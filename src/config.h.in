@@ -46,6 +46,12 @@
 /* Defined if struct sockaddr_storage has deprecated __ss_family member */
 #undef HAVE___SS_FAMILY
 
+#undef NDEBUG
+#undef DEBUG
+
+/* Define if you have the fcntl function.  */
+#undef HAVE_FCNTL
+
 /* Define if you have the gai_strerror function.  */
 #undef HAVE_GAI_STRERROR
 
@@ -57,6 +63,9 @@
 
 /* Define if you have the select function.  */
 #undef HAVE_SELECT
+
+/* Define if you have the signal function.  */
+#undef HAVE_SIGNAL
 
 /* Define if you have the socket function.  */
 #undef HAVE_SOCKET
@@ -73,6 +82,9 @@
 /* Define if you have the <errno.h> header file.  */
 #undef HAVE_ERRNO_H
 
+/* Define if you have the <fcntl.h> header file.  */
+#undef HAVE_FCNTL_H
+
 /* Define if you have the <limits.h> header file.  */
 #undef HAVE_LIMITS_H
 
@@ -81,6 +93,9 @@
 
 /* Define if you have the <netinet/in.h> header file.  */
 #undef HAVE_NETINET_IN_H
+
+/* Define if you have the <signal.h> header file.  */
+#undef HAVE_SIGNAL_H
 
 /* Define if you have the <stdint.h> header file.  */
 #undef HAVE_STDINT_H
@@ -105,10 +120,4 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Defined if struct sockaddr_storage has ss_family member */
-#undef HAVE_SS_FAMILY
-
-/* Defined if struct sockaddr_storage has old __ss_family member */
-#undef HAVE___SS_FAMILY
 

@@ -47,6 +47,10 @@ This option forces the use of IPv4.
 This option forces the use of IPv6 and inhibites the use IPV4-mapped 
 addresses.
 .TP 13
+.I \-d
+This option enables the SO_REUSEADDR socket option (works in both working 
+modes, but is useful only in listen mode).
+.TP 13
 .I \-h
 This option simply displays a brief help.
 .TP 13
@@ -59,10 +63,6 @@ instead of hostnames.
 .TP 13
 .I \-p port
 This option sets the port number for the local endside of the connection.
-.TP 13
-.I \-r
-This option enables the SO_REUSEADDR socket option (works in both working 
-modes, but is useful only in listen mode).
 .TP 13
 .I \-s addr
 This option sets the source address for the local endside of the connection.

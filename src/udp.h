@@ -1,5 +1,5 @@
 /*
- *  misc.h - miscellaneous funcions module - header
+ *  udp.h - udp networking module - header 
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
@@ -18,27 +18,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#ifndef MISC_H
-#define MISC_H
+#ifndef UDP_H
+#define UDP_H
 
-#include "config.h"
-#include <stdio.h>
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#include <sys/types.h>
+#include <sys/socket.h>
+#include "network.h"
 
-
-typedef enum { FALSE = 0, TRUE = 1 } bool;
-
-void fatal(const char *template, ...);
-void warn(const char *template, ...);
-uint8_t *xmalloc(size_t size);
-
-#ifdef HAVE_STRTOL
-int safe_atoi(char *str);
-#else
-#define safe_atoi atoi
-#endif
-
-#endif /* MISC_H */
+void udp_connect(sa_family_t family, address *remote_addr, address *local_addr);
+void udp_listen(sa_family_t family, address *local_addr);
+	
+#endif /* UDP_H */

@@ -1,9 +1,4 @@
 
-2002-04-07
-
-minor changes. nc6 now compiles even on openbsd. 
-
-
 2002-04-03
 
 we have finally managed to port netcat6 to freebsd and to let it work with 

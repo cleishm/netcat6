@@ -1,4 +1,23 @@
-#include "config.h"
+/*
+ *  udp.c - udp networking module - implementation 
+ * 
+ *  nc6 - an advanced netcat clone
+ *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */  
 #include <assert.h>
 #include <errno.h>
 #include <netdb.h>
@@ -8,9 +27,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "config.h"
 #include "circ_buf.h"
+#include "filter.h"
 #include "misc.h"
 #include "network.h"
+#include "parser.h"
 #include "readwrite.h"
 
 #undef  MAX
@@ -18,14 +40,12 @@
 #undef  MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-#define UDP_MSG_SIZE 65536
-
 #if HAVE___SS_FAMILY
 #define ss_family __ss_family
 #endif 
 
-/* buffer size is 8kb */
-static const size_t BUFFER_SIZE = UDP_MSG_SIZE;
+/* buffer size is 64kb */
+static const size_t BUFFER_SIZE = 65536;
 
 /* by default, let's make select time out in 1 second. this is clearly an
  * arbitrary choice, and i don't know if it is a good (or clever) one. */
@@ -37,6 +57,52 @@ static int destlen;
 static address dest_addr;
 static bool have_dest      = FALSE;
 static bool have_dest_addr = FALSE;
+
+
+static int sockaddr_len(struct sockaddr *sa);
+static int udp_connect_to(sa_family_t family, address *remote, address *local);
+static int udp_bind_to(sa_family_t family, address *local);
+static void udp_readwrite(int udp_sock, io_stream *ios);
+
+void udp_connect(sa_family_t family, address *remote_addr, address *local_addr)
+{
+	int fd;
+	io_stream local;
+
+	assert(remote_addr != NULL);
+	assert(is_flag_set(USE_UDP) == TRUE);
+	
+	dest_addr = *remote_addr;
+	have_dest_addr = TRUE;
+	stdio_to_io_stream(&local);
+
+	fd = udp_connect_to(family, remote_addr, local_addr);
+	have_dest = TRUE;
+
+	udp_readwrite(fd, &local);
+	close(fd);
+}
+
+
+
+void udp_listen(sa_family_t family, address *local_addr)
+{
+	int fd;
+	io_stream local;
+
+	assert(local_addr != NULL);
+	assert(is_flag_set(USE_UDP) == TRUE);
+	
+	have_dest_addr = FALSE;
+	have_dest      = FALSE;
+
+	stdio_to_io_stream(&local);
+
+	fd = udp_bind_to(family, local_addr);
+
+	udp_readwrite(fd, &local);
+	close(fd);
+}
 
 
 
@@ -64,25 +130,25 @@ static int sockaddr_len(struct sockaddr *sa)
 
 /* this function opens a socket, connects the socket to the address specified 
  * in addr and returns the file descriptor of the socket. */
-static int udp_connect_to(sa_family_t family, unsigned int flags, 
-                          address *remote, address *local)
+static int udp_connect_to(sa_family_t family, address *remote, address *local)
 {
 	int err, fd;
 	struct addrinfo hints, *res = NULL;
 
-	/* make sure preconditions on remote address are respected */
+	/* make sure that the preconditions on the addresses and on the flags 
+	 * are respected */
 	assert(remote != NULL);
 	assert(remote->address != NULL && strlen(remote->address) > 0);
 	assert(remote->port != NULL && strlen(remote->port) > 0 );
-
-	assert(flags & USE_UDP);
+	assert(is_flag_set(USE_UDP) == TRUE);
+	assert(is_flag_set(REUSE_ADDR) == FALSE);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = family;
 	hints.ai_socktype = SOCK_DGRAM;
 	
-	if (flags & NUMERIC_MODE) 
+	if (is_flag_set(NUMERIC_MODE) == TRUE) 
 		hints.ai_flags |= AI_NUMERICHOST;
 	
 	/* get the IP address of the remote end of the connection */
@@ -93,7 +159,7 @@ static int udp_connect_to(sa_family_t family, unsigned int flags,
 	assert(res != NULL);
 	assert(res->ai_addrlen <= sizeof(dest));
 
-	/* get the fisrt sockaddr structure returned by getaddrinfo */
+	/* get the first sockaddr structure returned by getaddrinfo */
 	memcpy(&dest, res->ai_addr, res->ai_addrlen);
 	destlen = res->ai_addrlen;
 
@@ -118,7 +184,7 @@ static int udp_connect_to(sa_family_t family, unsigned int flags,
 		hints.ai_family   = family;
 		hints.ai_socktype = SOCK_DGRAM;
 	
-		if (flags & NUMERIC_MODE) 
+		if (is_flag_set(NUMERIC_MODE) == TRUE) 
 			hints.ai_flags |= AI_NUMERICHOST;
 		
 		/* get the IP address of the local end of the connection */
@@ -145,7 +211,7 @@ static int udp_connect_to(sa_family_t family, unsigned int flags,
 			if (err < 0) perror("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
-		
+
 		/* bind to the local address */
 		err = bind(fd, (struct sockaddr *)&src, srclen);
 		if (err != 0) 
@@ -159,39 +225,46 @@ static int udp_connect_to(sa_family_t family, unsigned int flags,
 
 
 
-static int udp_bind_to(sa_family_t family, unsigned int flags,
-                       address *local)
+static int udp_bind_to(sa_family_t family, address *local)
 {
-	int err, fd, ns;
+	int err, fd;
 	struct addrinfo hints, *res = NULL;
 	struct sockaddr_storage src;
 	int srclen;
 
+	/* make sure that the preconditions on the addresses and on the flags 
+	 * are respected */
 	assert(local != NULL);
 	assert(local->address != NULL || local->port != NULL);
 	assert(local->address == NULL || strlen(local->address) > 0);
 	assert(local->port    == NULL || strlen(local->port) > 0);
-	
-	assert(flags & USE_UDP);
+	assert(is_flag_set(USE_UDP) == TRUE);
 	 
+	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = family;
 	hints.ai_flags    = AI_PASSIVE;
 	hints.ai_socktype = SOCK_DGRAM;
 	
-	if (flags & NUMERIC_MODE) 
+	if (is_flag_set(NUMERIC_MODE) == TRUE) 
 		hints.ai_flags |= AI_NUMERICHOST;
 
+	/* get the IP address of the remote end of the connection */
 	err = getaddrinfo(local->address, local->port, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
 		
+	/* check the results of getaddrinfo */
 	assert(res != NULL);
+	assert(res->ai_addrlen <= sizeof(src));
 
+	/* get the first sockaddr structure returned by getaddrinfo */
 	memcpy(&src, res->ai_addr, res->ai_addrlen);
 	srclen = res->ai_addrlen;
 	
+	/* cleanup to avoid memory leaks */
 	freeaddrinfo(res);
 
+	/* create the socket */
 	fd = socket(res->ai_family, SOCK_DGRAM, 0);
 	if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
@@ -204,13 +277,14 @@ static int udp_bind_to(sa_family_t family, unsigned int flags,
 	}
 #endif 
 		
-	if (flags & REUSE_ADDR) {
+	if (is_flag_set(REUSE_ADDR) == TRUE) {
 		int on = 1;
 		/* in case of error, we will go on anyway... */
 		err = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
 		if (err < 0) perror("error with sockopt SO_REUSEADDR");
 	}
 
+	/* bind to the local address */
 	err = bind(fd, (struct sockaddr *)&src, srclen);
 	if (err != 0) fatal("cannot use specified source addr/port: %s", 
 		            strerror(errno));
@@ -221,11 +295,10 @@ static int udp_bind_to(sa_family_t family, unsigned int flags,
 
 
 /* udp_sock is the remote stream, ios the local one */
-static void udp_readwrite(int udp_sock, io_stream *ios, unsigned int flags)
+static void udp_readwrite(int udp_sock, io_stream *ios)
 {
 	int rr, max_fd_in;
 	fd_set read_fdset, tmp_fdset;
-	struct timeval timeout; 
 	static uint8_t *buf1 = NULL;
 	static uint8_t *buf2 = NULL;
 
@@ -272,7 +345,7 @@ static void udp_readwrite(int udp_sock, io_stream *ios, unsigned int flags)
 		
 		if (FD_ISSET(udp_sock, &tmp_fdset)) {
 			struct sockaddr_storage from;
-			int fromlen = sizeof(from);
+			socklen_t fromlen = sizeof(from);
 			
 			/* something has been received from udp_sock. 
 			 * let's read it. */
@@ -283,24 +356,15 @@ static void udp_readwrite(int udp_sock, io_stream *ios, unsigned int flags)
 				destlen = sockaddr_len((struct sockaddr *)&from);
 				assert(destlen <= sizeof(struct sockaddr_storage));
 				memcpy(&dest, &from, destlen);
-				have_dest == TRUE;
+				have_dest = TRUE;
 			}
 			
 			if ((have_dest_addr == FALSE && 
-			     are_address_equal(&from, &dest) == TRUE) || 
+			     are_address_equal((struct sockaddr *)&from, 
+			                       (struct sockaddr *)&dest) == TRUE) || 
 			    (have_dest_addr == TRUE && 
-			     is_allowed(&from, &dest_addr, flags) == TRUE)) {
-#if 0
-				if (rr == 0) {
-					/* if rr == 0, then we are not 
-					 * receiving data from udp_sock 
-					 * anymore. let's close it. */
-					close(udp_sock);				
-					/* this will put an end to the 
-					 * select loop. */
-					FD_CLR(udp_sock, &read_fdset);
-				} else 
-#endif
+			     is_allowed((struct sockaddr *)&from, &dest_addr) == TRUE)) {
+				
 				if (rr < 0) {
 					/* error while reading udp_sock: 
 					 * print an error message and exit. */
@@ -367,41 +431,3 @@ static void udp_readwrite(int udp_sock, io_stream *ios, unsigned int flags)
 
 
 
-void udp_connect(sa_family_t family, unsigned int flags, 
-		 address *remote_addr, address *local_addr)
-{
-	int fd;
-	io_stream remote, local;
-
-	assert(remote_addr != NULL);
-	assert(flags & USE_UDP);
-	
-	dest_addr = *remote_addr;
-	have_dest_addr = TRUE;
-	stdio_to_io_stream(&local);
-
-	fd = udp_connect_to(family, flags, remote_addr, local_addr);
-	have_dest = TRUE;
-
-	udp_readwrite(fd, &local, flags);
-}
-
-
-
-void udp_listen(sa_family_t family, unsigned int flags, address *local_addr)
-{
-	int fd;
-	io_stream remote, local;
-
-	assert(local_addr != NULL);
-	assert(flags & USE_UDP);
-	
-	have_dest_addr = FALSE;
-	have_dest      = FALSE;
-
-	stdio_to_io_stream(&local);
-
-	fd = udp_bind_to(family, flags, local_addr);
-
-	udp_readwrite(fd, &local, flags);
-}

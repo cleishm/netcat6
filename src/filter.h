@@ -1,3 +1,23 @@
+/*
+ *  filter.h - incoming traffic validator module - header
+ * 
+ *  nc6 - an advanced netcat clone
+ *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */  
 #ifndef FILTER_H
 #define FILTER_H
 
@@ -6,17 +26,7 @@
 #include "misc.h"
 #include "network.h"
 
-#if 0
-typedef struct filter_t {
-	struct filter_t *next;
-	char *address;
-	char *port;
-} *filter, *iterator;
-
-#define EMPTY_FILTER NULL;
-void add_to_filter(const address *a, filter *f);
-#endif
-
-bool is_allowed(const struct sockaddr *sa, const address *addr, unsigned int flags);
+bool are_address_equal(const struct sockaddr *a, const struct sockaddr *b);
+bool is_allowed(const struct sockaddr *sa, const address *addr);
 
 #endif /* FILTER_H */

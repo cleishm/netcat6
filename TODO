@@ -1,10 +1,43 @@
 
 i'd like to improve netcat6 in many ways:
 
-- write new man page
-- add support for execution of programs?
-- add inetd-like continuos listening mode ?
+small hacks/bugfixes that _MUST_ be done before final release 0.2.0:
+
+- verify res_init behaviour
+- set O_NONBLOCK flags for fds					DONE
+- optimize for tcp file transfers				PARTLY DONE (must add -q)
+- optimize for udp file transfers
+- enhance the tcp connect/listen/accept mechanism		DONE
+- enhance the udp send/recv mechanism
+- add GPL at the beginning of the code				DONE
+- find if SO_REUSEADDR makes sense with a non-passive		DONE
+  udp or tcp socket
+- add timeouts for accept and connect
+- ignore SIGPIPE and SIGURG					DONE
+- update the man page:
+	describe udp listen mode
+	describe optimizations for file transfers
+- review parser.c:
+	add flag query function					DONE
+	remove -r option for backward compatibility		DONE
+	add -x option						DONE
+	add -q option						DONE
+	add long options support
+- various performance optimizations				DONE
+- create --enable-debug configure option			DONE
+- review/update autoconf scripts				DONE
+- review the _WHOLE_ source code
+
+
+big features to be added in the next releases:
+
+- ascii logging of connections
+- hexdump logging
+- UDP path mtu discovery support
 - ssl support
+- (stealth?) portscanning
+- add support for execution of programs?
+- add inetd-like continuos listening mode?
 
 
 

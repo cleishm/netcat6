@@ -1,6 +1,6 @@
 Summary: Reads and writes data across network connections using TCP or UDP with IPv4 and IPv6.
 Name: nc6
-Version: 0.2pre2a
+Version: 0.2pre3
 Release: 1
 Source0: ftp://ftp.ferrara.linux.it/pub/project6/sources/nc6-%{version}.tar.gz
 Copyright: GPL

@@ -5,3 +5,6 @@
 /* Defined if struct sockaddr_storage has deprecated __ss_family member */
 #undef HAVE___SS_FAMILY
 
+#undef NDEBUG
+#undef DEBUG
+

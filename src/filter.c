@@ -1,10 +1,35 @@
+/*
+ *  filter.c - incoming traffic validator module - implementation
+ * 
+ *  nc6 - an advanced netcat clone
+ *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */  
 #include <assert.h>
 #include <netdb.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "config.h"
 #include "filter.h"
 #include "misc.h"
+#include "network.h"
+#include "parser.h"
 
 
 /* compare two sockaddr structs to see if they represent the same address */
@@ -100,7 +125,7 @@ static bool is_address_ipv4_mapped(const struct sockaddr *a)
 
 
 /* returns TRUE if sa corresponds to the address/port couple specified in addr */
-bool is_allowed(const struct sockaddr *sa, const address *addr, unsigned int flags)
+bool is_allowed(const struct sockaddr *sa, const address *addr)
 {
 	struct addrinfo hints, *res = NULL, *ptr;
 	int err;
@@ -123,13 +148,14 @@ bool is_allowed(const struct sockaddr *sa, const address *addr, unsigned int fla
 	
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = AF_UNSPEC;
-	hints.ai_socktype = (flags & USE_UDP ? SOCK_DGRAM : SOCK_STREAM);
+	hints.ai_socktype = 
+		((is_flag_set(USE_UDP) == TRUE) ? SOCK_DGRAM : SOCK_STREAM);
 	
 	err = getaddrinfo(addr->address, addr->port, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
-		if ((flags | STRICT_IPV6) &&
+		if ((is_flag_set(STRICT_IPV6) == TRUE) &&
 		    is_address_ipv4_mapped(ptr->ai_addr)) {
 			/* cannot accept address */
 			continue;

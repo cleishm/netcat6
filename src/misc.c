@@ -1,14 +1,33 @@
-#include "config.h"
+/*
+ *  misc.c - miscellaneous funcions module - implementation 
+ * 
+ *  nc6 - an advanced netcat clone
+ *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */  
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "config.h"
 #include "misc.h"
 #ifdef HAVE_STRTOL
 #include <errno.h>
 #include <limits.h>
 #endif
 
-extern const char *get_program_name();
 
 
 /* exit the program with an error message */
@@ -52,26 +71,6 @@ uint8_t *xmalloc(size_t size)
 	if (value == NULL) fatal("virtual memory exhausted");
 
 	return value;
-}
-
-
-
-void print_usage(FILE *fp)
-{
-	const char *program_name = get_program_name();
-
-	fprintf(fp, "\nUsage:\n"
-	       "\t%s [-46nh] [-p port] [-s addr] hostname port\n"
-	       "\t%s -l -p port [-s addr] [-46nh] [hostname] [port]\n\n"
-	       "Recognized options are:\n"
-	       "    -4         Use only IPv4\n"
-	       "    -6         Use only IPv6\n"
-	       "    -l         Listen mode, for inbound connects\n"
-	       "    -s addr    Local source address\n"
-	       "    -p port    Local source port\n"
-	       "    -n         Numeric-only IP addresses, no DNS\n" 
-	       "    -h         Display help\n\n", 
-	       program_name, program_name);
 }
 
 
