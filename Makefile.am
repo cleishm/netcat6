@@ -16,7 +16,7 @@ EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
 
 AUTOMAKE_OPTIONS 	= foreign dist-bzip2
 ACLOCAL_AMFLAGS		= -I $(auxdir)
-SUBDIRS 		= docs src #config 
+SUBDIRS 		= docs contrib src #config 
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
 			  config.status config.log $(AUX_DIST)
 
