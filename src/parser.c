@@ -32,7 +32,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.20 2002-12-30 14:44:49 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.21 2002-12-30 16:11:47 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -292,28 +292,33 @@ static void print_usage(FILE *fp)
 	const char *program_name = get_program_name();
 
 	fprintf(fp, "Usage:\n"
-"\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
-"\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
+"\t%s [options...] hostname port\n"
+"\t%s -l -p port [-s addr] [options...] [hostname] [port]\n\n"
 "Recognized options are:\n", program_name, program_name);
 	fprintf(fp,	
-"    -4                Use only IPv4\n"
-"    -6                Use only IPv6\n"
-"    -d                Disable SO_REUSEADDR socket option (only in listen mode)\n"
-"    -h, --help        Display help\n"
-"    -l, --listen      Listen mode, for inbound connects\n"
-"    -n                Numeric-only IP addresses, no DNS\n" 
-"    -p, --port=PORT   Local source port\n"
-"    -q, --hold-timeouts=SEC1[:SEC2]  Hold timeouts\n"
-"    -s, --address=ADDRESS  Local source address\n"
-"    -u, --udp         Require use of UDP\n"
-"    -v                Increase program verbosity (call twice for max verbosity)\n"
-"    -w, --timeout=SECONDS  Timeout for connects/accepts\n"
-"    -x, --transfer    File transfer mode\n"
-"        --buffer-size=BYTES  Set buffer size for network receives\n"
-"        --mtu=BYTES          Set MTU for network connection transmits\n"
-"        --nru=BYTES          Set NRU for network connection receives\n"
-"        --half-close     Handle network half-closes correctly\n"
-"        --disable-nagle  Disable nagle algorithm for TCP connections\n"
+"  -4                Use only IPv4\n"
+"  -6                Use only IPv6\n"
+"  -d                Disable SO_REUSEADDR socket option (only in listen mode)\n"
+"  -h, --help        Display help\n"
+"  -l, --listen      Listen mode, for inbound connects\n"
+"  -n                Numeric-only IP addresses, no DNS\n" 
+"  -p, --port=PORT   Local source port\n"
+"  -q, --hold-timeouts=SEC1[:SEC2]\n"
+"                    Set hold timeouts\n"
+"  -s, --address=ADDRESS\n"
+"                    Local source address\n"
+"  -u, --udp         Require use of UDP\n"
+"  -v                Increase program verbosity (call twice for max verbosity)\n"
+"  -w, --timeout=SECONDS\n"
+"                    Timeout for connects/accepts\n"
+"  -x, --transfer    File transfer mode\n"
+"      --buffer-size=BYTES\n"
+"                    Set buffer size for network receives\n"
+"      --mtu=BYTES   Set MTU for network connection transmits\n"
+"      --nru=BYTES   Set NRU for network connection receives\n"
+"      --half-close  Handle network half-closes correctly\n"
+"      --disable-nagle\n"
+"                    Disable nagle algorithm for TCP connections\n"
 "\n");
 }
 
