@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.18 2003-01-11 14:05:48 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.19 2003-01-11 19:46:38 chris Exp $");
 
 
 
@@ -73,8 +73,8 @@ static void ios_assert(const io_stream *ios)
 	    ios->name == NULL ||
 	    ios->buf_in == NULL ||
 	    ios->buf_out == NULL)
-		fatal(_("internal error with I/O streams: please"
-		      "contact the authors of nc6 for bugfixing ;-)"));
+		fatal("internal error with I/O streams: please"
+		      "contact the authors of nc6 for bugfixing ;-)");
 }
 #else
 #define ios_assert(IOS) do {} while(0)
@@ -110,11 +110,11 @@ void ios_assign_stdio(io_stream *ios)
 	ios_assert(ios);
 
 	if ((ios->fd_in  = dup(STDIN_FILENO)) < 0) 
-		fatal(_("error in duplicating stdin file descriptor: %s"), 
+		fatal("error in duplicating stdin file descriptor: %s", 
 		      strerror(errno));
 	
 	if ((ios->fd_out = dup(STDOUT_FILENO)) < 0) 
-		fatal(_("error in duplicating stdout file descriptor: %s"), 
+		fatal("error in duplicating stdout file descriptor: %s", 
 		      strerror(errno));
 
 	/* pretend stdio is a stream socket */
@@ -183,9 +183,9 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 		timerclear(tv);
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("%s hold timed out"), ios->name);
+			warn("%s hold timed out", ios->name);
 	} else if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
-		warn(_("%s timer expires in %d.%06d"),
+		warn("%s timer expires in %d.%06d",
 		     ios->name, tv->tv_sec, tv->tv_usec);
 #endif
 	}
@@ -215,14 +215,14 @@ ssize_t ios_read(io_stream *ios)
 		ios->rcvd += rr;
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("read %d bytes from %s"), rr, ios->name);
+			warn("read %d bytes from %s", rr, ios->name);
 #endif
 		return rr;
 	} else if (rr == 0) {
 		/* read eof - close read stream */
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("read eof from %s"), ios->name);
+			warn("read eof from %s", ios->name);
 #endif
 		ios_shutdown(ios, SHUT_RD);
 		return IOS_EOF;
@@ -233,7 +233,7 @@ ssize_t ios_read(io_stream *ios)
 		/* weird error */
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("error reading from %s: %s"),
+			warn("error reading from %s: %s",
 			     ios->name, strerror(errno));
 #endif
 		return IOS_FAILED;
@@ -262,7 +262,7 @@ ssize_t ios_write(io_stream *ios)
 		ios->sent += rr;
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("wrote %d bytes to %s"), rr, ios->name);
+			warn("wrote %d bytes to %s", rr, ios->name);
 #endif
 		/* shutdown the write if buf_out is empty and out_eof is set */
 		if (ios->out_eof && cb_is_empty(ios->buf_out))
@@ -278,9 +278,9 @@ ssize_t ios_write(io_stream *ios)
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 			if (errno == EPIPE)
-				warn(_("received SIGPIPE on %s"), ios->name);
+				warn("received SIGPIPE on %s", ios->name);
 			else
-				warn(_("error writing to %s: %s"),
+				warn("error writing to %s: %s",
 				     ios->name, strerror(errno));
 		}
 #endif
@@ -321,7 +321,7 @@ void ios_shutdown(io_stream* ios, int how)
 			close(ios->fd_out);
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("closed %s"), ios->name);
+			warn("closed %s", ios->name);
 #endif
 		ios->fd_in = ios->fd_out = -1;
 	} else if (how == SHUT_RD) {
@@ -335,14 +335,14 @@ void ios_shutdown(io_stream* ios, int how)
 				shutdown(ios->fd_in, SHUT_RD);
 #ifndef NDEBUG
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn(_("shutdown %s for read"), ios->name);
+					warn("shutdown %s for read", ios->name);
 #endif
 			}
 		} else {
 			close(ios->fd_in);
 #ifndef NDEBUG
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn(_("closed %s for read"), ios->name);
+				warn("closed %s for read", ios->name);
 #endif
 		}
 		ios->fd_in = -1;
@@ -360,14 +360,14 @@ void ios_shutdown(io_stream* ios, int how)
 				shutdown(ios->fd_out, SHUT_WR);
 #ifndef NDEBUG
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn(_("shutdown %s for write"),ios->name);
+					warn("shutdown %s for write",ios->name);
 #endif
 			}
 		} else {
 			close(ios->fd_out);
 #ifndef NDEBUG
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn(_("closed %s for write"), ios->name);
+				warn("closed %s for write", ios->name);
 #endif
 		}
 		ios->fd_out = -1;

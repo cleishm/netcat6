@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.17 2003-01-11 14:05:47 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.18 2003-01-11 19:46:38 chris Exp $");
 
 
 
@@ -194,7 +194,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	
 	err = getaddrinfo(addr->address, addr->service, &hints, &res);
 	if (err != 0) 
-		fatal(_("getaddrinfo error: %s"), gai_strerror(err));
+		fatal("getaddrinfo error: %s", gai_strerror(err));
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 

@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.19 2003-01-11 14:05:47 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.20 2003-01-11 19:46:38 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -92,7 +92,7 @@ void ca_to_addrinfo(struct addrinfo *ainfo,
 #ifdef ENABLE_IPV6
 			ainfo->ai_family = PF_INET6;
 #else
-			fatal(_("internal error: system does not support ipv6"));
+			fatal("internal error: system does not support ipv6");
 #endif
 			break;
 		case PROTO_IPv4:
@@ -102,7 +102,7 @@ void ca_to_addrinfo(struct addrinfo *ainfo,
 			ainfo->ai_family = PF_UNSPEC;
 			break;
 		default:
-			fatal(_("internal error: unknown socket domain"));
+			fatal("internal error: unknown socket domain");
 	}
 	
 	switch (attrs->protocol) {
@@ -123,7 +123,7 @@ void ca_to_addrinfo(struct addrinfo *ainfo,
 			ainfo->ai_socktype = SOCK_STREAM;
 			break;
 		default:
-			fatal(_("internal error: unknown socket type"));
+			fatal("internal error: unknown socket type");
 	}
 }
 
@@ -132,24 +132,24 @@ void ca_warn_details(const connection_attributes *attrs)
 {
 	switch (attrs->remote_stream.socktype) {
 	case SOCK_STREAM:
-		warn(_("using stream socket"));
+		warn("using stream socket");
 		break;
 	case SOCK_DGRAM:
-		warn(_("using datagram socket"));
+		warn("using datagram socket");
 		break;
 	default:
-		fatal(_("internal error: unsupported socktype %d"),
+		fatal("internal error: unsupported socktype %d",
 		      attrs->remote_stream.socktype);
 	}
 
-	warn(_("using remote receive buffer size of %d"),
+	warn("using remote receive buffer size of %d",
 	     attrs->remote_buffer.buf_size);
 
 	if (attrs->remote_stream.nru)
-		warn(_("using remote receive nru of %d"),
+		warn("using remote receive nru of %d",
 		     attrs->remote_stream.nru);
 
 	if (attrs->remote_stream.mtu)
-		warn(_("using remote send mtu of %d"),
+		warn("using remote send mtu of %d",
 		     attrs->remote_stream.mtu);
 }

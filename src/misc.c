@@ -32,7 +32,7 @@
 #include <limits.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.13 2003-01-11 14:05:48 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.14 2003-01-11 19:46:38 chris Exp $");
 
 
 
@@ -78,7 +78,7 @@ void *xmalloc(size_t size)
 {
 	register void *value = malloc(size);
 	
-	if (value == NULL) fatal(_("virtual memory exhausted"));
+	if (value == NULL) fatal("virtual memory exhausted");
 
 	return value;
 }
@@ -99,13 +99,13 @@ void nonblock(int fd)
 {
 	int arg;
 	if ((arg = fcntl(fd, F_GETFL, 0)) < 0)
-		fatal(_("error reading file descriptor flags: %s"),
+		fatal("error reading file descriptor flags: %s",
 		      strerror(errno));
 
 	arg |= O_NONBLOCK;
 
 	if (fcntl(fd, F_SETFL, arg) < 0)
-		fatal(_("error setting flag O_NONBLOCK on file descriptor"),
+		fatal("error setting flag O_NONBLOCK on file descriptor",
 		      strerror(errno));
 }
 
@@ -122,9 +122,9 @@ int safe_atoi(const char *str)
 	errno = 0;
 	res = strtol(str, &c, 10);
 	if (errno == ERANGE || res > INT_MAX || res < INT_MIN)
-		fatal(_("error parsing integer: out of range"));
+		fatal("error parsing integer: out of range");
 	
-	if (*c != '\0') fatal(_("error parsing integer from string"));
+	if (*c != '\0') fatal("error parsing integer from string");
 
 	return ((int)res);
 }

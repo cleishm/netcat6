@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.30 2003-01-11 14:05:48 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.31 2003-01-11 19:46:38 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -83,7 +83,7 @@ void do_connect(connection_attributes *attrs)
 	/* get the address of the remote end of the connection */
 	err = getaddrinfo(remote->address, remote->service, &hints, &res);
 	if (err != 0)
-		fatal(_("forward host lookup failed for remote endpoint %s: %s"),
+		fatal("forward host lookup failed for remote endpoint %s: %s",
 		      remote->address, gai_strerror(err));
 
 	/* check the results of getaddrinfo */
@@ -127,7 +127,7 @@ void do_connect(connection_attributes *attrs)
 
 		/* this should never happen */
 		if (err != 0)
-			fatal(_("getnameinfo failed: %s"), gai_strerror(err));
+			fatal("getnameinfo failed: %s", gai_strerror(err));
 
 		/* get the real name for this destination as a string */
 		if (verbose_mode == TRUE && numeric_mode == FALSE) {
@@ -136,7 +136,7 @@ void do_connect(connection_attributes *attrs)
 			                  hbuf_rev, sizeof(hbuf_rev),
 					  sbuf_rev, sizeof(sbuf_rev), 0);
 			if (err != 0) {
-				warn(_("inverse lookup failed for %s: %s"),
+				warn("inverse lookup failed for %s: %s",
 				     hbuf_num, gai_strerror(err));
 				/* just make the real name the numeric string */
 				strcpy(hbuf_rev, hbuf_num);
@@ -154,7 +154,7 @@ void do_connect(connection_attributes *attrs)
 			/* ignore this address if it is not supported */
 			if (unsupported_sock_error(errno))
 				continue;
-			fatal(_("cannot create the socket: %s"), strerror(errno));
+			fatal("cannot create the socket: %s", strerror(errno));
 		}
 		
 #if defined(ENABLE_IPV6) && defined(IPV6_V6ONLY)
@@ -164,7 +164,7 @@ void do_connect(connection_attributes *attrs)
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
 			if (err < 0) 
-				warn(_("error with sockopt IPV6_V6ONLY"));
+				warn("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
 
@@ -175,7 +175,7 @@ void do_connect(connection_attributes *attrs)
 			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
 			                 &on, sizeof(on));
 			if (err < 0) 
-				warn(_("error with sockopt TCP_NODELAY"));
+				warn("error with sockopt TCP_NODELAY");
 		}
 
 		/* setup local source address and/or service */
@@ -196,8 +196,8 @@ void do_connect(connection_attributes *attrs)
 			err = getaddrinfo(local->address, local->service,
 			                  &hints, &src_res);
 			if (err != 0)
-				fatal(_("forward host lookup failed "
-				        "for source address %s: %s"),
+				fatal("forward host lookup failed "
+				      "for source address %s: %s",
 				      local->address, gai_strerror(err));
 
 			/* check the results of getaddrinfo */
@@ -216,9 +216,9 @@ void do_connect(connection_attributes *attrs)
 				assert(src_ptr == NULL);
 				
 				if (verbose_mode == TRUE) {
-					warn(_("bind to source addr/port failed "
-					       "when connecting to "
-					       "%s [%s] %s (%s): %s"),
+					warn("bind to source addr/port failed "
+					     "when connecting to "
+					     "%s [%s] %s (%s): %s",
 					     hbuf_rev, hbuf_num,
 					     sbuf_num, sbuf_rev,
 					     strerror(errno));
@@ -260,13 +260,13 @@ void do_connect(connection_attributes *attrs)
 			} while (err < 0 && errno == EINTR);
 
 			if (err < 0)
-				fatal(_("select error: %s"), strerror(errno));
+				fatal("select error: %s", strerror(errno));
 			
 			if (err == 0) {
 				/* connection timed out */
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
-					warn(_("%s [%s] %s (%s): "
-					       "connect timed out"),
+					warn("%s [%s] %s (%s): "
+					     "connect timed out",
 					     hbuf_rev, hbuf_num,
 					     sbuf_num, sbuf_rev);
 				}
@@ -278,7 +278,7 @@ void do_connect(connection_attributes *attrs)
 			/* select returned - test socket error for result */
 			len = sizeof(err);
 			if (getsockopt(fd, SOL_SOCKET,SO_ERROR, &err, &len) < 0)
-				fatal(_("getsockopt error: %s"), strerror(errno));
+				fatal("getsockopt error: %s", strerror(errno));
 			if (err != 0)
 				errno = err;
 		}
@@ -286,7 +286,7 @@ void do_connect(connection_attributes *attrs)
 		if (err != 0) {
 			/* connection failed */
 			if (verbose_mode == TRUE) {
-				warn(_("cannot connect to %s [%s] %s (%s): %s"),
+				warn("cannot connect to %s [%s] %s (%s): %s",
 				     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
 				     strerror(errno));
 			}
@@ -306,16 +306,16 @@ void do_connect(connection_attributes *attrs)
 	if (ptr == NULL) {
 		/* if a connection was attempted, an error has been output */
 		if (connect_attempted == FALSE) {
-			fatal(_("forward lookup returned no usable socket types"));
+			fatal("forward lookup returned no usable socket types");
 		} else {
-			fatal(_("unable to connect to address %s, service %s"), 
+			fatal("unable to connect to address %s, service %s", 
 			      remote->address, remote->service);
 		}
 	}
 
 	/* let the user know the connection has been established */
 	if (verbose_mode == TRUE) {
-		warn(_("%s [%s] %s (%s) open"),
+		warn("%s [%s] %s (%s) open",
 		     hbuf_rev, hbuf_num,
 		     sbuf_num, sbuf_rev);
 	}
@@ -383,9 +383,9 @@ void do_listen(connection_attributes *attrs)
 	/* get the IP address of the local end of the connection */
 	err = getaddrinfo(local->address, local->service, &hints, &res);
 	if (err != 0) 
-		fatal(_("forward host lookup failed "
-		        "for local endpoint %s (%s): %s"),
-		      local->address? local->address : _("[unspecified]"),
+		fatal("forward host lookup failed "
+		      "for local endpoint %s (%s): %s",
+		      local->address? local->address : "[unspecified]",
 		      local->service, gai_strerror(err));
 		
 	/* check the results of getaddrinfo */
@@ -452,7 +452,7 @@ void do_listen(connection_attributes *attrs)
 
 		/* this should never happen */
 		if (err != 0)
-			fatal(_("getnameinfo failed: %s"), gai_strerror(err));
+			fatal("getnameinfo failed: %s", gai_strerror(err));
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -460,7 +460,7 @@ void do_listen(connection_attributes *attrs)
 			/* ignore this address if it is not supported */
 			if (unsupported_sock_error(errno))
 				continue;
-			fatal(_("cannot create the socket: %s"), strerror(errno));
+			fatal("cannot create the socket: %s", strerror(errno));
 		}
 
 #if defined(ENABLE_IPV6) && defined(IPV6_V6ONLY)
@@ -470,7 +470,7 @@ void do_listen(connection_attributes *attrs)
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
 			if (err < 0)
-				warn(_("error with sockopt IPV6_V6ONLY"));
+				warn("error with sockopt IPV6_V6ONLY");
 			else
 				set_ipv6_only = TRUE;
 		}
@@ -482,7 +482,7 @@ void do_listen(connection_attributes *attrs)
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
 			                 &on, sizeof(on));
-			if (err < 0) warn(_("error with sockopt SO_REUSEADDR"));
+			if (err < 0) warn("error with sockopt SO_REUSEADDR");
 		}
 
 		/* disable the nagle option for TCP sockets */
@@ -492,7 +492,7 @@ void do_listen(connection_attributes *attrs)
 			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
 			                 &on, sizeof(on));
 			if (err < 0) 
-				warn(_("error with sockopt TCP_NODELAY"));
+				warn("error with sockopt TCP_NODELAY");
 		}
 
 		/* bind to the local address */
@@ -505,13 +505,13 @@ void do_listen(connection_attributes *attrs)
 			    ptr->ai_family == PF_INET &&
 			    set_ipv6_only == FALSE &&
 			    bound_ipv6_any == TRUE) {
-				warn(_("listening on %s (%s) ..."),
+				warn("listening on %s (%s) ...",
 				     hbuf_num, sbuf_num);
 				close(fd);
 				continue;
 			}
 #endif
-			warn(_("bind to source %s (%s) failed: %s"),
+			warn("bind to source %s (%s) failed: %s",
 			     hbuf_num, sbuf_num, strerror(errno));
 			close(fd);
 			continue;
@@ -524,12 +524,12 @@ void do_listen(connection_attributes *attrs)
 		if (ptr->ai_socktype == SOCK_STREAM) {
 			err = listen(fd, 5);
 			if (err != 0)
-				fatal(_("cannot listen on %s (%s): %s"),
+				fatal("cannot listen on %s (%s): %s",
 				      hbuf_num, sbuf_num, strerror(errno));
 		}
 
 		if (verbose_mode == TRUE)
-			warn(_("listening on %s (%s) ..."), hbuf_num, sbuf_num);
+			warn("listening on %s (%s) ...", hbuf_num, sbuf_num);
 
 #ifdef ENABLE_IPV6
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
@@ -553,7 +553,7 @@ void do_listen(connection_attributes *attrs)
 	freeaddrinfo(res);
 	
 	if (nfd == 0)
-		fatal(_("failed to bind to any local addr/port"));
+		fatal("failed to bind to any local addr/port");
 
 	/* enter into the accept loop */
  	for (;;) {
@@ -576,11 +576,11 @@ void do_listen(connection_attributes *attrs)
 		err = select(maxfd + 1, &tmp_ap_fdset, NULL, NULL, tvp);
 
 		if (err == 0)
-			fatal(_("connection timed out"));
+			fatal("connection timed out");
 		
 		if (err < 0) {
 			if (errno == EINTR) continue;
-			fatal(_("select error: %s"), strerror(errno));
+			fatal("select error: %s", strerror(errno));
 		}
 
 		/* find the ready filedescriptor */
@@ -601,7 +601,7 @@ void do_listen(connection_attributes *attrs)
 		if (socktype == SOCK_STREAM) {
 			ns = accept(fd, (struct sockaddr *)&dest, &destlen);
 			if (ns < 0)
-				fatal(_("cannot accept connection: %s"),
+				fatal("cannot accept connection: %s",
 				      strerror(errno));
 		} else {
 			/* this is checked when binding listen sockets */
@@ -610,12 +610,12 @@ void do_listen(connection_attributes *attrs)
 			err = recvfrom(fd, NULL, 0, MSG_PEEK,
 			               (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
-				fatal(_("cannot recv from socket: %s"),
+				fatal("cannot recv from socket: %s",
 				      strerror(errno));
 
 			ns = dup(fd);
 			if (ns < 0)
-				fatal(_("cannot duplicate file descriptor %d: %s"),
+				fatal("cannot duplicate file descriptor %d: %s",
 				      fd, strerror(errno));
 		}
 
@@ -627,7 +627,7 @@ void do_listen(connection_attributes *attrs)
 			/* find out what address the connection was to */
 			err = getsockname(ns, (struct sockaddr *)&src, &srclen);
 			if (err < 0)
-				fatal(_("getsockname failed: %s"),
+				fatal("getsockname failed: %s",
 				      strerror(errno));
 
 			/* get the numeric name for this source as a string */
@@ -637,7 +637,7 @@ void do_listen(connection_attributes *attrs)
 
 			/* this should never happen */
 			if (err != 0)
-				fatal(_("getnameinfo failed: %s"),
+				fatal("getnameinfo failed: %s",
 				      gai_strerror(err));
 
 			/* get the numeric name for this client as a string */
@@ -646,7 +646,7 @@ void do_listen(connection_attributes *attrs)
 					  c_sbuf_num, sizeof(c_sbuf_num),
 					  NI_NUMERICHOST | NI_NUMERICSERV);
 			if (err != 0)
-				fatal(_("getnameinfo failed: %s"),
+				fatal("getnameinfo failed: %s",
 				      gai_strerror(err));
 
 			/* get the real name for this client as a string */
@@ -656,7 +656,7 @@ void do_listen(connection_attributes *attrs)
 						  sizeof(c_hbuf_rev), 
 						  NULL, 0, 0);
 				if (err != 0) {
-					warn(_("inverse lookup failed for %s: %s"),
+					warn("inverse lookup failed for %s: %s",
 				             c_hbuf_num, gai_strerror(err));
 					strcpy(c_hbuf_rev, c_hbuf_num);
 				}
@@ -677,13 +677,13 @@ void do_listen(connection_attributes *attrs)
 				err = connect(ns, (struct sockaddr*)&dest, 
 				              destlen);
 				if (err != 0)
-					fatal(_("cannot connect "
-					        "datagram socket: %s"),
+					fatal("cannot connect "
+					      "datagram socket: %s",
 					      strerror(errno));
 			}
 
 			if (verbose_mode == TRUE) {
-				warn(_("connect to %s (%s) from %s [%s] %s"),
+				warn("connect to %s (%s) from %s [%s] %s",
 				     hbuf_num, sbuf_num,
 				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
@@ -699,8 +699,8 @@ void do_listen(connection_attributes *attrs)
 			ns = -1;
 
 			if (verbose_mode == TRUE) {
-				warn(_("refused connect "
-				       "to %s (%s) from %s [%s] %s"),
+				warn("refused connect "
+				     "to %s (%s) from %s [%s] %s",
 				     hbuf_num, sbuf_num,
 				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}

@@ -90,6 +90,4 @@ int safe_atoi(const char *str);
 #define RCSID(X)
 #endif
 
-#undef _
-#define _(x) (x)
 #endif /* MISC_H */

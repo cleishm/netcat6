@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.18 2003-01-11 14:05:47 simone Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.19 2003-01-11 19:46:38 chris Exp $");
 
 
 
@@ -40,8 +40,8 @@ static void cb_assert(const circ_buf *cb)
 	    cb->buf == NULL ||
 	    cb->ptr == NULL ||
 	    cb->buf_size < cb->data_size) 
-		fatal(_("internal error with circular buffers: please "
-		        "contact the authors of nc6 for bugfixing ;-)"));
+		fatal("internal error with circular buffers: please "
+		      "contact the authors of nc6 for bugfixing ;-)");
 }
 #else
 #define cb_assert(CB)	do {} while(0)
