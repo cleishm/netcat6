@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.61 2004-01-23 09:34:24 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.62 2004-02-10 08:46:21 mauro Exp $");
 
 
 
@@ -229,6 +229,9 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		case 'b':
 			family = PROTO_BLUEZ;
 			protocol = L2CAP_PROTOCOL;
+			/* use standard bluetooth mtu */
+			if (remote_mtu == 0)
+				remote_mtu = 672;
 			break;
 #endif
 		case 'e':
