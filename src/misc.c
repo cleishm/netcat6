@@ -18,6 +18,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -34,6 +35,8 @@
 void fatal(const char *template, ...)
 {
 	va_list ap;
+	
+	assert(template != NULL);
 						      
 	fprintf(stderr, "%s: ", get_program_name());
 							       
@@ -51,6 +54,8 @@ void fatal(const char *template, ...)
 void warn(const char *template, ...)
 {
 	va_list ap;
+
+	assert(template != NULL);
 						      
 	fprintf(stderr, "%s: ", get_program_name());
 							       
@@ -76,10 +81,12 @@ uint8_t *xmalloc(size_t size)
 
 
 #ifdef HAVE_STRTOL
-int safe_atoi(char *str)
+int safe_atoi(const char *str)
 {
 	long int res;
 	char *c;
+
+	assert(str != NULL);
 
 	errno = 0;
 	res = strtol(str, &c, 10);

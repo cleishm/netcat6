@@ -28,15 +28,20 @@
 #endif
 #include <sys/types.h>
 
+#undef  MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#undef  MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 
+const char *get_program_name();
 void fatal(const char *template, ...);
 void warn(const char *template, ...);
 uint8_t *xmalloc(size_t size);
 
 #ifdef HAVE_STRTOL
-int safe_atoi(char *str);
+int safe_atoi(const char *str);
 #else
 #define safe_atoi atoi
 #endif

@@ -87,9 +87,8 @@ void tcp_listen(sa_family_t family, address *remote_addr, address *local_addr)
  * by "remote" and returns the file descriptor of the socket. */
 static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 {
-	int err, fd, destlen;
+	int err, fd;
 	struct addrinfo hints, *res = NULL, *ptr;
-	struct sockaddr_storage dest;
 
 	/* make sure that the preconditions on the addresses and on the flags 
 	 * are respected */
@@ -97,14 +96,13 @@ static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 	assert(remote->address != NULL && strlen(remote->address) > 0);
 	assert(remote->port != NULL && strlen(remote->port) > 0 );
 	assert(is_flag_set(USE_UDP) == FALSE);
-	assert(is_flag_set(REUSE_ADDR) == FALSE);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = family;
 	hints.ai_socktype = SOCK_STREAM;
-#ifdef AI_ADDRCONFIG
-	hints.ai_flags = AI_ADDRCONFIG;
+#ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
+	hints.ai_flags    = AI_ADDRCONFIG;
 #endif
 	
 	if (is_flag_set(NUMERIC_MODE) == TRUE) 
@@ -116,13 +114,15 @@ static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 
 	/* check the results of getaddrinfo */
 	assert(res != NULL);
-	assert(res->ai_addrlen <= sizeof(dest));
 
 	/* if the connect to the first address returned by getaddrinfo fails,
 	 * then we keep trying with the other addresses */
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
+		int destlen;
+		struct sockaddr_storage dest;
 		
-		/* get the first sockaddr structure returned by getaddrinfo */
+		/* get the sockaddr structures returned by getaddrinfo */
+		assert(ptr->ai_addrlen <= sizeof(dest));
 		memcpy(&dest, ptr->ai_addr, ptr->ai_addrlen);	
 		destlen = ptr->ai_addrlen;
 
@@ -134,29 +134,30 @@ static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 		if (local != NULL && (local->address != NULL || local->port != NULL)) {
 			int srclen;
 			struct sockaddr_storage src;
-			struct addrinfo hints2, *res2 = NULL;
+			struct addrinfo *res2 = NULL;
 		
 			/* make sure preconditions on local address are respected */
 			assert(local->address == NULL || strlen(local->address) > 0);
 			assert(local->port    == NULL || strlen(local->port) > 0);
 		
-			/* setup hints2 structure to be passed to getaddrinfo */
-			memset(&hints2, 0, sizeof(hints2));
-			hints2.ai_family   = family;
-			hints2.ai_socktype = SOCK_STREAM;
+			/* setup hints structure to be passed to getaddrinfo */
+			memset(&hints, 0, sizeof(hints));
+			hints.ai_family   = dest.ss_family;
+			hints.ai_flags    = AI_PASSIVE;
+			hints.ai_socktype = SOCK_STREAM;
 	
 			if (is_flag_set(NUMERIC_MODE) == TRUE) 
-				hints2.ai_flags |= AI_NUMERICHOST;
+				hints.ai_flags |= AI_NUMERICHOST;
 		
 			/* get the IP address of the local end of the connection */
-			err = getaddrinfo(local->address, local->port, &hints2, &res2);
+			err = getaddrinfo(local->address, local->port, &hints, &res2);
 			if(err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
 
 			/* check the results of getaddrinfo */
 			assert(res2 != NULL);
-			assert(res2->ai_addrlen <= sizeof(src));
 
 			/* get the fisrt sockaddr structure returned by getaddrinfo */
+			assert(res2->ai_addrlen <= sizeof(src));
 			memcpy(&src, res2->ai_addr, res2->ai_addrlen);
 			srclen = res2->ai_addrlen;
 		
@@ -175,8 +176,16 @@ static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 
 			/* bind to the local address */
 			err = bind(fd, (struct sockaddr *)&src, srclen);
-			if (err != 0) fatal("cannot use specified source addr/port: %s", 
-		        	            strerror(errno));		
+			if (err != 0) {
+				if (ptr->ai_next == NULL) {
+					fatal("cannot use specified source addr/port: %s", 
+		        	              strerror(errno));
+				} else {
+					warn("cannot use specified source addr/port: %s", 
+		        	              strerror(errno));
+					continue;
+				}
+			}
 		}
 		
 		/* perform the connection */
@@ -240,9 +249,9 @@ static int tcp_bind_to(sa_family_t family, address *remote, address *local,
 		
 	/* check the results of getaddrinfo */
 	assert(res != NULL);
-	assert(res->ai_addrlen <= sizeof(src));
 
 	/* get the fisrt sockaddr structure returned by getaddrinfo */
+	assert(res->ai_addrlen <= sizeof(src));
 	memcpy(&src, res->ai_addr, res->ai_addrlen);	
 	
 	/* cleanup to avoid memory leaks */
@@ -256,17 +265,17 @@ static int tcp_bind_to(sa_family_t family, address *remote, address *local,
 	if (family == AF_INET6) {
 		int on = 1;
 		/* in case of error, we will go on anyway... */
-		err = setsockopt(fd,IPPROTO_IPV6,IPV6_V6ONLY,&on,sizeof(on));
+		err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
 		if (err < 0) perror("error with sockopt IPV6_V6ONLY");
 	}
 #endif 
-		
-	if (is_flag_set(REUSE_ADDR) == TRUE) {
-		int on = 1;
-		/* in case of error, we will go on anyway... */
-		err = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
-		if (err < 0) perror("error with sockopt SO_REUSEADDR");
-	}
+	
+	/* use ns as a temporary */
+	ns = 1;
+	
+	/* in case of error, we will go on anyway... */
+	err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &ns, sizeof(ns));
+	if (err < 0) perror("error with sockopt SO_REUSEADDR");
 
 	/* bind to the local address */
 	err = bind(fd, (struct sockaddr *)&src, sizeof(src));
@@ -275,7 +284,7 @@ static int tcp_bind_to(sa_family_t family, address *remote, address *local,
 
 	/* the socket needs to listen for incoming connections. the backlog 
 	 * parameter is set to 5 for backward compatibility (it seems that at
-	 * least some BSD-derived system limit the backlog parmeter to this 
+	 * least some BSD-derived system limit the backlog parameter to this 
 	 * value). */
 	err = listen(fd, 5);
 	if (err != 0) fatal("cannot listen on specified addr/port: %s", 

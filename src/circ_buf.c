@@ -23,10 +23,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/uio.h>
 #include "circ_buf.h"
 #include "misc.h"
-
 
 bool is_empty(const circ_buf *cb)
 {
@@ -58,8 +58,8 @@ void check_cb(const circ_buf *cb)
 	    cb->buf_size  < 0 ||
 	    cb->data_size < 0 ||
 	    cb->buf_size < cb->data_size) 
-		fatal("internal error: contact the author "
-		      "of this software for bugfixing ;-)");
+		fatal("internal error with circular buffers: please "
+		      "contact the authors of nc6 for bugfixing ;-)");
 }
 #endif
 
@@ -91,14 +91,17 @@ int read_to_cb(int fd, circ_buf *cb)
 
 	/* do the actual read */
 	do { 
+		errno = 0;
 		rr = readv(fd, iov, count);
-	} while(errno == EINTR);
+	} while (errno == EINTR);
 
 	/* if rr < 0 an error has occured, 
 	 * if rr = 0 nothing needs to be changed.
 	 * update internal stuff only if rr > 0 */
 	if (rr > 0) {
 		cb->data_size += rr;
+		
+		/* sanity check */
 		check_cb(cb);
 	}
 
@@ -107,15 +110,24 @@ int read_to_cb(int fd, circ_buf *cb)
 
 
 
-int udp_read_to_cb(int fd, circ_buf *cb)
+int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb)
 {
-	int rr, count;
+	int i, count, rr;
 	struct iovec iov[2];
+	uint8_t *tmp;
 
+	assert(buf != NULL);
 	check_cb(cb);
 	
 	/* buffer is full, return an error condition */
 	if (cb->data_size == cb->buf_size) return -1;
+	
+	/* exit if len is zero */
+	if (len == 0) return 0;
+	
+	/* setup initial values for tmp and rr */
+	tmp = (uint8_t *)buf;
+	rr  = 0;
 	
 	/* prepare for writing to buffer */
 	if (cb->ptr + cb->data_size >= cb->buf + cb->buf_size) {
@@ -131,17 +143,24 @@ int udp_read_to_cb(int fd, circ_buf *cb)
 		count = 2;
 	}		
 
-	/* do the actual read */
-	do { 
-		rr = readv(fd, iov, count);
-	} while(errno == EINTR);
+	/* do the actual write */
+	for (i = 0; i <= count; ++i) {
+		size_t chunk_size;
+		
+		chunk_size = MIN(iov[i].iov_len, len);
+		assert(chunk_size > 0);
+		
+		memcpy((void *)iov[i].iov_base, (const void *)tmp, chunk_size);
 
-	/* if rr < 0 an error has occured, 
-	 * if rr = 0 nothing needs to be changed.
-	 * update internal stuff only if rr > 0 */
-	if (rr > 0) {
-		cb->data_size += rr;
+		tmp = tmp + chunk_size;
+		len -= chunk_size;
+		cb->data_size += chunk_size;
+		rr += chunk_size;
+
+		/* sanity check */
 		check_cb(cb);
+		
+		if (len == 0) break;
 	}
 
 	return rr;
@@ -174,8 +193,9 @@ int write_from_cb(int fd, circ_buf *cb)
 
 	/* do the actual write */
 	do { 
+		errno = 0;
 		rr = writev(fd, iov, count);
-	} while(errno == EINTR);
+	} while (errno == EINTR);
 
 	/* if rr < 0 an error has occured, 
 	 * if rr = 0 nothing needs to be changed.
@@ -188,6 +208,63 @@ int write_from_cb(int fd, circ_buf *cb)
 		if (cb->ptr >= cb->buf + cb->buf_size) 
 			cb->ptr -= cb->buf_size;
 		
+		/* sanity check */
+		check_cb(cb);
+	}
+
+	return rr;
+}
+
+
+
+int send_from_cb(int fd, circ_buf *cb, const struct sockaddr *dest, size_t destlen)
+{
+	int rr, count;
+	struct iovec iov[2];
+	struct msghdr msg;
+	
+	check_cb(cb);
+	
+	/* buffer is empty, return immediately */
+	if (cb->data_size == 0) return 0;
+	
+	/* prepare for reading from buffer */
+	if (cb->ptr + cb->data_size >= cb->buf + cb->buf_size) {
+		iov[0].iov_base = cb->ptr;
+		iov[0].iov_len  = cb->buf_size - (cb->ptr - cb->buf);
+		iov[1].iov_base = cb->buf;
+		iov[1].iov_len  = cb->data_size - iov[0].iov_len;
+		count = 2;
+	} else {
+		iov[0].iov_base = cb->ptr;
+		iov[0].iov_len  = cb->data_size;
+		count = 1;
+	}		
+	
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name    = (void *)dest;
+	msg.msg_namelen = destlen;
+	msg.msg_iov     = iov;
+	msg.msg_iovlen  = count;
+
+	/* do the actual write */
+	do { 
+		errno = 0;
+		rr = sendmsg(fd, &msg, 0);
+	} while (errno == EINTR);
+
+	/* if rr < 0 an error has occured, 
+	 * if rr = 0 nothing needs to be changed.
+	 * update internal stuff only if rr > 0 */
+	if (rr > 0) {
+		cb->data_size -= rr;
+		
+		/* update value of cb->ptr */
+		cb->ptr += rr;
+		if (cb->ptr >= cb->buf + cb->buf_size) 
+			cb->ptr -= cb->buf_size;
+		
+		/* sanity check */
 		check_cb(cb);
 	}
 
@@ -211,6 +288,8 @@ circ_buf *alloc_cb(size_t size)
 	cb->data_size = 0;
 	cb->buf_size  = size;
 
+	check_cb(cb);
+	
 	return cb;
 }
 
@@ -231,3 +310,6 @@ void free_cb(circ_buf **cb)
 	
 	*cb = NULL;
 }
+
+
+

@@ -38,8 +38,11 @@ typedef struct circ_buf_t {
 bool is_empty(const circ_buf *cb);
 bool is_full(const circ_buf *cb);
 int read_to_cb(int fd, circ_buf *cb);
+int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb);
 int write_from_cb(int fd, circ_buf *cb);
+int send_from_cb(int fd, circ_buf *cb, const struct sockaddr *dest, size_t destlen);
 circ_buf *alloc_cb(size_t size);
+void free_cb(circ_buf **cb);
 
 #ifdef NDEBUG
 #define check_cb(_x_)	do { } while(0)

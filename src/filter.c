@@ -36,52 +36,52 @@
 bool are_address_equal(const struct sockaddr *a, 
 	               const struct sockaddr *b)
 {
-    struct sockaddr *aa, *bb;
+	struct sockaddr *aa, *bb;
     
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(a->sa_family == AF_INET || a->sa_family == AF_INET6);
-    assert(b->sa_family == AF_INET || b->sa_family == AF_INET6);
-    
-    aa = (struct sockaddr *)a;
-    bb = (struct sockaddr *)b;
-    
-    /* we have to handle those --damned-- IPV4MAPPED addresses */
-    if (aa->sa_family != bb->sa_family) {
-    	if (a->sa_family == AF_INET6 && 
-            IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)a)->sin6_addr)) {
-	        aa = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-	        memset(aa, 0, sizeof(struct sockaddr_in));
-		memcpy(&(((struct sockaddr_in *)aa)->sin_addr.s_addr),
-	    	       &(((struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
-		       sizeof(struct in_addr));
-	        ((struct sockaddr_in *)aa)->sin_port = 
-		    ((struct sockaddr_in6 *)a)->sin6_port;
-        } else if (b->sa_family == AF_INET6 && 
-            IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)b)->sin6_addr)) {
-	        bb = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-	        memset(bb, 0, sizeof(struct sockaddr_in));
-		memcpy(&(((struct sockaddr_in *)bb)->sin_addr.s_addr),
-	    	       &(((struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
-		       sizeof(struct in_addr));
-	        ((struct sockaddr_in *)bb)->sin_port = 
-		    ((struct sockaddr_in6 *)b)->sin6_port;
-        } else {
-            return FALSE;
+	assert(a != NULL);
+	assert(b != NULL);
+	assert(a->sa_family == AF_INET || a->sa_family == AF_INET6);
+	assert(b->sa_family == AF_INET || b->sa_family == AF_INET6);
+	
+	aa = (struct sockaddr *)a;
+	bb = (struct sockaddr *)b;
+	
+	/* we have to handle those --damned-- IPV4MAPPED addresses */
+	if (aa->sa_family != bb->sa_family) {
+		if (a->sa_family == AF_INET6 && 
+		    IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)a)->sin6_addr)) {
+			aa = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+			memset(aa, 0, sizeof(struct sockaddr_in));
+			memcpy(&(((struct sockaddr_in *)aa)->sin_addr.s_addr),
+	    	               &(((struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
+		               sizeof(struct in_addr));
+			((struct sockaddr_in *)aa)->sin_port = 
+				((struct sockaddr_in6 *)a)->sin6_port;
+		} else if (b->sa_family == AF_INET6 && 
+                           IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)b)->sin6_addr)) {
+			bb = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+			memset(bb, 0, sizeof(struct sockaddr_in));
+			memcpy(&(((struct sockaddr_in *)bb)->sin_addr.s_addr),
+	    	               &(((struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
+		               sizeof(struct in_addr));
+			((struct sockaddr_in *)bb)->sin_port = 
+				((struct sockaddr_in6 *)b)->sin6_port;
+		} else {
+			return FALSE;
+		}
 	}
-    }
 
-    /* now we can perform the comparison */
-    if (aa->sa_family == AF_INET6) {
-    	if (memcmp(&((struct sockaddr_in6 *)aa)->sin6_addr, 
-		   &((struct sockaddr_in6 *)bb)->sin6_addr, 
-		   sizeof(struct sockaddr_in6)) != 0) return FALSE;
-    } else { 
-    	if (((struct sockaddr_in *)aa)->sin_addr.s_addr != 
-	    ((struct sockaddr_in *)bb)->sin_addr.s_addr) return FALSE;
-    }
-    
-    return TRUE;
+	/* now we can perform the comparison */
+	if (aa->sa_family == AF_INET6) {
+		if (memcmp(&((struct sockaddr_in6 *)aa)->sin6_addr, 
+		           &((struct sockaddr_in6 *)bb)->sin6_addr, 
+		           sizeof(struct sockaddr_in6)) != 0) return FALSE;
+	} else { 
+		if (((struct sockaddr_in *)aa)->sin_addr.s_addr != 
+	            ((struct sockaddr_in *)bb)->sin_addr.s_addr) return FALSE;
+	}
+	
+	return TRUE;
 }
 
 
@@ -114,6 +114,8 @@ static unsigned short get_port(const struct sockaddr *sa)
 static bool is_address_ipv4_mapped(const struct sockaddr *a)
 {
 	bool ret = FALSE;
+	
+	assert(a != NULL);
 	
 	if (a->sa_family == AF_INET6 && 
 	    IN6_IS_ADDR_V4MAPPED(&(((struct sockaddr_in6 *)a)->sin6_addr)))

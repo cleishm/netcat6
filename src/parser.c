@@ -29,41 +29,27 @@
 #include "misc.h"  
 #include "network.h"  
 #include "parser.h"  
+#include "timeout.h"  
 
-extern const char *get_program_name();
 
 static unsigned long flags_mask;
-
 static void set_flag(unsigned long mask);
+static void parse_and_set_timeouts(const char *str);
+static void print_usage(FILE *fp);
 
 
 
-void print_usage(FILE *fp)
+
+bool is_flag_set(unsigned long mask)
 {
-	const char *program_name = get_program_name();
-
-	fprintf(fp, "\nUsage:\n"
-	       "\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
-	       "\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
-	       "Recognized options are:\n"
-	       "    -4         Use only IPv4\n"
-	       "    -6         Use only IPv6\n"
-	       "    -d         Enable SO_REUSEADDR socket option (only in listen mode)\n"
-	       "    -h         Display help\n"
-	       "    -l         Listen mode, for inbound connects\n"
-	       "    -n         Numeric-only IP addresses, no DNS\n" 
-	       "    -p port    Local source port\n"
-	       "    -s addr    Local source address\n"
-	       "    -u         Use UDP instead of TCP\n",
-	       "    -x         File transfer mode\n\n",	       
-	       program_name, program_name);
+	return ((flags_mask & mask) ? TRUE : FALSE);
 }
 
 
 
 void parse_arguments(int argc, char **argv)
 {
-	int c;
+	int c, verbosity_level;
 	char src_addr[MAX_IP_ADDRLEN + 1];
 	char src_port[MAX_PORTLEN + 1];
 	sa_family_t family;
@@ -72,16 +58,17 @@ void parse_arguments(int argc, char **argv)
 
 	/* initialize local address, address family and other stuff 
 	 * with their default values */
-	local.address = NULL;
-	local.port    = NULL;
-	family        = AF_UNSPEC;
-	listen_mode   = FALSE;
-
+	local.address   = NULL;
+	local.port      = NULL;
+	family          = AF_UNSPEC;
+	listen_mode     = FALSE;	
+	verbosity_level = 0;
+	
 	/* initialize to zero for correct use of getopt */
 	opterr = 0;
 
 	/* option recognition loop */
-	while ((c = getopt(argc, argv, "46dhlnp:s:ux")) >= 0) {
+	while ((c = getopt(argc, argv, "46hlnp:q:s:uvx")) >= 0) {
  		switch(c) {
 		case '4':
 			if (family != AF_UNSPEC) 
@@ -96,9 +83,6 @@ void parse_arguments(int argc, char **argv)
 			family = AF_INET6;
 			set_flag(STRICT_IPV6);
 			break;
-		case 'd':	
-			set_flag(REUSE_ADDR);
-			break;
 		case 'h':	
 			print_usage(stdout);
 			exit(EXIT_SUCCESS);
@@ -109,9 +93,18 @@ void parse_arguments(int argc, char **argv)
 			set_flag(NUMERIC_MODE);
 			break;
 		case 'p':	
+			if (optarg == NULL) {
+				warn("you must specify a port with the -p switch");
+				print_usage(stderr);
+				exit(EXIT_FAILURE);
+			}
 			strncpy(src_port, optarg, sizeof(src_port) - 1);
 			src_port[sizeof(src_port) - 1] = '\0';
 			local.port = src_port;
+			break;	
+		case 'q':
+			set_flag(TIMEOUT_MODE);
+			parse_and_set_timeouts(optarg);
 			break;	
 		case 's':	
 			strncpy(src_addr, optarg, sizeof(src_addr) - 1);
@@ -121,8 +114,15 @@ void parse_arguments(int argc, char **argv)
 		case 'u':	
 			set_flag(USE_UDP);
 			break;
+		case 'v':	
+			if (++verbosity_level > 1) 
+				set_flag(VERY_VERBOSE_MODE); 
+			set_flag(VERBOSE_MODE); 
+			break;
 		case 'x':	
 			set_flag(FILE_TRANSFER_MODE);
+			set_flag(TIMEOUT_MODE);
+			set_timeouts(0, 0, SET_TIMEOUT1 | SET_TIMEOUT2);
 			break;
 		default:	
 			print_usage(stderr);
@@ -130,10 +130,11 @@ void parse_arguments(int argc, char **argv)
 		}
 	}
 
+	
 	argv += optind;
 	argc -= optind;
 
-	if (listen_mode == TRUE) {		
+	if (listen_mode == TRUE) {	
 		if (local.port == NULL) {
 			warn("in listen mode you must specify a port with the -p switch");
 			print_usage(stderr);
@@ -163,12 +164,6 @@ void parse_arguments(int argc, char **argv)
 
 		do_listen(family, &remote, &local);
 	} else {
-		if (is_flag_set(REUSE_ADDR) == TRUE) {
-			warn("you cannot enable SO_REUSEADDR socket option in connect mode");
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
-		}
-		
 		/* argv[0] and argv[1] must be address and port */
 		if (argc != 2) {
 			warn("you must specify the address/port couple of the remote endpoint");
@@ -176,6 +171,7 @@ void parse_arguments(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 
+		/* sanity checks */
 		assert(argv[0] != NULL && strlen(argv[0]) > 0);
 		assert(argv[1] != NULL && strlen(argv[1]) > 0);
 
@@ -189,14 +185,61 @@ void parse_arguments(int argc, char **argv)
 
 
 
-bool is_flag_set(unsigned long mask)
+static void print_usage(FILE *fp)
 {
-	return ((flags_mask & mask) ? TRUE : FALSE);
+	const char *program_name = get_program_name();
+
+	fprintf(fp, "\nUsage:\n"
+	       "\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
+	       "\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
+	       "Recognized options are:\n"
+	       "    -4         Use only IPv4\n"
+	       "    -6         Use only IPv6\n"
+	       "    -d         Enable SO_REUSEADDR socket option (only in listen mode)\n"
+	       "    -h         Display help\n"
+	       "    -l         Listen mode, for inbound connects\n"
+	       "    -n         Numeric-only IP addresses, no DNS\n" 
+	       "    -p port    Local source port\n"
+	       "    -s addr    Local source address\n"
+	       "    -u         Use UDP instead of TCP\n"
+	       "    -v         Increase program verbosity\n"
+	       "    -x         File transfer mode\n\n",	       
+	       program_name, program_name);
 }
+
+
+
+static void parse_and_set_timeouts(const char *str)
+{
+	int t1, t2, flags;
+	char *s;
+
+	assert(str != NULL);
+
+	flags = SET_TIMEOUT2;
+	
+	if ((s = strchr(str, ':')) != NULL) {
+		*s++ = '\0';
+		t1 = safe_atoi(s);
+		flags |= SET_TIMEOUT1;
+	} else {
+		t1 = 0;
+	}
+
+	t2 = safe_atoi(str);
+
+#ifndef NDEBUG
+	printf("timeouts are: %d,%d\n", t1, t2);
+#endif
+	
+	set_timeouts(t1, t2, flags);
+}
+
 
 
 
 static void set_flag(unsigned long mask)
 {
-	flags_mask = flags_mask & mask;
+	flags_mask = flags_mask | mask;
 }
+

@@ -24,7 +24,15 @@
 #include <sys/socket.h>
 #include "network.h"
 
-void udp_connect(sa_family_t family, address *remote_addr, address *local_addr);
-void udp_listen(sa_family_t family, address *local_addr);
+struct udp_connection
+{
+        int fd;
+        size_t destlen;
+        struct sockaddr_storage dest;
+        address *dest_addr;
+};
+
+void udp_connect(sa_family_t family, const address *remote_addr, const address *local_addr);
+void udp_listen(sa_family_t family, const address *local_addr);
 	
 #endif /* UDP_H */

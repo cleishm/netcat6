@@ -71,8 +71,8 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 bin_PROGRAMS = nc6
-noinst_HEADERS = circ_buf.h filter.h misc.h network.h parser.h readwrite.h tcp.h udp.h
-nc6_SOURCES = circ_buf.c filter.c main.c misc.c network.c parser.c readwrite.c tcp.c udp.c  
+noinst_HEADERS = circ_buf.h filter.h misc.h network.h parser.h readwrite.h tcp.h timeout.h udp.h
+nc6_SOURCES = circ_buf.c filter.c main.c misc.c network.c parser.c readwrite.c tcp.c timeout.c udp.c  
 subdir = src
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = config.h
@@ -82,7 +82,8 @@ PROGRAMS = $(bin_PROGRAMS)
 
 am_nc6_OBJECTS = circ_buf.$(OBJEXT) filter.$(OBJEXT) main.$(OBJEXT) \
 	misc.$(OBJEXT) network.$(OBJEXT) parser.$(OBJEXT) \
-	readwrite.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT)
+	readwrite.$(OBJEXT) tcp.$(OBJEXT) timeout.$(OBJEXT) \
+	udp.$(OBJEXT)
 nc6_OBJECTS = $(am_nc6_OBJECTS)
 nc6_LDADD = $(LDADD)
 nc6_DEPENDENCIES =
@@ -98,7 +99,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/main.Po $(DEPDIR)/misc.Po \
 @AMDEP_TRUE@	$(DEPDIR)/network.Po $(DEPDIR)/parser.Po \
 @AMDEP_TRUE@	$(DEPDIR)/readwrite.Po $(DEPDIR)/tcp.Po \
-@AMDEP_TRUE@	$(DEPDIR)/udp.Po
+@AMDEP_TRUE@	$(DEPDIR)/timeout.Po $(DEPDIR)/udp.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -189,6 +190,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/readwrite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/tcp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/timeout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/udp.Po@am__quote@
 
 distclean-depend:

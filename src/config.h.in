@@ -22,6 +22,9 @@
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 #undef size_t
 
@@ -40,23 +43,44 @@
 /* Define if you can safely include both <sys/time.h> and <time.h>.  */
 #undef TIME_WITH_SYS_TIME
 
-/* Defined if struct sockaddr_storage has ss_family member */
-#undef HAVE_SS_FAMILY
-
-/* Defined if struct sockaddr_storage has deprecated __ss_family member */
-#undef HAVE___SS_FAMILY
-
-#undef NDEBUG
+#undef HAVE_STRUCT_SOCKADDR_STORAGE
+#undef HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY
+#undef HAVE_STRUCT_SOCKADDR_STORAGE__SS_FAMILY
+#undef HAVE_STRUCT_SOCKADDR_IN6
+#undef HAVE_STRUCT_SOCKADDR_SA_LEN
+#undef HAVE_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID
+#undef HAVE_GETADDRINFO
+#undef HAVE_GETADDRINFO_AI_ADDRCONFIG
+#undef INET6
 #undef DEBUG
+#undef NDEBUG
+
+/* Define if you have the bzero function.  */
+#undef HAVE_BZERO
 
 /* Define if you have the fcntl function.  */
 #undef HAVE_FCNTL
 
+/* Define if you have the freeaddrinfo function.  */
+#undef HAVE_FREEADDRINFO
+
+/* Define if you have the freehostent function.  */
+#undef HAVE_FREEHOSTENT
+
 /* Define if you have the gai_strerror function.  */
 #undef HAVE_GAI_STRERROR
 
+/* Define if you have the getipnodebyaddr function.  */
+#undef HAVE_GETIPNODEBYADDR
+
+/* Define if you have the getipnodebyname function.  */
+#undef HAVE_GETIPNODEBYNAME
+
 /* Define if you have the getnameinfo function.  */
 #undef HAVE_GETNAMEINFO
+
+/* Define if you have the gettimeofday function.  */
+#undef HAVE_GETTIMEOFDAY
 
 /* Define if you have the memset function.  */
 #undef HAVE_MEMSET

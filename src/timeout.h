@@ -1,5 +1,5 @@
 /*
- *  readwrite.h - stream i/o reading/writing loop - header
+ *  timeout.h - timeout handling module  - header 
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
@@ -18,23 +18,18 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-
-#ifndef READWRITE_H
-#define READWRITE_H
-
+#include <sys/time.h>
 #include "misc.h"
-#include "udp.h"
 
-typedef struct io_stream_t
-{
-	int  fd_in;  /* for reading */
-	int  fd_out; /* for writing */
-	bool is_tcp_socket; 
-} io_stream;
+/* 
+ * TIMEOUT1 is for the timeout from the last time we have received data from the user 
+ * TIMEOUT2 is for the timeout from the last time we have received data from the net 
+ */
+#define TIMEOUT1	1
+#define TIMEOUT2	2
+#define SET_TIMEOUT1	0x0001
+#define SET_TIMEOUT2	0x0002
 
-void readwrite(io_stream *ios1, io_stream *ios2);
-void stdio_to_io_stream(io_stream *ios);
-void socket_to_io_stream(int fd, io_stream *ios);
-void udp_readwrite(struct udp_connection *udpc, io_stream *ios);
+bool timeout_expired(const struct timeval *tstamp, int timeout_num);
+void set_timeouts(int tout1, int tout2, int flags);
 
-#endif /* READWRITE_H */
