@@ -32,6 +32,7 @@
 
 
 
+inline
 static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 {
 	struct addrinfo* ptr;
@@ -271,6 +272,7 @@ typedef struct fd_socktype_t {
 
 
 /* add a new fd/socktype pair to the list */
+inline
 static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
 		int fd, int socktype)
 {
@@ -286,6 +288,7 @@ static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
 
 
 /* retrieve a socktype for a given fd from the list */
+inline
 static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
 {
 	assert(fd_socktypes);
@@ -297,6 +300,7 @@ static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
 
 
 /* destroy an fd_socktype list */
+inline
 static void destroy_fd_socktypes(fd_socktype* fd_socktypes)
 {
 	fd_socktype* tmp;
