@@ -44,7 +44,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.27 2003-07-22 18:51:43 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.28 2004-01-14 12:42:51 mauro Exp $");
 
 
 
@@ -205,8 +205,13 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	if (err != 0) {
 		/* some errors just indicate that the address wasn't suitable */
 		switch (err) {
-		case EAI_NODATA:
-		case EAI_ADDRFAMILY:
+#ifdef HAVE_GETADDRINFO_EAI_NODATA 
+  		case EAI_NODATA:
+#endif
+#ifdef HAVE_GETADDRINFO_EAI_ADDRFAMILY
+  		case EAI_ADDRFAMILY:
+#endif
+  		case EAI_FAMILY:
 		case EAI_SERVICE:
 		case EAI_SOCKTYPE:
 			return FALSE;

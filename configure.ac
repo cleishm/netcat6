@@ -159,6 +159,21 @@ GETADDRINFO_AI_ALL(
   )
 )
 
+dnl check if EAI_ADDRFAMILY is defined in <netdb.h> 
+GETADDRINFO_EAI_ADDRFAMILY(
+  AC_DEFINE(
+    [HAVE_GETADDRINFO_EAI_ADDRFAMILY], 1,
+    [Define if the system headers support the EAI_ADDRFAMILY error code.]
+  )
+)
+
+dnl check if EAI_NODATA is defined in <netdb.h>
+GETADDRINFO_EAI_NODATA(
+  AC_DEFINE(
+    [HAVE_GETADDRINFO_EAI_NODATA], 1,
+    [Define if the system headers support the EAI_NODATA error code.]
+  )
+)
 
 dnl The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then

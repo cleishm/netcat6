@@ -69,3 +69,53 @@ AC_DEFUN([GETADDRINFO_AI_V4MAPPED],[
   fi
 ])
 
+
+
+AC_DEFUN([GETADDRINFO_EAI_ADDRFAMILY],[
+  AC_CACHE_CHECK([if getaddrinfo returns the EAI_ADDRFAMILY error code],
+    [ds6_cv_gai_eai_addrfamily],[
+    AC_TRY_CPP([
+#include <netdb.h>
+
+#ifndef EAI_ADDRFAMILY 
+#error Missing EAI_ADDRFAMILY 
+#endif
+    ],[
+      ds6_cv_gai_eai_addrfamily=yes
+    ],[
+      ds6_cv_gai_eai_addrfamily=no
+    ])
+  ])
+
+  if test "X$ds6_cv_gai_eai_addrfamily" = "Xyes"; then :
+    $1
+  else :
+    $2
+  fi
+])
+
+
+
+AC_DEFUN([GETADDRINFO_EAI_NODATA],[
+  AC_CACHE_CHECK([if getaddrinfo returns the EAI_NODATA error code],
+    [ds6_cv_gai_eai_nodata],[
+    AC_TRY_CPP([
+#include <netdb.h>
+
+#ifndef EAI_NODATA
+#error Missing EAI_NODATA
+#endif
+    ],[
+      ds6_cv_gai_eai_nodata=yes
+    ],[
+      ds6_cv_gai_eai_nodata=no
+    ])
+  ])
+
+  if test "X$ds6_cv_gai_eai_nodata" = "Xyes"; then :
+    $1
+  else :
+    $2
+  fi
+])
+

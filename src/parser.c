@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.57 2004-01-08 17:18:54 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.58 2004-01-14 12:42:51 mauro Exp $");
 
 
 
@@ -369,12 +369,16 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			if (protocol != UDP_PROTOCOL && 
 			    protocol != TCP_PROTOCOL)
 				fatal("unknown/unsupported transport protocol selected");
+			break;
 #ifdef HAVE_BLUEZ
 		case PROTO_BLUEZ:
 			if (protocol != SCO_PROTOCOL && 
 			    protocol != L2CAP_PROTOCOL)
 				fatal("unknown/unsupported bluez protocol selected");
+			break;
 #endif
+		default:
+			fatal("unknown/unsupported transport protocol selected");
 	}
 	
 	if (listen_mode == TRUE) {
@@ -495,10 +499,12 @@ static void print_usage(FILE *fp)
 	
 	fprintf(fp, _(
 " -4                     Use only IPv4\n"
-" -6                     Use only IPv6\n"
+" -6                     Use only IPv6\n"));
 #ifdef HAVE_BLUEZ
-" -b, --bluetooth        Use Bluetooth (L2CAP)\n"
+	fprintf(fp, _(
+" -b, --bluetooth        Use Bluetooth (L2CAP)\n"));
 #endif
+	fprintf(fp, _(
 " --buffer-size=BYTES    Set buffer size\n"
 " --continuous           Continuously accept connections\n"
 "                        (only in listen mode with --exec)\n"
@@ -517,10 +523,12 @@ static void print_usage(FILE *fp)
 "                        Set hold timeout(s) for local [and remote]\n"
 " --rcvbuf-size          Kernel receive buffer size for network sockets\n"
 " --recv-only            Only receive data, don't transmit\n"
-" -s, --address=ADDRESS  Local source address\n"
+" -s, --address=ADDRESS  Local source address\n"));
 #ifdef HAVE_BLUEZ
-" --sco                  Use SCO over Bluetooth\n"
+	fprintf(fp, _(
+" --sco                  Use SCO over Bluetooth\n"));
 #endif
+	fprintf(fp, _(
 " --send-only            Only transmit data, don't receive\n"
 " --sndbuf-size          Kernel send buffer size for network sockets\n"
 " -t, --idle-timeout=SECONDS\n"
