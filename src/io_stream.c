@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.16 2003-01-03 17:07:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.17 2003-01-04 14:41:47 mauro Exp $");
 
 
 
@@ -41,6 +41,7 @@ void io_stream_init(io_stream *ios, const char* name,
 	assert(ios != NULL);
 	assert(inbuf != NULL);
 	assert(outbuf != NULL);
+	assert(name != NULL);
 
 	ios->fd_in  = -1;
 	ios->fd_out = -1;
@@ -58,24 +59,42 @@ void io_stream_init(io_stream *ios, const char* name,
 	ios->hold_time = -1; /* infinite */
 	timerclear(&(ios->read_closed));
 
-	ios->name = name;
+	ios->name = xstrdup(name);
 	ios->rcvd = 0;
 	ios->sent = 0;
 }
 
 
 
+#ifndef NDEBUG
+static void ios_assert(const io_stream *ios)
+{
+	if (ios == NULL ||
+	    ios->name == NULL ||
+	    ios->buf_in == NULL ||
+	    ios->buf_out == NULL)
+		fatal("internal error with I/O streams: please"
+		      "contact the authors of nc6 for bugfixing ;-)");
+}
+#else
+#define ios_assert(IOS) do {} while(0)
+#endif
+
+
+
 void io_stream_destroy(io_stream *ios)
 {
-	assert(ios != NULL);
+	ios_assert(ios);
+	
 	ios_shutdown(ios, SHUT_RDWR);
+	free(ios->name);
 }
 
 
 
 void ios_assign_socket(io_stream *ios, int fd, int socktype)
 {
-	assert(ios != NULL);
+	ios_assert(ios);
 	assert(fd >= 0);
 
 	ios->fd_in  = fd;
@@ -88,6 +107,7 @@ void ios_assign_socket(io_stream *ios, int fd, int socktype)
 void ios_assign_stdio(io_stream *ios)
 {
 	assert(ios != NULL);
+	ios_assert(ios);
 
 	if ((ios->fd_in  = dup(STDIN_FILENO)) < 0) 
 		fatal("error in duplicating stdin file descriptor: %s", 
@@ -105,8 +125,12 @@ void ios_assign_stdio(io_stream *ios)
 
 int ios_schedule_read(io_stream *ios)
 {
-	size_t space = cb_space(ios->buf_in);
+	size_t space;
 
+	ios_assert(ios);
+	
+	space = cb_space(ios->buf_in);
+	
 	/* if closed, the buffer is full or there isn't enough free space in
 	 * the buffer to satisfy the nru, then we can't read */
 	if ((ios->fd_in < 0) || space == 0 || space < ios->nru)
@@ -120,6 +144,8 @@ int ios_schedule_read(io_stream *ios)
 
 int ios_schedule_write(io_stream *ios)
 {
+	ios_assert(ios);
+	
 	/* if closed or there is no data in the buffer, then we can't write */
 	if ((ios->fd_out < 0) || cb_is_empty(ios->buf_out))
 		return -1;
@@ -134,7 +160,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 {
 	struct timeval now;
 
-	assert(ios != NULL);
+	ios_assert(ios);
 	assert(tv != NULL);
 
 	/* no timeout if read is still open or hold time is infinite */
@@ -173,7 +199,7 @@ ssize_t ios_read(io_stream *ios)
 {
 	ssize_t rr;
 
-	assert(ios != NULL);
+	ios_assert(ios);
 	
 	/* should only be called if ios_schedule_read returned a true result */
 	assert(ios->fd_in >= 0);
@@ -220,7 +246,7 @@ ssize_t ios_write(io_stream *ios)
 {
 	ssize_t rr;
 
-	assert(ios != NULL);
+	ios_assert(ios);
 	
 	/* should only be called if ios_schedule_write returned a true result */
 	assert(ios->fd_out >= 0);
@@ -266,7 +292,8 @@ ssize_t ios_write(io_stream *ios)
 
 void ios_write_eof(io_stream* ios)
 {
-	assert(ios != NULL);
+	ios_assert(ios);
+	
 	ios->out_eof = TRUE;
 	/* check if the buffer is already empty */
 	if (cb_is_empty(ios->buf_out))
@@ -277,7 +304,7 @@ void ios_write_eof(io_stream* ios)
 
 void ios_shutdown(io_stream* ios, int how)
 {
-	assert(ios != NULL);
+	ios_assert(ios);
 
 	if (how == SHUT_RDWR) {
 		/* close both the input and the output */

@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.28 2003-01-03 17:07:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.29 2003-01-04 14:41:47 mauro Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -136,9 +136,9 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_read(ios1);
 
 			if (rr < 0) {
-				if (rr == IOS_EOF)
+				if (rr == IOS_EOF) {
 					ios_write_eof(ios2);
-				else {
+				} else {
 					/* something bad happened -
 					 * exit the main loop */
 					retval = -1;
@@ -152,9 +152,9 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_read(ios2);
 
 			if (rr < 0) {
-				if (rr == IOS_EOF)
+				if (rr == IOS_EOF) {
 					ios_write_eof(ios1);
-				else {
+				} else {
 					/* something bad happened -
 					 * exit the main loop */
 					retval = -1;
