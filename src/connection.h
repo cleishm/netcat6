@@ -56,6 +56,6 @@ void connection_attributes_init(connection_attributes *attrs);
 void connection_attributes_destroy(connection_attributes *attrs);
 
 void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
-		const connection_attributes *attrs);
+                                       const connection_attributes *attrs);
 
 #endif /* CONNECTION_H */

@@ -1,5 +1,4 @@
-/* vi:ts=4 sw=4
- *
+/*
  *  connection.c - connection description structures and functions - implementation
  * 
  *  nc6 - an advanced netcat clone
@@ -28,12 +27,12 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.5 2002-12-24 14:54:00 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.6 2002-12-24 19:50:56 mauro Exp $");
 
 
 void connection_attributes_init(connection_attributes *attrs)
 {
-	assert(attrs);
+	assert(attrs != NULL);
 
 	attrs->proto = PROTO_UNSPECIFIED;
 	attrs->type = TCP_SOCKET;
@@ -52,7 +51,7 @@ void connection_attributes_init(connection_attributes *attrs)
 
 void connection_attributes_destroy(connection_attributes *attrs)
 {
-	assert(attrs);
+	assert(attrs != NULL);
 
 	io_stream_destroy(&(attrs->remote_stream));
 	io_stream_destroy(&(attrs->local_stream));
@@ -61,10 +60,10 @@ void connection_attributes_destroy(connection_attributes *attrs)
 
 
 void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
-		const connection_attributes *attrs)
+                                       const connection_attributes *attrs)
 {
-	assert(ainfo);
-	assert(attrs);
+	assert(ainfo != NULL);
+	assert(attrs != NULL);
 
 	switch (attrs->proto) {
 		case PROTO_IPv6:
