@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.17 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.18 2002-12-28 09:55:45 chris Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
@@ -306,12 +306,12 @@ void do_connect(connection_attributes *attrs)
 		     (ptr->ai_socktype == SOCK_STREAM)? "stream":"datagram");
 	}
 
-	/* cleanup addrinfo structure */
-	freeaddrinfo(res);
-
 	/* fill out the io_streams for the local and remote */
 	ios_assign_stdio(&(attrs->local_stream));
 	ios_assign_socket(&(attrs->remote_stream), fd, ptr->ai_socktype);
+
+	/* cleanup addrinfo structure */
+	freeaddrinfo(res);
 }
 
 
