@@ -28,7 +28,7 @@
 
 
 /* add a new fd/socktype pair to the list */
-inline bound_socket *add_bound_socket(bound_socket *list,
+bound_socket *add_bound_socket(bound_socket *list,
                                              int fd, int socktype)
 {
 	bound_socket *fdnew;
@@ -47,7 +47,7 @@ inline bound_socket *add_bound_socket(bound_socket *list,
 
 
 /* retrieve a socktype for a given fd from the list */
-inline int find_bound_socket(const bound_socket *list, int fd)
+int find_bound_socket(const bound_socket *list, int fd)
 {
 	assert(list != NULL);
 	
@@ -60,7 +60,7 @@ inline int find_bound_socket(const bound_socket *list, int fd)
 
 
 /* destroy a bound_socket list */
-inline void destroy_bound_sockets(bound_socket *list)
+void destroy_bound_sockets(bound_socket *list)
 {
 	bound_socket *tmp;
 	
@@ -73,7 +73,7 @@ inline void destroy_bound_sockets(bound_socket *list)
 
 
 
-inline void close_and_destroy_bound_sockets(bound_socket *list)
+void close_and_destroy_bound_sockets(bound_socket *list)
 {
 	bound_socket *tmp;
 	
@@ -99,7 +99,7 @@ inline void close_and_destroy_bound_sockets(bound_socket *list)
  * IPv6 addresses to the start of the getaddrinfo results.
  */
 #ifdef ENABLE_IPV6
-inline struct addrinfo* order_ipv6_first(struct addrinfo *ai)
+struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 {
 	struct addrinfo* ptr;
 	struct addrinfo* lastv6 = NULL;
@@ -138,7 +138,7 @@ inline struct addrinfo* order_ipv6_first(struct addrinfo *ai)
  * used - resulting in a failure when trying to create the socket.
  * This function checks for all the different error codes that indicate this
  * situation */
-inline bool unsupported_sock_error(int err)
+bool unsupported_sock_error(int err)
 {
 	return (err == EPFNOSUPPORT ||
 	        err == EAFNOSUPPORT ||
