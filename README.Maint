@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.3 2002-12-29 14:12:10 mauro Exp $
+$Id: README.Maint,v 1.4 2003-01-01 21:15:50 chris Exp $
 
 
 Source layout
@@ -22,6 +22,35 @@ To get a usable configure system after checking source out of CVS, run
 
 This will process all the automake/autoconf files and build a configure
 script.
+
+
+Development Objectives and Principles
+-------------------------------------
+
+The objectives for the development of netcat6 are:
+  * To produce a functional replacement of netcat with complete AF
+     independence (especially support for IPv6).
+  * To provide the functions of netcat that are useful without the features
+     that are unnecessary or where a better method exists.
+  * To provide additional functionality that would be useful in this type
+     of application.
+  * Clear and well structured code and documentation.  netcat6 should serve as
+     an excellent example of AF independant network programming.
+  * To be highly portable (to many platforms and operating systems) as long
+     as the code can remain clear and well structred.
+
+The following are NOT objectives for netcat6 development:
+  * Complete compatability with the original netcat.
+
+The following are the principles for netcat6:
+  * Open design: The design should not be secret (nc6 is GPL, so both design
+     and implementation are public).
+  * Economy of mechanism: Keep the design as simple as possible.
+  * Least astonishment: The application behavior should match what is
+   naively expected.
+  * Simplicity of function: The application should perform functions that are
+     useful in the context of general use of the application (eg. it should 
+     not become bloated with oft unnecessary features).
 
 
 Style guide
