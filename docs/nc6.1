@@ -75,21 +75,6 @@ will use UDP as the transport protocol (TCP is the default).
 UDP support in 
 .B netcat6
 is really advanced and works very well in both connect and in listen mode.
-.P 
-Netcat used to have a very bad UDP support, as its code was written upon
-the illogic assumption that some system calls which were designed to work 
-for stream sockets (like read and write) would have worked with datagram 
-sockets too. So, the same code was used for both datagram and stream sockets.
-This certainly works in Linux and in BSD systems, as the kernel translates 
-the calls to write and read upon a datagram socket into calls to sendmsg 
-and recvmsg. Unfortunately, this does work only in a few UNIX systems. 
-Even worse, this approach does not work with UDP server sockets.
-.P 
-Instead, from the 0.2pre2 release,
-.B netcat6
-features a working UDP support, with code for stream sockets and datagram 
-sockets being completely separated one from the other, in order to achieve 
-the best UDP support, even in listen mode!
 .SH COPYRIGHT
 GPL. 
 .SH AUTHOR
