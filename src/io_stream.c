@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.14 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.15 2003-01-03 14:38:27 chris Exp $");
 
 
 
@@ -47,6 +47,7 @@ void io_stream_init(io_stream *ios, const char* name,
 
 	ios->buf_in  = inbuf;
 	ios->buf_out = outbuf;
+	ios->out_eof = FALSE;
 
 	ios->mtu = 0; /* unlimited */
 	ios->nru = 0; /* unlimited */
@@ -200,10 +201,26 @@ ssize_t ios_write(io_stream *ios)
 	else
 		rr = cb_write(ios->buf_out, ios->fd_out, ios->mtu);
 
-	if (rr > 0)
+	if (rr > 0) {
 		ios->sent += rr;
 
+		/* shutdown the write if buf_out is empty and out_eof is set */
+		if (ios->out_eof && cb_is_empty(ios->buf_out))
+			ios_shutdown(ios, SHUT_WR);
+	}
+
 	return rr;
+}
+
+
+
+void ios_write_eof(io_stream* ios)
+{
+	assert(ios != NULL);
+	ios->out_eof = TRUE;
+	/* check if the buffer is already empty */
+	if (cb_is_empty(ios->buf_out))
+		ios_shutdown(ios, SHUT_WR);
 }
 
 

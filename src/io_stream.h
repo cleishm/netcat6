@@ -34,6 +34,8 @@ typedef struct io_stream_t
 
 	circ_buf* buf_in;  /* the input buffer */
 	circ_buf* buf_out; /* the output buffer */
+	bool out_eof;      /* true if no more data will be added
+			    * to the output buffer */
 
 	size_t mtu;        /* Maximum Transmition Unit */
 	size_t nru;        /* miNimum Receive Unit */
@@ -41,7 +43,7 @@ typedef struct io_stream_t
 	bool half_close_suppress; /* true if half-closes should be suppressed */
 
 	int hold_time;     /* time to hold the stream open after read closes,
-	                      -1 means hold indefinately */
+	                    * -1 means hold indefinately */
 	struct timeval read_closed; /* the time that the read was closed */
 
 	const char* name;  /* the name of this io stream (for logging) */
@@ -87,6 +89,11 @@ ssize_t ios_read(io_stream *ios);
 /* write from the output buffer.
  * should only be called if ios_schedule_write returned a true value */
 ssize_t ios_write(io_stream *ios);
+
+
+/* signal that no more data will be added to the output buffer.  Once the
+ * buffer is cleared, the io_stream will shutdown it's write stream */
+void ios_write_eof(io_stream *ios);
 
 
 #define is_read_open(IOS)   ((IOS)->fd_in >= 0)

@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.26 2003-01-03 10:34:06 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.27 2003-01-03 14:38:27 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -160,12 +160,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				if (very_verbose_mode == TRUE) {
 					warn("read eof from %s",
 					     ios_name(ios1));
-					warn("closing write of %s",
-					     ios_name(ios2));
 				}
 #endif
 				ios_shutdown(ios1, SHUT_RD);
-				ios_shutdown(ios2, SHUT_WR);
+				ios_write_eof(ios2);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios1:
 				 * print an error message and exit. */
@@ -189,12 +187,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				if (very_verbose_mode == TRUE) {
 					warn("read eof from %s",
 					     ios_name(ios2));
-					warn("closing write of %s",
-					     ios_name(ios1));
 				}
 #endif
 				ios_shutdown(ios2, SHUT_RD);
-				ios_shutdown(ios1, SHUT_WR);
+				ios_write_eof(ios1);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios2:
 				 * print an error message and exit. */
