@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.45 2003-01-24 14:19:31 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.46 2003-01-24 14:20:55 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -409,7 +409,7 @@ static void print_usage(FILE *fp)
 "                    Set hold timeout(s) for local [and remote]\n"
 "  -s, --address=ADDRESS\n"
 "                    Local source address\n"
-"  -t, --idle-timeout=SEC\n"
+"  -t, --idle-timeout=SECONDS\n"
 "                    Idle connection timeout\n"
 "  -u, --udp         Require use of UDP\n"
 "  -v                Increase program verbosity (call twice for max verbosity)\n"
