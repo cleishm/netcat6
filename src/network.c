@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.43 2003-01-23 15:47:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.44 2003-01-23 16:29:15 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -53,6 +53,8 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
                            size_t size, bool numeric_mode);
 static void set_sockopts(const connection_attributes* attrs,
 		         int socket, const struct addrinfo* sockinfo);
+static void warn_socket_details(const connection_attributes *attrs,
+                                int sock, int socktype);
 
 
 
@@ -64,6 +66,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	bool connect_attempted = FALSE;
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
+	bool very_verbose_mode = FALSE;
 	char name_buf[AI_STR_SIZE];
 
 	/* make sure that attrs is a valid pointer */
@@ -80,8 +83,9 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	assert(local->service == NULL  || strlen(local->service)  > 0);
 
 	/* setup flags */
-	numeric_mode  = is_flag_set(NUMERIC_MODE);
-	verbose_mode  = is_flag_set(VERBOSE_MODE);
+	numeric_mode      = is_flag_set(NUMERIC_MODE);
+	verbose_mode      = is_flag_set(VERBOSE_MODE);
+	very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -254,6 +258,10 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	if (verbose_mode == TRUE)
 		warn(_("%s open"), name_buf);
 
+	/* give details about the new socket */
+	if (very_verbose_mode == TRUE)
+		warn_socket_details(attrs, fd, ptr->ai_socktype);
+
 	/* return the socktype */
 	if (rt_socktype != NULL)
 		*rt_socktype = ptr->ai_socktype;
@@ -334,6 +342,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
+	bool very_verbose_mode = FALSE;
 #ifdef ENABLE_IPV6
 	bool set_ipv6_only     = FALSE;
 	bool bound_ipv6_any    = FALSE;
@@ -361,8 +370,9 @@ void do_listen_continuous(const connection_attributes* attrs,
 		return;
 
 	/* setup flags */
-	numeric_mode    = is_flag_set(NUMERIC_MODE);
-	verbose_mode    = is_flag_set(VERBOSE_MODE);
+	numeric_mode      = is_flag_set(NUMERIC_MODE);
+	verbose_mode      = is_flag_set(VERBOSE_MODE);
+	very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -630,6 +640,10 @@ void do_listen_continuous(const connection_attributes* attrs,
 				     name_buf, c_name_buf);
 			}
 
+			/* give details about the new socket */
+			if (very_verbose_mode == TRUE)
+				warn_socket_details(attrs, ns, socktype);
+
 			callback(ns, socktype, cdata);
 
 			if (max_accept > 0 && --max_accept == 0)
@@ -771,8 +785,8 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 
 
 
-static void set_sockopts(const connection_attributes* attrs,
-		         int sock, const struct addrinfo* sockinfo)
+static void set_sockopts(const connection_attributes *attrs,
+		         int sock, const struct addrinfo *sockinfo)
 {
 	int on, err;
 
@@ -783,7 +797,7 @@ static void set_sockopts(const connection_attributes* attrs,
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 				 &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with sockopt SO_REUSEADDR: %s"),
+			warn(_("error with setsockopt SO_REUSEADDR: %s"),
 			     strerror(errno));
 	}
 
@@ -796,27 +810,65 @@ static void set_sockopts(const connection_attributes* attrs,
 		err = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 				 &on, sizeof(on));
 		if (err < 0) 
-			warn(_("error with sockopt TCP_NODELAY: %s"),
+			warn(_("error with setsockopt TCP_NODELAY: %s"),
 			     strerror(errno));
 	}
 
 	/* setup the kernel sndbuf size */
 	if ((on = ca_sndbuf_size(attrs)) > 0) {
 		/* in case of error, we will go on anyway... */
-		err = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, 
-				 &on, sizeof(on));
+		err = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with sockopt SO_SNDBUF: %s"),
+			warn(_("error with setsockopt SO_SNDBUF: %s"),
 			     strerror(errno));
 	}
 
 	/* setup the kernel rcvbuf size */
 	if ((on = ca_rcvbuf_size(attrs)) > 0) {
 		/* in case of error, we will go on anyway... */
-		err = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, 
-				 &on, sizeof(on));
+		err = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with sockopt SO_RCVBUF: %s"),
+			warn(_("error with setsockopt SO_RCVBUF: %s"),
 			     strerror(errno));
+	}
+}
+
+
+
+static void warn_socket_details(const connection_attributes *attrs,
+                                int sock, int socktype)
+{
+	int n, nlen;
+
+	/* announce the socket in very verbose mode */
+	switch (socktype) {
+	case SOCK_STREAM:
+		warn(_("using stream socket"));
+		break;
+	case SOCK_DGRAM:
+		warn(_("using datagram socket"));
+		break;
+	default:
+		fatal(_("internal error: unsupported socktype %d"), socktype);
+	}
+
+	/* announce the real sndbuf size */
+	if (ca_sndbuf_size(attrs) > 0) {
+		nlen = sizeof(n);
+		if (getsockopt(sock, SOL_SOCKET, SO_SNDBUF, &n, &nlen) < 0)
+			warn(_("error with getsockopt SO_SNDBUF: %s"),
+			     strerror(errno));
+		else
+			warn(_("using socket sndbuf size of %d"), n);
+	}
+
+	/* announce the real rcvbuf size */
+	if (ca_rcvbuf_size(attrs) > 0) {
+		nlen = sizeof(n);
+		if (getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &n, &nlen) < 0)
+			warn(_("error with getsockopt SO_RCVBUF: %s"),
+			     strerror(errno));
+		else
+			warn(_("using socket rcvbuf size of %d"), n);
 	}
 }

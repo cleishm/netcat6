@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.24 2003-01-20 23:03:05 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.25 2003-01-23 16:29:15 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -118,21 +118,6 @@ static int establish_connection(int mode, const connection_attributes *attrs,
 
 	assert(fd >= 0);
 	assert(socktype >= 0);
-
-	/* announce the socket in very verbose mode */
-	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
-		switch (socktype) {
-		case SOCK_STREAM:
-			warn(_("using stream socket"));
-			break;
-		case SOCK_DGRAM:
-			warn(_("using datagram socket"));
-			break;
-		default:
-			fatal(_("internal error: unsupported socktype %d"),
-			      socktype);
-		}
-	}
 
 	return callback(attrs, fd, socktype);
 }
