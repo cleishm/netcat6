@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.16 2003-01-05 13:40:01 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.17 2003-01-11 14:05:48 simone Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -91,7 +91,7 @@ static void establish_connection(int mode, connection_attributes *attrs)
 		do_connect(attrs);
 		break;
 	default:
-		fatal("internal error: unknown connection mode");
+		fatal(_("internal error: unknown connection mode"));
 	}
 }
 
@@ -118,7 +118,7 @@ static int do_transfer(connection_attributes *attrs)
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("receiving from remote only, transmit disabled");
+			warn(_("receiving from remote only, transmit disabled"));
 #endif
 	}
 
@@ -135,7 +135,7 @@ static int do_transfer(connection_attributes *attrs)
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("transmitting to remote only, receive disabled");
+			warn(_("transmitting to remote only, receive disabled"));
 #endif
 	}
 
@@ -143,7 +143,7 @@ static int do_transfer(connection_attributes *attrs)
 	retval = readwrite(remote_stream, local_stream);
 
 	if (is_flag_set(VERBOSE_MODE) == TRUE)
-		warn("connection closed (sent %d, rcvd %d)",
+		warn(_("connection closed (sent %d, rcvd %d)"),
 			ios_bytes_sent(remote_stream),
 			ios_bytes_received(remote_stream));
 

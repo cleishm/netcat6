@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.33 2003-01-06 15:04:21 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.34 2003-01-11 14:05:48 simone Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -153,8 +153,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				set_flag(DONT_REUSE_ADDR);
 				break;
 			default:
-				fatal("getopt returned unexpected long option "
-				      "offset index %d\n", option_index);
+				fatal(_("getopt returned unexpected long option "
+				        "offset index %d\n"), option_index);
 			}
 			break;
 		case '4':
@@ -217,7 +217,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		default:	
-			fatal("getopt returned unexpected character 0%o\n", c);
+			fatal(_("getopt returned unexpected character 0%o\n"), c);
 		}
 	}
 	
@@ -255,7 +255,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
 	    is_flag_set(SEND_DATA_ONLY) == TRUE)
 	{
-		fatal("Cannot set both --recv-only and --send-only");
+		fatal(_("Cannot set both --recv-only and --send-only"));
 	}
 
 	/* additional arguments are the remote address/service */
@@ -291,8 +291,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	if (listen_mode == TRUE) {
 		if (local_address.service == NULL) {
-			warn("in listen mode you must specify a port "
-			     "with the -p switch");
+			warn(_("in listen mode you must specify a port "
+			       "with the -p switch"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -300,8 +300,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ret = LISTEN_MODE;
 	} else {
 		if (is_flag_set(DONT_REUSE_ADDR) == TRUE) {
-			warn("--no-reuseaddr option "
-			     "can be used only in listen mode");
+			warn(_("--no-reuseaddr option "
+			       "can be used only in listen mode"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -309,8 +309,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		if (remote_address.address == NULL ||
 		    remote_address.service == NULL)
 		{
-			warn("you must specify the address/port couple "
-			     "of the remote endpoint");
+			warn(_("you must specify the address/port couple "
+			       "of the remote endpoint"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -362,11 +362,11 @@ static void print_usage(FILE *fp)
 {
 	const char *program_name = get_program_name();
 
-	fprintf(fp, "Usage:\n"
+	fprintf(fp, _("Usage:\n"
 "\t%s [options...] hostname port\n"
 "\t%s -l -p port [-s addr] [options...] [hostname] [port]\n\n"
-"Recognized options are:\n", program_name, program_name);
-	fprintf(fp,	
+"Recognized options are:\n"), program_name, program_name);
+	fprintf(fp, _(
 "  -4                Use only IPv4\n"
 "  -6                Use only IPv6\n"
 "  -h, --help        Display help\n"
@@ -393,7 +393,7 @@ static void print_usage(FILE *fp)
 "                    Disable nagle algorithm for TCP connections\n"
 "      --no-reuseaddr\n"
 "                    Disable SO_REUSEADDR socket option (only in listen mode)\n"
-"\n");
+"\n"));
 }
 
 
