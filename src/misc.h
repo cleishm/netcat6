@@ -35,7 +35,7 @@
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 
-const char *get_program_name();
+const char *get_program_name(void);
 void fatal(const char *template, ...);
 void warn(const char *template, ...);
 uint8_t *xmalloc(size_t size);

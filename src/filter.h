@@ -23,10 +23,11 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include "misc.h"
 #include "network.h"
 
-bool are_address_equal(const struct sockaddr *a, const struct sockaddr *b);
-bool is_allowed(const struct sockaddr *sa, const address *addr);
+bool is_allowed(const struct sockaddr *sa, const address *addr,
+		const connection_attributes* attrs);
 
 #endif /* FILTER_H */

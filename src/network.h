@@ -21,12 +21,19 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <sys/socket.h>
 
-/* maximum length of the string representing an IP address */
-#define MAX_IP_ADDRLEN sizeof("0000:0000:0000:0000:0000:0000:255.255.255.255")
-#define MAX_PORTLEN    sizeof("65535")
+#include <netdb.h>
 
+typedef enum sock_type_t {
+	UDP_SOCKET,
+	TCP_SOCKET
+} sock_type;
+
+typedef enum sock_protocol_t {
+	PROTO_IPv6,
+	PROTO_IPv4,
+	PROTO_UNSPECIFIED
+} sock_proto;
 
 typedef struct address_t
 {
@@ -34,8 +41,17 @@ typedef struct address_t
 	char *port;
 } address;
 
+typedef struct connection_attributes_t
+{
+	sock_proto proto;
+	sock_type  type;	
+} connection_attributes;
 
-void do_connect(sa_family_t family, address *remote_addr, address *local_addr);
-void do_listen(sa_family_t family, address *remote_addr, address *local_addr);
-	
+
+void do_connect(const address *remote, const address *local,
+		const connection_attributes *attrs);
+void do_listen(const address *remote, const address *local,
+	       const connection_attributes *attrs);
+
+
 #endif /* NETWORK_H */

@@ -1,8 +1,9 @@
 Summary: Reads and writes data across network connections using TCP or UDP with IPv4 and IPv6.
 Name: nc6
-Version: 0.2pre3
+Version: 0.2pre4
 Release: 1
 Source0: ftp://ftp.ferrara.linux.it/pub/project6/sources/nc6-%{version}.tar.gz
+Packager: Mauro Tortonesi <mauro@ferrara.linux.it>
 Copyright: GPL
 Group: Applications/Internet
 BuildRoot: %{_tmppath}/%{name}-root
@@ -24,7 +25,6 @@ capabilities.
 %setup
 
 %build
-#./bootstrap
 ./configure
 make
 
@@ -43,6 +43,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %doc README AUTHORS COPYING NEWS TODO ChangeLog
 %{_bindir}/nc6
 %{_mandir}/man1/nc6.1*
+
 
 %changelog
 * Sun Mar 10 2002 Peter Bieringer <pb@bieringer.de>

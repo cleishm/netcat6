@@ -27,14 +27,13 @@
 
 typedef struct io_stream_t
 {
-	int  fd_in;  /* for reading */
-	int  fd_out; /* for writing */
-	bool is_tcp_socket; 
+	int fd_in;       /* for reading */
+	int fd_out;      /* for writing */
+	int socktype;    /* the type of the socket */
 } io_stream;
 
 void readwrite(io_stream *ios1, io_stream *ios2);
 void stdio_to_io_stream(io_stream *ios);
-void socket_to_io_stream(int fd, io_stream *ios);
-void udp_readwrite(struct udp_connection *udpc, io_stream *ios);
+void socket_to_io_stream(io_stream *ios, int fd, int socktype);
 
 #endif /* READWRITE_H */

@@ -32,7 +32,9 @@ struct udp_connection
         address *dest_addr;
 };
 
-void udp_connect(sa_family_t family, const address *remote_addr, const address *local_addr);
-void udp_listen(sa_family_t family, const address *local_addr);
+void udp_connect(const sa_family_t family,
+		const address *remote_addr, const address *local_addr);
+void udp_listen(const sa_family_t family,
+		const address *remote_addr, const address *local_addr);
 	
 #endif /* UDP_H */

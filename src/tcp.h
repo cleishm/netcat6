@@ -25,7 +25,9 @@
 #include "network.h"
 
 
-void tcp_connect(sa_family_t family, address *remote_addr, address *local_addr);
-void tcp_listen(sa_family_t family, address *remote_addr, address *local_addr);
+void tcp_connect(const sa_family_t family,
+		const address *remote_addr, const address *local_addr);
+void tcp_listen(const sa_family_t family,
+		const address *remote_addr, const address *local_addr);
 	
 #endif /* TCP_H */

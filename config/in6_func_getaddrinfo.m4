@@ -132,10 +132,10 @@ main(){
 ])])
 if test "$in6_cv_func_getaddrinfo" = "yes"; then
 	AC_MSG_RESULT([yes])
-	$2
+	$1
 elif test "$in6_cv_func_getaddrinfo" = "buggy"; then
 	AC_MSG_RESULT([buggy])
-	$3
+	$2
 else
 	AC_MSG_RESULT([no])
 fi

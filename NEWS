@@ -1,4 +1,22 @@
 
+0.2pre4 
+
+This release introduces the interesting timeout mode and features a 
+state-of-the-art UDP support. From this release nc6 uses, if present, 
+the AI_ADDRCONFIG flag of getaddrinfo for the connect mode. This changes 
+the stupid use-IPv6-by-default behaviour that is harmful if your system
+supports IPv6 but you don't have a global-scope IPv6 address configured 
+on your machine.
+Now file transfer mode works also with UDP. The configuration process has 
+been greatly improved.
+
+
+0.2pre3
+
+This release introduces an interesting mode for file transfers in TCP and 
+features many other minor enhancements in the code.
+
+
 0.2pre2
 
 This release finally introduces a good UDP support. Now netcat6 should 

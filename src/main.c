@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 
 
-const char *get_program_name()
+const char *get_program_name(void)
 {
 	return program_name;
 }

@@ -27,10 +27,7 @@ Lorenzo Colitti <lorenzo _at_ colitti.com> for his precious suggestion about
 	handling listen mode with udp.
 
 Peter Bieringer <pb _at_ bieringer.de> for providing the .spec file included
-	in nc6, and his invaluable help in many chances.
-
-Filippo Natali <pitonat _at_ libero.it> for providing help in porting netcat6 
-	to freebsd and for his TODO suggestions.
+	in nc6, and his invaluable help.
 
 
 						Mauro Tortonesi

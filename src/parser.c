@@ -50,19 +50,20 @@ bool is_flag_set(unsigned long mask)
 void parse_arguments(int argc, char **argv)
 {
 	int c, verbosity_level;
-	char src_addr[MAX_IP_ADDRLEN + 1];
-	char src_port[MAX_PORTLEN + 1];
-	sa_family_t family;
-	bool listen_mode;
+	char src_addr[NI_MAXHOST + 1];
+	char src_port[NI_MAXSERV + 1];
 	address local, remote;
+	connection_attributes attrs;
 
 	/* initialize local address, address family and other stuff 
 	 * with their default values */
 	local.address   = NULL;
 	local.port      = NULL;
-	family          = AF_UNSPEC;
-	listen_mode     = FALSE;	
 	verbosity_level = 0;
+
+	/* initialize hints structure to default values */
+	attrs.proto = PROTO_UNSPECIFIED;
+	attrs.type  = TCP_SOCKET;
 	
 	/* initialize to zero for correct use of getopt */
 	opterr = 0;
@@ -71,23 +72,24 @@ void parse_arguments(int argc, char **argv)
 	while ((c = getopt(argc, argv, "46hlnp:q:s:uvx")) >= 0) {
  		switch(c) {
 		case '4':
-			if (family != AF_UNSPEC) 
-				fatal("cannot specify the "
-				      "address family twice");
-			family = AF_INET;
+			if (attrs.proto != PROTO_UNSPECIFIED) 
+				fatal("cannot specify the address family twice");
+			attrs.proto = PROTO_IPv4;
 			break;
 		case '6':	
-			if (family != AF_UNSPEC) 
-				fatal("cannot specify the "
-				      "address family twice");
-			family = AF_INET6;
+			if (attrs.proto != PROTO_UNSPECIFIED) 
+				fatal("cannot specify the address family twice");
+			attrs.proto = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
+			break;
+		case 'd':	
+			set_flag(DONT_REUSE_ADDR);
 			break;
 		case 'h':	
 			print_usage(stdout);
 			exit(EXIT_SUCCESS);
 		case 'l':
-			listen_mode = TRUE;
+			set_flag(LISTEN_MODE);
 			break;
 		case 'n':	
 			set_flag(NUMERIC_MODE);
@@ -112,7 +114,7 @@ void parse_arguments(int argc, char **argv)
 			local.address = src_addr;
 			break;	
 		case 'u':	
-			set_flag(USE_UDP);
+			attrs.type = UDP_SOCKET;
 			break;
 		case 'v':	
 			if (++verbosity_level > 1) 
@@ -129,32 +131,31 @@ void parse_arguments(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 	}
-
 	
 	argv += optind;
 	argc -= optind;
 
-	if (listen_mode == TRUE) {	
+	switch(argc) {
+	case 0:
+		remote.address = NULL;
+		remote.port    = NULL;
+		break;
+	case 1:
+		remote.address = argv[0];
+		remote.port    = NULL;
+		break;
+	case 2:
+		remote.address = argv[0];
+		remote.port    = argv[1];
+		break;
+	default:
+		print_usage(stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	if (is_flag_set(LISTEN_MODE) == TRUE) {	
 		if (local.port == NULL) {
 			warn("in listen mode you must specify a port with the -p switch");
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
-		}
-
-		switch(argc) {
-		case 0:
-			remote.address = NULL;
-			remote.port    = NULL;
-			break;
-		case 1:
-			remote.address = argv[0];
-			remote.port    = NULL;
-			break;
-		case 2:
-			remote.address = argv[0];
-			remote.port    = argv[1];
-			break;
-		default:
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -162,24 +163,25 @@ void parse_arguments(int argc, char **argv)
 		assert(remote.address == NULL || strlen(remote.address) > 0);
 		assert(remote.port == NULL || strlen(remote.port) > 0);
 
-		do_listen(family, &remote, &local);
+		do_listen(&remote, &local, &attrs);
 	} else {
-		/* argv[0] and argv[1] must be address and port */
-		if (argc != 2) {
+		if (is_flag_set(DONT_REUSE_ADDR)) {
+			warn("-d option can be used only in listen mode");
+			print_usage(stderr);
+			exit(EXIT_FAILURE);
+		}
+		
+		if (remote.address == NULL || remote.port == NULL) {
 			warn("you must specify the address/port couple of the remote endpoint");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 
 		/* sanity checks */
-		assert(argv[0] != NULL && strlen(argv[0]) > 0);
-		assert(argv[1] != NULL && strlen(argv[1]) > 0);
+		assert(remote.address != NULL && strlen(remote.address) > 0);
+		assert(remote.port != NULL && strlen(remote.port) > 0);
 
-		/* call do_connect */
-		remote.address = argv[0];
-		remote.port    = argv[1];
-
-		do_connect(family, &remote, &local);
+		do_connect(&remote, &local, &attrs);
 	}
 }
 
@@ -190,21 +192,22 @@ static void print_usage(FILE *fp)
 	const char *program_name = get_program_name();
 
 	fprintf(fp, "\nUsage:\n"
-	       "\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
-	       "\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
-	       "Recognized options are:\n"
-	       "    -4         Use only IPv4\n"
-	       "    -6         Use only IPv6\n"
-	       "    -d         Enable SO_REUSEADDR socket option (only in listen mode)\n"
-	       "    -h         Display help\n"
-	       "    -l         Listen mode, for inbound connects\n"
-	       "    -n         Numeric-only IP addresses, no DNS\n" 
-	       "    -p port    Local source port\n"
-	       "    -s addr    Local source address\n"
-	       "    -u         Use UDP instead of TCP\n"
-	       "    -v         Increase program verbosity\n"
-	       "    -x         File transfer mode\n\n",	       
-	       program_name, program_name);
+		"\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
+		"\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
+		"Recognized options are:\n", program_name, program_name);
+	fprintf(fp,	
+		"    -4         Use only IPv4\n"
+		"    -6         Use only IPv6\n"
+		"    -d         Disable SO_REUSEADDR socket option (only in listen mode)\n"
+		"    -h         Display help\n"
+		"    -l         Listen mode, for inbound connects\n"
+		"    -n         Numeric-only IP addresses, no DNS\n" 
+		"    -p port    Local source port\n"
+		"    -q n1[:n2] Timeout mode\n"
+		"    -s addr    Local source address\n"
+		"    -u         Require use of UDP\n"
+		"    -v         Increase program verbosity (call twice for max verbosity)\n"
+		"    -x         File transfer mode\n\n");
 }
 
 

@@ -33,39 +33,43 @@
 
 
 /* compare two sockaddr structs to see if they represent the same address */
-bool are_address_equal(const struct sockaddr *a, 
-	               const struct sockaddr *b)
+static bool are_address_equal(const struct sockaddr *a, 
+			      const struct sockaddr *b)
 {
-	struct sockaddr *aa, *bb;
+	const struct sockaddr *aa, *bb;
     
 	assert(a != NULL);
 	assert(b != NULL);
 	assert(a->sa_family == AF_INET || a->sa_family == AF_INET6);
 	assert(b->sa_family == AF_INET || b->sa_family == AF_INET6);
 	
-	aa = (struct sockaddr *)a;
-	bb = (struct sockaddr *)b;
+	aa = (const struct sockaddr *)a;
+	bb = (const struct sockaddr *)b;
 	
 	/* we have to handle those --damned-- IPV4MAPPED addresses */
 	if (aa->sa_family != bb->sa_family) {
 		if (a->sa_family == AF_INET6 && 
-		    IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)a)->sin6_addr)) {
-			aa = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-			memset(aa, 0, sizeof(struct sockaddr_in));
-			memcpy(&(((struct sockaddr_in *)aa)->sin_addr.s_addr),
-	    	               &(((struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
+		    IN6_IS_ADDR_V4MAPPED(&((const struct sockaddr_in6 *)a)->sin6_addr)) {
+			struct sockaddr *ap;
+			ap = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+			memset(ap, 0, sizeof(struct sockaddr_in));
+			memcpy(&(((struct sockaddr_in *)ap)->sin_addr.s_addr),
+	    	               &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
 		               sizeof(struct in_addr));
-			((struct sockaddr_in *)aa)->sin_port = 
-				((struct sockaddr_in6 *)a)->sin6_port;
+			((struct sockaddr_in *)ap)->sin_port = 
+				((const struct sockaddr_in6 *)a)->sin6_port;
+			aa = ap;
 		} else if (b->sa_family == AF_INET6 && 
-                           IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)b)->sin6_addr)) {
-			bb = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-			memset(bb, 0, sizeof(struct sockaddr_in));
-			memcpy(&(((struct sockaddr_in *)bb)->sin_addr.s_addr),
-	    	               &(((struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
+                           IN6_IS_ADDR_V4MAPPED(&((const struct sockaddr_in6 *)b)->sin6_addr)) {
+			struct sockaddr *bp;
+			bp = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+			memset(bp, 0, sizeof(struct sockaddr_in));
+			memcpy(&(((struct sockaddr_in *)bp)->sin_addr.s_addr),
+	    	               &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
 		               sizeof(struct in_addr));
-			((struct sockaddr_in *)bb)->sin_port = 
-				((struct sockaddr_in6 *)b)->sin6_port;
+			((struct sockaddr_in *)bp)->sin_port = 
+				((const struct sockaddr_in6 *)b)->sin6_port;
+			bb = bp;
 		} else {
 			return FALSE;
 		}
@@ -73,12 +77,12 @@ bool are_address_equal(const struct sockaddr *a,
 
 	/* now we can perform the comparison */
 	if (aa->sa_family == AF_INET6) {
-		if (memcmp(&((struct sockaddr_in6 *)aa)->sin6_addr, 
-		           &((struct sockaddr_in6 *)bb)->sin6_addr, 
+		if (memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr, 
+		           &((const struct sockaddr_in6 *)bb)->sin6_addr, 
 		           sizeof(struct sockaddr_in6)) != 0) return FALSE;
 	} else { 
-		if (((struct sockaddr_in *)aa)->sin_addr.s_addr != 
-	            ((struct sockaddr_in *)bb)->sin_addr.s_addr) return FALSE;
+		if (((const struct sockaddr_in *)aa)->sin_addr.s_addr != 
+	            ((const struct sockaddr_in *)bb)->sin_addr.s_addr) return FALSE;
 	}
 	
 	return TRUE;
@@ -96,13 +100,15 @@ static unsigned short get_port(const struct sockaddr *sa)
 	
 	switch (sa->sa_family) {
 		case AF_INET:
-			ret = ((struct sockaddr_in *)sa)->sin_port;
+			ret = ((const struct sockaddr_in *)sa)->sin_port;
 			break;
 		case AF_INET6:
-			ret = ((struct sockaddr_in6 *)sa)->sin6_port;
+			ret = ((const struct sockaddr_in6 *)sa)->sin6_port;
 			break;
 		default:
 			fatal("address family not supported", sa->sa_family);
+			/* stop a compiler warning about unassigned ret */
+			ret = -1;
 	}
 	
 	return ret;
@@ -118,7 +124,7 @@ static bool is_address_ipv4_mapped(const struct sockaddr *a)
 	assert(a != NULL);
 	
 	if (a->sa_family == AF_INET6 && 
-	    IN6_IS_ADDR_V4MAPPED(&(((struct sockaddr_in6 *)a)->sin6_addr)))
+	    IN6_IS_ADDR_V4MAPPED(&(((const struct sockaddr_in6 *)a)->sin6_addr)))
 		ret = TRUE;
 			
 	return ret;
@@ -127,7 +133,8 @@ static bool is_address_ipv4_mapped(const struct sockaddr *a)
 
 
 /* returns TRUE if sa corresponds to the address/port couple specified in addr */
-bool is_allowed(const struct sockaddr *sa, const address *addr)
+bool is_allowed(const struct sockaddr *sa, const address *addr,
+		const connection_attributes *attrs)
 {
 	struct addrinfo hints, *res = NULL, *ptr;
 	int err;
@@ -149,9 +156,31 @@ bool is_allowed(const struct sockaddr *sa, const address *addr)
 	ret = FALSE;
 	
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family   = AF_UNSPEC;
-	hints.ai_socktype = 
-		((is_flag_set(USE_UDP) == TRUE) ? SOCK_DGRAM : SOCK_STREAM);
+	
+	switch (attrs->proto) {
+		case PROTO_IPv6:
+			hints.ai_family = AF_INET6;
+			break;
+		case PROTO_IPv4:
+			hints.ai_family = AF_INET;
+			break;
+		case PROTO_UNSPECIFIED:
+			hints.ai_family = AF_UNSPEC;
+			break;
+		default:
+			fatal("internal error: unknown socket domain");
+	}
+	
+	switch (attrs->type) {
+		case UDP_SOCKET:
+			hints.ai_socktype = SOCK_DGRAM;
+			break;
+		case TCP_SOCKET:
+			hints.ai_socktype = SOCK_STREAM;
+			break;
+		default:
+			fatal("internal error: unknown socket type");
+	}
 	
 	err = getaddrinfo(addr->address, addr->port, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
@@ -174,4 +203,6 @@ bool is_allowed(const struct sockaddr *sa, const address *addr)
 
 	return ret;
 }
+
+
 
