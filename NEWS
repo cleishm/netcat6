@@ -1,0 +1,23 @@
+
+0.2pre2
+
+This release finally introduces a good UDP support. Now netcat6 should 
+also compile without problems on glibc 2.1 systems. The man page has also
+been updated.
+
+
+0.2pre1
+
+This release introduces many bugfixes and some new features. Now netcat6 
+makes use of GNU autoconf/automake to automate the configuration and 
+build process.
+
+
+0.1
+
+This is a simple rewrite of netcat with advanced handling of internal
+buffers. It supports only TCP.
+
+
+					    Mauro Tortonesi
+					    <mauro@ferrara.linux.it>

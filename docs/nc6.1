@@ -1,0 +1,104 @@
+.TH NC6 1 
+.SH NAME
+nc6 \- TCP/IP swiss army knife
+.SH SYNOPSIS
+.B nc6
+.I "[ -46hnru ] hostname port"
+.br
+.B nc6
+.I "[ -46hnru ] -l -p port [hostname] [port]"
+.SH "DESCRIPTION"
+.B netcat6
+is a simple unix utility which reads and writes data across network
+connections, using TCP or UDP protocol. It is designed to be a
+reliable "back-end" tool that can be used directly or easily driven by
+other programs and scripts.  At the same time, it is a feature-rich
+network debugging and exploration tool, since it can create almost any
+kind of connection you would need and has several interesting built-in
+capabilities. 
+.B netcat6
+, or "nc6" as the actual program is named, should
+have been supplied long ago as another one of those cryptic but
+standard Unix tools.
+.P
+In the simplest usage, "nc6 host port" creates a TCP connection to the
+given port on the given target host.  Your standard input is then sent
+to the host, and anything that comes back across the connection is
+sent to your standard output.  This continues indefinitely, until the
+network side of the connection shuts down.  Note that this behaviour is
+different from most other applications which shut everything down and
+exit after an end-of-file on the standard input.
+.P
+.B netcat6 
+can also function as a server, by listening for inbound
+connections on arbitrary ports and then doing the same reading and
+writing.  With minor limitations, 
+.B netcat6 
+doesn't really care if it runs in "client" or "server" mode -- it still 
+shovels data back and forth until there isn't any more left.  In this
+manual page, these two working modes are referred as "connect mode" and 
+"listen mode", respectively.
+.SH OPTIONS
+.TP 13
+.I \-4
+This option forces the use of IPv4. 
+.TP 13
+.I \-6
+This option forces the use of IPv6 and inhibites the use IPV4-mapped 
+addresses.
+.TP 13
+.I \-h
+This option simply displays a brief help.
+.TP 13
+.I \-l
+This option selects listen mode, for inbound connects.
+.TP 13
+.I \-n
+This option disables DNS queries - you'll have to use numeric IP address 
+instead of hostnames.
+.TP 13
+.I \-p port
+This option sets the port number for the local endside of the connection.
+.TP 13
+.I \-r
+This option enables the SO_REUSEADDR socket option (works in both working 
+modes, but is useful only in listen mode).
+.TP 13
+.I \-s addr
+This option sets the source address for the local endside of the connection.
+.TP 13
+.I \-u
+With this option set, 
+.B netcat6 
+will use UDP as the transport protocol (TCP is the default).
+.SH UDP
+UDP support in 
+.B netcat6
+is really advanced and works very well in both connect and in listen mode.
+.P 
+Netcat used to have a very bad UDP support, as its code was written upon
+the illogic assumption that some system calls which were designed to work 
+for stream sockets (like read and write) would have worked with datagram 
+sockets too. So, the same code was used for both datagram and stream sockets.
+This certainly works in Linux and in BSD systems, as the kernel translates 
+the calls to write and read upon a datagram socket into calls to sendmsg 
+and recvmsg. Unfortunately, this does work only in a few UNIX systems. 
+Even worse, this approach does not work with UDP server sockets.
+.P 
+Instead, from the 0.2pre2 release,
+.B netcat6
+features a working UDP support, with code for stream sockets and datagram 
+sockets being completely separated one from the other, in order to achieve 
+the best UDP support, even in listen mode!
+.SH COPYRIGHT
+GPL. 
+.SH AUTHOR
+The author of 
+.B netcat6 
+is Mauro Tortonesi <mauro@ferrara.linux.it>.
+.P 
+This manual page is taken from the netcat manual page, which was written 
+by Joey Hess <joeyh@debian.org> and Robert Woodcock <rcw@debian.org>, 
+cribbing heavily from netcat's README file.
+.P
+Netcat was written by a guy we know as the Hobbit <hobbit@avian.org>.

@@ -1,0 +1,26 @@
+
+2002-01-16
+
+updated man page. fixed a compilation bug with glibc 2.1 (thanks to KUNITAKE
+Koichi for reporting it) - it should work now.
+
+
+2001-12-31
+
+added UDP support.
+
+
+2001-11-11
+
+complete re-organization of the package. added GNU autoconf and automake 
+support.
+
+
+2001-10-*
+
+many bugfixes (thanks to Felix Von Leitner and hendy_at_team-teso.org for 
+reporting bugs), code cleaning, re-engineering of the most importants parts 
+of the code (argument parsing, networking code and select loop).
+
+merging of some patches/bugfixes from simone piunno.
+

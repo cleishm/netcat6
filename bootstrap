@@ -1,0 +1,13 @@
+#! /bin/sh
+# bootstrap -- again, this is taken from Gary V. Vaughan's
+# excellent autotools book (http://sources.redhat.com/autotools).
+
+## @start 1
+#! /bin/sh
+
+set -x
+aclocal -I config
+autoheader
+automake --foreign --add-missing --copy
+autoconf
+## @end 1
