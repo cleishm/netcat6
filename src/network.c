@@ -41,7 +41,7 @@
 #include <bluetooth/l2cap.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.51 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.52 2004-01-21 10:10:19 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -824,11 +824,13 @@ static void do_listen_continuous_bluez(const connection_attributes* attrs,
 		size = sizeof(struct sockaddr_sco);
 		
 		ssco->sco_family = AF_BLUETOOTH;
-		if (local->address != NULL)
-			str2ba(local->address, &ssco->sco_bdaddr);
-		
-		strncpy(name_buf, local->address, sizeof(name_buf) - 1);
-		name_buf[sizeof(name_buf) - 1] = '\0';
+		if (local->address != NULL) {
+			str2ba(local->address, &ssco->sco_bdaddr);	
+			strncpy(name_buf, local->address, sizeof(name_buf) - 1);
+			name_buf[sizeof(name_buf) - 1] = '\0';
+		} else {
+			name_buf[0] = '\0';
+		}
 	} else if (ca_protocol(attrs) == L2CAP_PROTOCOL) {
 		struct sockaddr_l2 *sl2 = (struct sockaddr_l2*)&ss;
 		int psm;
