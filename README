@@ -1,12 +1,12 @@
 
 
 netcat6 is a simple netcat clone, with IPv6 support. Currently, I have
-tested it only in a Linux environment, but it should work with minor
-modifications on other Unix platforms too.
+tested it only with Linux (both glibc 2.1 and 2.2) and FreeBSD, but it 
+should work with minor modifications on other Unix platforms too.
 
 You are encouraged to send me bug reports for netcat6 or suggestions 
 on how to improve it (desired features and stuff like that).
 
 
                                         Mauro Tortonesi
-					<mauro@ferrara.linux.it>
+					<mauro _at_ ferrara.linux.it>

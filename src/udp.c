@@ -1,12 +1,13 @@
+#include "config.h"
 #include <assert.h>
 #include <errno.h>
 #include <netdb.h>
-#include <netinet/in.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
-#include "config.h"
 #include "circ_buf.h"
 #include "misc.h"
 #include "network.h"
@@ -18,6 +19,10 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 #define UDP_MSG_SIZE 65536
+
+#if HAVE___SS_FAMILY
+#define ss_family __ss_family
+#endif 
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = UDP_MSG_SIZE;

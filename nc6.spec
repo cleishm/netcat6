@@ -1,6 +1,6 @@
 Summary: Reads and writes data across network connections using TCP or UDP with IPv4 and IPv6.
 Name: nc6
-Version: 0.2pre2
+Version: 0.2pre2a
 Release: 1
 Source0: ftp://ftp.ferrara.linux.it/pub/project6/sources/nc6-%{version}.tar.gz
 Copyright: GPL
@@ -8,15 +8,15 @@ Group: Applications/Internet
 BuildRoot: %{_tmppath}/%{name}-root
 
 %description
-The nc6 package contains Netcat (the program is actually nc6), a simple
+The nc6 package contains Netcat6 (the program is actually nc6), a simple
 utility for reading and writing data across network connections, using
-the TCP or UDP protocols. Netcat is intended to be a reliable back-end
+the TCP or UDP protocols. Netcat6 is intended to be a reliable back-end
 tool which can be used directly or easily driven by other programs and
 scripts.  Netcat is also a feature-rich network debugging and
 exploration tool, since it can create many different connections and
 has many built-in capabilities.
 
-You may want to install the netcat package if you are administering a
+You may want to install the netcat6 package if you are administering a
 network and you'd like to use its debugging and network exploration
 capabilities.
 

@@ -1,4 +1,16 @@
 
+2002-04-07
+
+minor changes. nc6 now compiles even on openbsd. 
+
+
+2002-04-03
+
+we have finally managed to port netcat6 to freebsd and to let it work with 
+glibc 2.1. autoconf/automake stuff has been updated. we have also performed 
+a minor review of the code, with some cleaning.
+
+
 2002-01-16
 
 updated man page. fixed a compilation bug with glibc 2.1 (thanks to KUNITAKE
@@ -18,8 +30,7 @@ support.
 
 2001-10-*
 
-many bugfixes (thanks to Felix Von Leitner and hendy_at_team-teso.org for 
-reporting bugs), code cleaning, re-engineering of the most importants parts 
+many bugfixes code cleaning, re-engineering of the most importants parts 
 of the code (argument parsing, networking code and select loop).
 
 merging of some patches/bugfixes from simone piunno.

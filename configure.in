@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/main.c)
 AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(src/config.h)
-AM_INIT_AUTOMAKE(nc6, 0.2pre2)
+AM_INIT_AUTOMAKE(nc6, 0.2pre2a)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -14,12 +14,17 @@ dnl Checks for libraries.
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h unistd.h errno.h netdb.h)
+AC_CHECK_HEADERS([errno.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
+
+AC_DEFINE([HAVE_SS_FAMILY], 1, 
+          [Defined if struct sockaddr_storage has ss_family member])
+AC_DEFINE([HAVE___SS_FAMILY], 0, 
+          [Defined if struct sockaddr_storage has old __ss_family member])
 IN6_STRUCT_SOCKADDR_STORAGE
 IN6_STRUCT_SOCKADDR_STORAGE_SS_FAMILY(AC_DEFINE(HAVE_SS_FAMILY))
 IN6_STRUCT_SOCKADDR_STORAGE___SS_FAMILY(AC_DEFINE(HAVE___SS_FAMILY))
@@ -28,10 +33,11 @@ IN6_STRUCT_SOCKADDR_IN6
 dnl Checks for library functions.
 AC_FUNC_ALLOCA
 AC_FUNC_MEMCMP
+dnl AC_FUNC_MALLOC
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(select socket strerror strtol)
+AC_CHECK_FUNCS([memset select socket strerror strrchr strtol])
 IN6_FUNC_GETADDRINFO
-AC_CHECK_FUNCS(gai_strerror getnameinfo)
+AC_CHECK_FUNCS([gai_strerror getnameinfo])
 
 AC_SUBST(ac_aux_dir)
 

@@ -1,7 +1,10 @@
 #ifndef CIRC_BUF_H
 #define CIRC_BUF_H
 
+#include "config.h"
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 #include "misc.h"
 
 typedef struct circ_buf_t {

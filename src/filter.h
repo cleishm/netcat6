@@ -1,6 +1,7 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include "misc.h"
 #include "network.h"

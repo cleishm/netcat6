@@ -1,9 +1,13 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include <stdint.h>
-#include <stdio.h>
 #include "config.h"
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <sys/types.h>
+#include <stdio.h>
+
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 

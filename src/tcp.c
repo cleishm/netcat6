@@ -1,63 +1,22 @@
+#include "config.h"
 #include <assert.h>
 #include <errno.h>
 #include <netdb.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
 #include "misc.h"
 #include "network.h"
 #include "readwrite.h"
 
+#if HAVE___SS_FAMILY
+#define ss_family __ss_family
+#endif 
+
 typedef void callback(int, int, io_stream*);
-
-
-
-#if 0
-void do_inetd(address *addr, io_source *local_io)
-{
-	int fd;
-	io_stream local;
-
-	assert(addr != NULL);
-	assert(local_io != NULL);
-	assert(local_io->program != NULL || local_io->addr != NULL);
-	
-	if (local_io->program != NULL) {
-		program_to_io_stream(local_io->program, &local);
-	} else {
-		fd = tcp_connect_to(local_io->addr);
-		socket_to_io_stream(fd, &local);
-	}
-
-	fd = tcp_bind_to(addr, callback_fn, &local);
-}
-
-
-
-static void callback_fn(int sock, int old_sock, io_stream *local)
-{
-	int pid;
-
-	pid = fork();
-	
-	if (pid < 0) {
-		/* error */
-		fatal("error while forking: %s", strerror(errno));
-	} else if (pid == 0) {
-		/* child process */
-		io_stream remote;
-		
-		close(old_sock);		
-		socket_to_io_stream(sock, &remote);
-
-		readwrite(&remote, local);		
-	}
-}
-#endif
-
 
 
 /* this function opens a socket, connects the socket to the address specified 
@@ -92,7 +51,7 @@ static int tcp_connect_to(sa_family_t family, unsigned int flags,
 	assert(res != NULL);
 	assert(res->ai_addrlen <= sizeof(dest));
 
-	/* get the fisrt sockaddr structure returned by getaddrinfo */
+	/* get the first sockaddr structure returned by getaddrinfo */
 	memcpy(&dest, res->ai_addr, res->ai_addrlen);	
 	destlen = res->ai_addrlen;
 
@@ -211,7 +170,7 @@ static int tcp_bind_to(sa_family_t family, unsigned int flags,
 	memcpy(&src, res->ai_addr, res->ai_addrlen);	
 	freeaddrinfo(res);
 
-	fd = socket(res->ai_family, SOCK_STREAM, 0);
+	fd = socket(src.ss_family, SOCK_STREAM, 0);
 	if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
 #ifdef IPV6_V6ONLY

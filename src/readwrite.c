@@ -1,10 +1,10 @@
+#include "config.h"
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "config.h"
 #include "circ_buf.h"
 #include "misc.h"
 #include "readwrite.h"

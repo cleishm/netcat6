@@ -1,15 +1,16 @@
 
-
 i'd like to improve netcat6 in many ways:
 
 - write new man page
 - add support for execution of programs?
 - add inetd-like continuos listening mode ?
+- ssl support
+
+
 
 the following is a mail which was sent to me by Mark Doll on Mon, 28 Jan 2002.
 Mark has pointed out some very interesting features which will surely be added
 in the next releases of netcat6.
-
 
 
 Mauro Tortonesi schrieb am 27.01.02:
@@ -30,7 +31,7 @@ options:
         -G num                  source-routing pointer: 4, 8, 12, ...
         -h                      this cruft
         -i secs                 delay interval for lines sent, ports
-scanned
+                                scanned
         -l                      listen mode, for inbound connects
         -n                      numeric-only IP addresses, no DNS
         -o file                 hex dump of traffic

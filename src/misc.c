@@ -1,7 +1,7 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "config.h"
 #include "misc.h"
 #ifdef HAVE_STRTOL
 #include <errno.h>
