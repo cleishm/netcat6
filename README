@@ -120,6 +120,9 @@ $ cvs -d :pserver:anonymous@cvs.deepspace6.net:/ds6/cvs login
 
 $ cvs -d :pserver:anonymous@cvs.deepspace6.net:/ds6/cvs co nc6
 
+Building from a CVS version is slightly different, so after checking out the
+CVS version, read README.Maint for instructions.
+
 
 AVAILABILITY
 ------------

@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.11 2003-03-16 11:55:36 chris Exp $
+$Id: README.Maint,v 1.12 2003-04-20 09:30:58 chris Exp $
 
 
 Source layout
@@ -11,6 +11,14 @@ Source layout
 /config		- autoconf macros
 /src		- all source code
 /docs		- documentation, man pages, etc
+
+
+Prerequisites
+-------------
+
+Netcat6 uses autoconf and automake for its build system.  Currently building
+the configure scripts requires autoconf version >= 2.52 and automake
+version >= 1.6.  No other non-standard libraries should be required.
 
 
 Getting started
