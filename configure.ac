@@ -185,11 +185,11 @@ AC_ARG_ENABLE(debug,
 
 if test "X$debug" = "Xyes"; then
   AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
-  CFLAGS="-g -O0"
+  CFLAGS="${CFLAGS} -g -O0"
 else
   AC_DEFINE(NDEBUG, 1,
     [Define if nc6 is to be build without debug information.])
-  CFLAGS="-O2"
+  CFLAGS="${CFLAGS} -O2"
   if test "X$GCC" = "Xyes"; then 
     NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
   fi
