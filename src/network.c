@@ -20,6 +20,7 @@
  */  
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,13 +30,6 @@
 #include "parser.h"
 #include "filter.h"
 #include "readwrite.h"
-
-/* buffer size for warning messages */
-static const size_t WARN_MESSAGE_SIZE = 512;
-
-/* maximum number of fd's to listen for connections on */
-static const size_t MAX_LISTEN_FDS = 8;
-
 
 
 static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
@@ -91,10 +85,10 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 	
 	switch (attrs->type) {
 		case UDP_SOCKET:
-			ainfo->ai_socktype = SOCK_DGRAM;
+			ainfo->ai_protocol = IPPROTO_UDP;
 			break;
 		case TCP_SOCKET:
-			ainfo->ai_socktype = SOCK_STREAM;
+			ainfo->ai_protocol = IPPROTO_TCP;
 			break;
 		default:
 			fatal("internal error: unknown socket type");
