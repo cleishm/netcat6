@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.10 2002-12-29 17:56:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.11 2002-12-29 23:55:07 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -73,6 +73,7 @@ int main(int argc, char **argv)
 
 	/* give information about the connection in very verbose mode */
 	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+
 		switch (connection_attrs.remote_stream.socktype) {
 		case SOCK_STREAM:
 			warn("using stream socket");
@@ -84,8 +85,18 @@ int main(int argc, char **argv)
 			fatal("internal error: unsupported socktype %d",
 			      connection_attrs.remote_stream.socktype);
 		}
-	}
 
+		warn("using remote receive buffer size of %d",
+		     connection_attrs.remote_buffer.buf_size);
+
+		if (connection_attrs.remote_stream.nru)
+			warn("using remote receive nru of %d",
+			     connection_attrs.remote_stream.nru);
+
+		if (connection_attrs.remote_stream.mtu)
+			warn("using remote send mtu of %d",
+			     connection_attrs.remote_stream.mtu);
+	}
 
 	/* setup unidirectional data transfers (if requested) */
 	assert(!(is_flag_set(RECV_DATA_ONLY) && is_flag_set(SEND_DATA_ONLY)));

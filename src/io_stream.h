@@ -27,32 +27,62 @@
 
 typedef struct io_stream_t
 {
-	int fd_in;       /* for reading */
-	int fd_out;      /* for writing */
-	int socktype;    /* the type of the socket */
-	int hold_time;   /* time to hold the stream open after read closes,
-	                    -1 means hold indefinately */
+	int fd_in;         /* for reading */
+	int fd_out;        /* for writing */
+	int socktype;      /* the type of the socket */
+
+	circ_buf* buf_in;  /* the input buffer */
+	circ_buf* buf_out; /* the output buffer */
+
+	size_t mtu;        /* Maximum Transmition Unit */
+	size_t nru;        /* miNimum Receive Unit */
+
+	int hold_time;     /* time to hold the stream open after read closes,
+	                      -1 means hold indefinately */
 	struct timeval read_closed; /* the time that the read was closed */
 } io_stream;
 
-void io_stream_init(io_stream *ios);
-void io_stream_destroy(io_stream *ios);
 
-#define ios_readfd(IOS)   ((IOS)->fd_in)
-#define ios_writefd(IOS)  ((IOS)->fd_out)
+void io_stream_init(io_stream *ios, circ_buf *inbuf, circ_buf *outbuf);
+void io_stream_destroy(io_stream *ios);
 
 void ios_assign_socket(io_stream *ios, int fd, int socktype);
 void ios_assign_stdio(io_stream *ios);
-void ios_shutdown(io_stream *ios, int how);
 
-#define is_read_open(IOS)   ((IOS)->fd_in >= 0)
-#define is_write_open(IOS)  ((IOS)->fd_out >= 0)
+/* sets the Maximum Transmition Unit
+ * this is the maximum amount that is sent in any write */
+#define ios_set_mtu(IOS, U)	((IOS)->mtu = (U))
+/* sets the miNimum Receive Unit
+ * this is the minimum amount of data that can be handled in any read */
+#define ios_set_nru(IOS, U)	((IOS)->nru = (U))
 
 /* sets the time (in sec) after read is shutdown that timeout occurs */
 #define ios_set_hold_timeout(IOS, T)  ((IOS)->hold_time = (T))
 
-/* Writes the interval to the next timeout into tv and returns a pointer
+
+/* returns an fd if the stream should be scheduled for read, -1 otherwise */
+int ios_schedule_read(io_stream *ios);
+/* returns an fd if the stream should be scheduled for write, -1 otherwise */
+int ios_schedule_write(io_stream *ios);
+
+/* writes the interval to the next timeout into tv and returns a pointer
  * to tv.  If no timeout is active, NULL is returned and tv is unchanged. */
 struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv);
+
+
+/* read into the input buffer.
+ * should only be called if ios_schedule_read returned a true value */
+ssize_t ios_read(io_stream *ios);
+/* write from the output buffer.
+ * should only be called if ios_schedule_write returned a true value */
+ssize_t ios_write(io_stream *ios);
+
+
+#define is_read_open(IOS)   ((IOS)->fd_in >= 0)
+#define is_write_open(IOS)  ((IOS)->fd_out >= 0)
+
+/* shutdown the stream as per shutdown(2) */
+void ios_shutdown(io_stream *ios, int how);
+
 
 #endif /* IO_STREAM_H */

@@ -48,6 +48,8 @@ typedef struct connection_attributes_t
 	sock_type  type;
 	address remote_address;
 	address local_address;
+	circ_buf remote_buffer;
+	circ_buf local_buffer;
 	io_stream remote_stream;
 	io_stream local_stream;
 	time_t connect_timeout;

@@ -32,7 +32,15 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.17 2002-12-29 22:35:48 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.18 2002-12-29 23:55:07 chris Exp $");
+
+
+/* default UDP MTU is 8kb */
+static const size_t DEFAULT_UDP_MTU = 8192;
+/* default UDP NRU is the maximum allowed MTU of 64k */
+static const size_t DEFAULT_UDP_NRU = 65536;
+/* default UDP buffer size is 64k */
+static const size_t DEFAULT_UDP_BUFFER_SIZE = 65536;
 
 
 static unsigned long flags_mask;
@@ -48,16 +56,22 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	int c, verbosity_level = 0;
 	bool listen_mode = FALSE;
 	bool file_transfer = FALSE;
+	size_t remote_mtu = 0;
+	size_t remote_nru = 0;
+	size_t remote_buffer_size = 0;
 	int option_index = 0;
 	static struct option long_options[] = {
-		{"help",           FALSE, 0, 'h'},
-		{"listen",         FALSE, 0, 'l'},
-		{"port",           TRUE,  0, 'p'},
-		{"hold-timeouts",  TRUE,  0, 'q'},
-		{"address",        TRUE,  0, 's'},
-		{"udp",            FALSE, 0, 'u'},
-		{"timeout",        TRUE,  0, 'w'},
-		{"transfer",       FALSE, 0, 'x'},
+		{"help",          FALSE, NULL, 'h'},
+		{"listen",        FALSE, NULL, 'l'},
+		{"port",          TRUE,  NULL, 'p'},
+		{"hold-timeouts", TRUE,  NULL, 'q'},
+		{"address",       TRUE,  NULL, 's'},
+		{"udp",           FALSE, NULL, 'u'},
+		{"timeout",       TRUE,  NULL, 'w'},
+		{"transfer",      FALSE, NULL, 'x'},
+		{"buffer-size",   TRUE,  NULL,  0 },
+		{"mtu",           TRUE,  NULL,  0 },
+		{"nru",           TRUE,  NULL,  0 },
 		{0, 0, 0, 0}
 	};
 
@@ -70,6 +84,23 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	                        long_options, &option_index)) >= 0)
 	{
  		switch(c) {
+		case 0:
+			if (strcmp(long_options[option_index].name,
+			    "buffer-size") == 0)
+			{
+				remote_buffer_size = safe_atoi(optarg);
+			}
+			else if (strcmp(long_options[option_index].name,
+			         "mtu") == 0)
+			{
+				remote_mtu = safe_atoi(optarg);
+			}
+			else if (strcmp(long_options[option_index].name,
+			         "nru") == 0)
+			{
+				remote_nru = safe_atoi(optarg);
+			}
+			break;
 		case '4':
 			if (attrs->proto != PROTO_UNSPECIFIED) 
 			    fatal("cannot specify the address family twice");
@@ -109,6 +140,14 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			break;	
 		case 'u':	
 			attrs->type = UDP_SOCKET;
+			/* set remote buffer sizes and mtu's, iff they haven't
+			 * already been set */
+			if (remote_mtu == 0)
+				remote_mtu = DEFAULT_UDP_MTU;
+			if (remote_nru == 0)
+				remote_nru = DEFAULT_UDP_NRU;
+			if (remote_buffer_size == 0)
+				remote_buffer_size = DEFAULT_UDP_BUFFER_SIZE;
 			break;
 		case 'v':	
 			if (++verbosity_level > 1) 
@@ -138,6 +177,18 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	/* setup file transfer depending on the mode */
 	if (file_transfer == TRUE)
 		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
+
+	/* check nru - if it's too big data will never be received */
+	if (remote_nru > remote_buffer_size)
+		remote_nru = remote_buffer_size;
+
+	/* setup mtu, nru and buffer size if they were specified */
+	if (remote_mtu > 0)
+		ios_set_mtu(&(attrs->remote_stream), remote_mtu);
+	if (remote_nru > 0)
+		ios_set_nru(&(attrs->remote_stream), remote_nru);
+	if (remote_buffer_size > 0)
+		cb_resize(&(attrs->remote_buffer), remote_buffer_size);
 
 	/* additional arguments are the remote address/service */
 	switch(argc) {
@@ -219,6 +270,9 @@ static void print_usage(FILE *fp)
 "    -v                Increase program verbosity (call twice for max verbosity)\n"
 "    -w, --timeout=SECONDS  Timeout for connects/accepts\n"
 "    -x, --transfer    File transfer mode\n"
+"        --buffer-size=BYTES  Set buffer size for network receives\n"
+"        --mtu=BYTES          Set MTU for network connection transmits\n"
+"        --nru=BYTES          Set NRU for network connection receives\n"
 "\n");
 }
 

@@ -34,88 +34,38 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.19 2002-12-27 22:58:32 chris Exp $");
-
-/* buffer size is 8kb */
-static const size_t BUFFER_SIZE = 8192;
-static const size_t TEMP_BUFFER_SIZE = 65536;
-
-/* bytes received, respectively, from local input and from the net */
-static int local_rcvd, net_rcvd; 
-/* bytes sent, respectively, to local output and to the net */
-static int local_sent, net_sent; 
-
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.20 2002-12-29 23:55:07 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
 int readwrite(io_stream *ios1, io_stream *ios2)
 {
 	int rr, max_fd = -1;
-	fd_set read_fdset, tmp_rd_fdset, write_fdset, tmp_wr_fdset;
-	circ_buf buf1;
-	uint8_t *tbuf1 = NULL;
-	int tbuf1_bytes = 0, tbuf1_offset = 0;
-	circ_buf buf2;
+	int ios1_read_fd, ios1_write_fd;
+	int ios2_read_fd, ios2_write_fd;
+	fd_set read_fdset, write_fdset;
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
 	int retval = 0;
+	size_t local_rcvd = 0;
+	size_t net_rcvd   = 0;		
+	size_t local_sent = 0;
+	size_t net_sent   = 0;		
+#ifndef NDEBUG
+	bool very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
+#endif
 	
 	/* check function arguments */
 	assert(ios1 != NULL);
 	assert(ios2 != NULL);
 
-	/* set up the buffers for each ios */
-	/* dgram protocols need to read all of each message at once, so we use
-	 * a temporary buffer to read into, then move the data gradually into
-	 * the circular buffer.  Further reads are suspended until all data
-	 * is moved */
-	cb_init(&buf1, BUFFER_SIZE);
-	if (ios1->socktype == SOCK_DGRAM)
-		tbuf1 = (uint8_t *)xmalloc(TEMP_BUFFER_SIZE);
-
-	/* since we know ios2 is local, it will be a stream - hence no need for
-	 * the temporary buffer */
-	cb_init(&buf2, BUFFER_SIZE);
-	assert(ios2->socktype != SOCK_DGRAM);
-
-	/* reset status */
-	local_rcvd = 0;
-	net_rcvd   = 0;		
-	local_sent = 0;
-	net_sent   = 0;		
-
 	/* setup all the stuff for the select loop */
-	FD_ZERO(&read_fdset);
-	FD_ZERO(&write_fdset);
 
-	/* calculate max_fd and add initial fd's to read from to read_fdset */
-	if (is_read_open(ios1)) {
-		/* read from ios1 */
-		FD_SET(ios_readfd(ios1), &read_fdset);
-		max_fd = MAX(ios_readfd(ios1), max_fd);
-	}
-	if (is_write_open(ios1)) 
-		max_fd = MAX(ios_writefd(ios1), max_fd);
-
-	if (is_read_open(ios2)) {
-		/* read from ios2 */
-		FD_SET(ios_readfd(ios2), &read_fdset);
-		max_fd = MAX(ios_readfd(ios2), max_fd);
-	}
-	if (is_write_open(ios2)) 
-		max_fd = MAX(ios_writefd(ios2), max_fd);
-
-	if (max_fd > FD_SETSIZE) {
-		/* with 4 fd's this shouldn't happen */
-		fatal("max_fd > FD_SETSIZE");
-	}
-
-	
 	/* here's the select loop. 
 	 *
 	 * the loop continues until one of the following occurs:
 	 *
-	 * neither side can be read from AND all write buffers have been written
+	 * neither side needs to read or write
 	 * OR
 	 * either side times out
 	 * OR
@@ -125,37 +75,44 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	 * triggers a hold timeout immediately - which closes the local read
 	 * side as well.
 	 */
-	while (is_read_open(ios1) || is_read_open(ios2) ||
-	       cb_is_empty(&buf1) == FALSE || cb_is_empty(&buf2) == FALSE)
-	{
+	for (;;) {
+		/* setup fdsets */
+		FD_ZERO(&read_fdset);
+		FD_ZERO(&write_fdset);
 
-		/* sanity checks */
-		/* writefd should be set iff the buffer contains data */
-		assert(XOR(cb_is_empty(&buf1) == TRUE,
-		       is_write_open(ios2) &&
-		         FD_ISSET(ios_writefd(ios2), &write_fdset)));
-		assert(XOR((cb_is_empty(&buf2) == TRUE),
-		       is_write_open(ios1) &&
-		         FD_ISSET(ios_writefd(ios1), &write_fdset)));
-		/* readfd should be set (or closed) iff the buffer is not full
-		 * or tbuf1 is in use and it still contains data */
-		assert(XOR(
-		       (tbuf1 && tbuf1_bytes > 0) ||
-		         (!tbuf1 && cb_is_full(&buf1) == TRUE),
-		       !is_read_open(ios1) ||
-		         FD_ISSET(ios_readfd(ios1), &read_fdset)));
-		assert(XOR(cb_is_full(&buf2) == TRUE,
-		       !is_read_open(ios2) ||
-		         FD_ISSET(ios_readfd(ios2), &read_fdset)));
-		/* if tbuf1 is not being used, tbuf1_bytes must be 0 */
-		assert(tbuf1 || tbuf1_bytes == 0);
+		ios1_read_fd = ios_schedule_read(ios1);
+		ios1_write_fd = ios_schedule_write(ios1);
+		ios2_read_fd = ios_schedule_read(ios2);
+		ios2_write_fd = ios_schedule_write(ios2);
+
+		max_fd = -1;
+		if (ios1_read_fd >= 0) {
+			FD_SET(ios1_read_fd, &read_fdset);
+			max_fd = ios1_read_fd;
+		}
+		if (ios1_write_fd >= 0) {
+			FD_SET(ios1_write_fd, &write_fdset);
+			max_fd = MAX(ios1_write_fd, max_fd);
+		}
+		if (ios2_read_fd >= 0) {
+			FD_SET(ios2_read_fd, &read_fdset);
+			max_fd = MAX(ios2_read_fd, max_fd);
+		}
+		if (ios2_write_fd >= 0) {
+			FD_SET(ios2_write_fd, &write_fdset);
+			max_fd = MAX(ios2_write_fd, max_fd);
+		}
+
+		/* stop loop if nothing is to be read or written */
+		if (max_fd == -1)
+			break;
 
 		/* check timeouts */
 		tvp1 = ios_next_timeout(ios1, &tv1);
 		tvp2 = ios_next_timeout(ios2, &tv2);
 
 #ifndef NDEBUG
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		if (very_verbose_mode == TRUE) {
 			if (tvp1)
 				warn("ios1 timer expires in %d.%06d",
 				     tv1.tv_sec, tv1.tv_usec);
@@ -165,7 +122,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		}
 #endif
 
-		/* stop if either ios has timed out */
+		/* stop loop if either ios has timed out */
 		if ((tvp1 && !timerisset(tvp1))||(tvp2 && !timerisset(tvp2))) {
 			retval = -1;
 			break;
@@ -179,14 +136,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		else
 			tvp = tvp2;  /* tvp2 may be NULL */
 
-		/* make a copy of read_fdset and write_fdset before passing 
-		 * them to select */
-		memcpy(&tmp_rd_fdset, &read_fdset, sizeof(fd_set));
-		memcpy(&tmp_wr_fdset, &write_fdset, sizeof(fd_set));
-
 		/* blocking select with timeout */		
-		rr = select(
-		        max_fd + 1, &tmp_rd_fdset, &tmp_wr_fdset, NULL, tvp);
+		rr = select(max_fd + 1, &read_fdset, &write_fdset, NULL, tvp);
 
 		/* handle select errors.
 		 * if errno == EINTR we just retry select */
@@ -196,235 +147,134 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			fatal("select error: %s", strerror(errno));
 		}
 		
-		if (is_read_open(ios1) &&
-		    FD_ISSET(ios_readfd(ios1), &tmp_rd_fdset))
-		{
-			assert((tbuf1 && tbuf1_bytes == 0) ||
-			       (!tbuf1 && cb_is_full(&buf1) == FALSE));
+		if (ios1_read_fd >= 0 && FD_ISSET(ios1_read_fd, &read_fdset)) {
+			/* ios1 is ready to read */
+			rr = ios_read(ios1);
 
-			/* something is ready to read on ios1 (remote) */
-			if (ios1->socktype == SOCK_DGRAM) {
-				assert(tbuf1 != NULL);
-				rr = recv(ios_readfd(ios1),
-				        (void *)tbuf1, TEMP_BUFFER_SIZE, 0);
-			} else {
-				rr = cb_read(&buf1, ios_readfd(ios1), 0);
-			}
-			
 			if (rr > 0) {
 				net_rcvd += rr;
 #ifndef NDEBUG
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn("%s %d bytes from ios1 (%d)",
-					     tbuf1? "read":"received",
-					     rr, ios_readfd(ios1));
+				if (very_verbose_mode == TRUE)
+					warn("read %d bytes from ios1 (%d)",
+					     rr, ios1_read_fd);
 #endif
-				/* forward any data in tbuf1 to buf1 */
-				if (tbuf1) {
-					int copied =
-					        cb_append(&buf1, tbuf1, rr);
-					tbuf1_bytes = rr - copied;
-					tbuf1_offset = copied;
-					/* some MUST have gone into buf1 */
-					assert(copied);
-				}
-
-				/* if reading into tbuf1 and it still contains
-				 * data OR if reading straight to buf1 and
-				 * it's full, then suspend further reading */
-				if ((tbuf1 && tbuf1_bytes > 0) ||
-				    (!tbuf1 && cb_is_full(&buf1) == TRUE))
-				{
-					FD_CLR(ios_readfd(ios1), &read_fdset);
-				}
-				    
-				/* start writing the buffer out */
-				assert(is_write_open(ios2));
-				FD_SET(ios_writefd(ios2), &write_fdset);
 			} else if (rr == 0) {
-				/* if rr == 0, then we are not receiving
-				 * data from ios1 anymore. 
-				 * let's close it. */
 #ifndef NDEBUG				
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("closing read of ios1 (%d)",
-					        ios_readfd(ios1));
+					     ios1_read_fd);
 #endif
-				FD_CLR(ios_readfd(ios1), &read_fdset);
 				ios_shutdown(ios1, SHUT_RD);
 			} else if (rr < 0 && errno != EAGAIN) {
-				/* error while reading ios1: 
+				/* error while reading ios1:
 				 * print an error message and exit. */
-				fatal("error reading from fd %d: %s", 
-				      ios_readfd(ios1), strerror(errno));
+				fatal("error reading from ios1 (%d): %s", 
+				      ios1_read_fd, strerror(errno));
 			}
 		}
-		
-		
-		if (is_read_open(ios2) &&
-		    FD_ISSET(ios_readfd(ios2), &tmp_rd_fdset))
-		{
-			assert(cb_is_full(&buf2) == FALSE);
 
-			/* something is ready to read on ios2 (local) */
-			rr = cb_read(&buf2, ios_readfd(ios2), 0);
-			
+		if (ios2_read_fd >= 0 && FD_ISSET(ios2_read_fd, &read_fdset)) {
+			/* ios2 is ready to read */
+			rr = ios_read(ios2);
+
 			if (rr > 0) {
 				local_rcvd += rr;
 #ifndef NDEBUG
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("read %d bytes from ios2 (%d)",
-					        rr, ios_readfd(ios2));
+					     rr, ios2_read_fd);
 #endif
-				/* if the buffer is full,
-				 * suspend further reading */
-				if (cb_is_full(&buf2) == TRUE)
-					FD_CLR(ios_readfd(ios2), &read_fdset);
-
-				/* start writing the buffer out */
-				assert(is_write_open(ios1));
-				FD_SET(ios_writefd(ios1), &write_fdset);
 			} else if (rr == 0) {
-				/* if rr == 0, then we are not receiving
-				 * data from ios2 anymore. 
-				 * let's close it. */
 #ifndef NDEBUG				
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("closing read of ios2 (%d)",
-					        ios_readfd(ios2));
+					     ios2_read_fd);
 #endif
-				FD_CLR(ios_readfd(ios2), &read_fdset);
 				ios_shutdown(ios2, SHUT_RD);
 			} else if (rr < 0 && errno != EAGAIN) {
-				/* error while reading ios2: 
+				/* error while reading ios2:
 				 * print an error message and exit. */
-				fatal("error reading from fd %d: %s", 
-				      ios_readfd(ios2), strerror(errno));
+				fatal("error reading from ios2 (%d): %s", 
+				      ios2_read_fd, strerror(errno));
 			}
 		}
-		
 
-		if (is_write_open(ios1) &&
-		    FD_ISSET(ios_writefd(ios1), &tmp_wr_fdset))
+		if (ios1_write_fd >= 0 && FD_ISSET(ios1_write_fd, &write_fdset))
 		{
-			assert(cb_is_empty(&buf2) == FALSE);
-
-			/* ios1 may be written to (remote) */
-			if (tbuf1)
-				rr = cb_send(&buf2, ios_writefd(ios1),0,NULL,0);
-			else
-				rr = cb_write(&buf2, ios_writefd(ios1), 0);
+			/* ios1 is ready to write */
+			rr = ios_write(ios1);
 
 			if (rr > 0) {
 				net_sent += rr;
 #ifndef NDEBUG				
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn("%s %d bytes to ios1 (%d)",
-					     tbuf1? "wrote":"sent",
-					     rr, ios_writefd(ios1));
+				if (very_verbose_mode == TRUE)
+					warn("wrote %d bytes to ios1 (%d)",
+					     rr, ios1_write_fd);
 #endif
-				/* if anything was written,
-				 * ios2 can resume reading again */
-				if (is_read_open(ios2))
-					FD_SET(ios_readfd(ios2), &read_fdset);
-				/* if the buffer is emptied,
-				 * stop trying to write */
-				if (cb_is_empty(&buf2) == TRUE)
-					FD_CLR(ios_writefd(ios1), &write_fdset);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1:
 				 * print an error message and exit. */
 				if (errno != EPIPE)
 					fatal("error writing to fd %d: %s",
-					      ios_writefd(ios1),
-					      strerror(errno));
+					      ios1_write_fd, strerror(errno));
 
 				/* the pipe is broken,
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("received SIGPIPE on ios1 (%d)",
-					        ios_writefd(ios1));
+					     ios1_write_fd);
 #endif
 
-				cb_clear(&buf2);
 				ios_shutdown(ios1, SHUT_RDWR);
 
 				/* exit the main loop */
 				retval = -1;
 				break;
 			}
+
 		}
 
-		
-		if (is_write_open(ios2) &&
-		    FD_ISSET(ios_writefd(ios2), &tmp_wr_fdset))
+		if (ios2_write_fd >= 0 && FD_ISSET(ios2_write_fd, &write_fdset))
 		{
-			assert(cb_is_empty(&buf1) == FALSE);
-
-			/* ios2 may be written to (local) */
-			rr = cb_write(&buf1, ios_writefd(ios2), 0);
+			/* ios2 is ready to write */
+			rr = ios_write(ios2);
 
 			if (rr > 0) {
 				local_sent += rr;
 #ifndef NDEBUG				
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("wrote %d bytes to ios2 (%d)",
-					        rr, ios_writefd(ios2));
+					     rr, ios2_write_fd);
 #endif
-				/* forward more from tbuf1 to buf1 */
-				if (tbuf1_bytes > 0) {
-					int copied = cb_append(
-					        &buf1,
-					        tbuf1+tbuf1_offset,
-					        tbuf1_bytes);
-					tbuf1_bytes -= copied;
-					tbuf1_offset += copied;
-				}
-				/* if the tbuf1 was emptied,
-				 * ios1 can resume reading again
-				 * if tbuf1 is not in use,
-				 * tbuf1_bytes will always be 0 */
-				if (is_read_open(ios1) && tbuf1_bytes == 0)
-					FD_SET(ios_readfd(ios1), &read_fdset);
-				/* if the buffer is emptied,
-				 * stop trying to write */
-				if (cb_is_empty(&buf1) == TRUE)
-					FD_CLR(ios_writefd(ios2), &write_fdset);
 			} else if (rr < 0 && errno != EAGAIN) {
-				/* error while writing to ios1:
+				/* error while writing to ios2:
 				 * print an error message and exit. */
 				if (errno != EPIPE)
 					fatal("error writing to fd %d: %s",
-					      ios_writefd(ios2),
-					      strerror(errno));
+					      ios2_write_fd, strerror(errno));
 
 				/* the pipe is broken,
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode == TRUE)
 					warn("received SIGPIPE on ios2 (%d)",
-					        ios_writefd(ios2));
+					     ios2_write_fd);
 #endif
 
-				cb_clear(&buf1);
 				ios_shutdown(ios2, SHUT_RDWR);
 
 				/* exit the main loop */
 				retval = -1;
 				break;
 			}
+
 		}
 	}
 	
-	/* perform the final cleanup */
-	cb_destroy(&buf1);
-	if (tbuf1) free(tbuf1);
-	cb_destroy(&buf2);
-	
 	if (is_flag_set(VERBOSE_MODE) == TRUE)
 		warn("connection closed (sent %d, rcvd %d)",
-			net_sent, net_rcvd);
+		     net_sent, net_rcvd);
 
 	return retval;
 }

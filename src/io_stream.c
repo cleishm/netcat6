@@ -29,17 +29,26 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.7 2002-12-28 20:54:22 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.8 2002-12-29 23:55:07 chris Exp $");
 
 
 
-void io_stream_init(io_stream *ios)
+void io_stream_init(io_stream *ios, circ_buf *inbuf, circ_buf *outbuf)
 {
 	assert(ios != NULL);
+	assert(inbuf != NULL);
+	assert(outbuf != NULL);
 
 	ios->fd_in = -1;
 	ios->fd_out = -1;
 	ios->socktype = 0;  /* unknown */
+
+	ios->buf_in = inbuf;
+	ios->buf_out = outbuf;
+
+	ios->mtu = 0; /* unlimited */
+	ios->nru = 0; /* unlimited */
+
 	ios->hold_time = 0; /* instant */
 	timerclear(&(ios->read_closed));
 }
@@ -88,45 +97,27 @@ void ios_assign_stdio(io_stream *ios)
 
 
 
-void ios_shutdown(io_stream* ios, int how)
+int ios_schedule_read(io_stream *ios)
 {
-	assert(ios != NULL);
+	size_t space = cb_space(ios->buf_in);
 
-	if (how == SHUT_RDWR) {
-		/* close both the input and the output */
-		if (ios->fd_in != -1) {
-			close(ios->fd_in);
-			/* record the read shutdown time */
-			gettimeofday(&(ios->read_closed), NULL);
-		}
-		/* if the same fd is input and output, don't close twice */
-		if (ios->fd_out != -1 && ios->fd_out != ios->fd_in)
-			close(ios->fd_out);
-		ios->fd_in = ios->fd_out = -1;
-	} else if (how == SHUT_RD) {
-		/* close the input */
-		if (ios->fd_in != -1) {
-			/* if the fd is duplex, use shutdown */
-			if (ios->fd_in == ios->fd_out)
-				shutdown(ios->fd_in, SHUT_RD);
-			else
-				close(ios->fd_in);
-			ios->fd_in = -1;
-			/* record the read shutdown time */
-			gettimeofday(&(ios->read_closed), NULL);
-		}
-	} else {
-		assert(how == SHUT_WR);		
-		/* close the output */
-		if (ios->fd_out != -1) {
-			/* if the fd is duplex, use shutdown */
-			if (ios->fd_in == ios->fd_out)
-				shutdown(ios->fd_out, SHUT_WR);
-			else
-				close(ios->fd_out);
-			ios->fd_out = -1;
-		}
-	}
+	/* if closed, the buffer is full or there isn't enough free space in
+	 * the buffer to satisfy the nru, then we can't read */
+	if ((ios->fd_in < 0) || space == 0 || space < ios->nru)
+		return -1;
+	/* schedule a read from fdin */
+	return ios->fd_in;
+}
+
+
+
+int ios_schedule_write(io_stream *ios)
+{
+	/* if closed or there is no data in the buffer, then we can't write */
+	if ((ios->fd_out < 0) || cb_is_empty(ios->buf_out))
+		return -1;
+	/* schedule a write to fdout */
+	return ios->fd_out;
 }
 
 
@@ -159,4 +150,78 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 	}
 
 	return tv;
+}
+
+
+
+ssize_t ios_read(io_stream *ios)
+{
+	/* should only be called if ios_schedule_read returned a true result */
+	assert(ios->fd_in >= 0);
+	assert(cb_space(ios->buf_in) >= ios->nru);
+
+	/* read as much as possible */
+	if (ios->socktype == SOCK_DGRAM)
+		return cb_recv(ios->buf_in, ios->fd_in, 0, NULL, 0);
+	else
+		return cb_read(ios->buf_in, ios->fd_in, 0);
+
+}
+
+
+
+ssize_t ios_write(io_stream *ios)
+{
+	/* should only be called if ios_schedule_write returned a true result */
+	assert(ios->fd_out >= 0);
+	assert(!cb_is_empty(ios->buf_out));
+
+	/* write as much as the mtu allows */
+	if (ios->socktype == SOCK_DGRAM)
+		return cb_send(ios->buf_out, ios->fd_out, ios->mtu, NULL, 0);
+	else
+		return cb_write(ios->buf_out, ios->fd_out, ios->mtu);
+}
+
+
+
+void ios_shutdown(io_stream* ios, int how)
+{
+	assert(ios != NULL);
+
+	if (how == SHUT_RDWR) {
+		/* close both the input and the output */
+		if (ios->fd_in >= 0) {
+			close(ios->fd_in);
+			/* record the read shutdown time */
+			gettimeofday(&(ios->read_closed), NULL);
+		}
+		/* if the same fd is input and output, don't close twice */
+		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
+			close(ios->fd_out);
+		ios->fd_in = ios->fd_out = -1;
+	} else if (how == SHUT_RD) {
+		/* close the input */
+		if (ios->fd_in >= 0) {
+			/* if the fd is duplex, use shutdown */
+			if (ios->fd_in == ios->fd_out)
+				shutdown(ios->fd_in, SHUT_RD);
+			else
+				close(ios->fd_in);
+			ios->fd_in = -1;
+			/* record the read shutdown time */
+			gettimeofday(&(ios->read_closed), NULL);
+		}
+	} else {
+		assert(how == SHUT_WR);		
+		/* close the output */
+		if (ios->fd_out >= 0) {
+			/* if the fd is duplex, use shutdown */
+			if (ios->fd_in == ios->fd_out)
+				shutdown(ios->fd_out, SHUT_WR);
+			else
+				close(ios->fd_out);
+			ios->fd_out = -1;
+		}
+	}
 }
