@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.38 2003-01-18 23:24:32 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.39 2003-01-19 10:31:03 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -630,7 +630,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 
 			/* get the name for this client */
 			getnameinfo_ex((struct sockaddr *)&dest, destlen,
-			               c_name_buf, sizeof(c_name_buf), FALSE);
+			               c_name_buf, sizeof(c_name_buf),
+				       numeric_mode);
 		}
 
 		/* check if connections from this client are allowed */
