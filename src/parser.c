@@ -32,7 +32,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.19 2002-12-30 14:06:54 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.20 2002-12-30 14:44:49 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -48,7 +48,7 @@ static const size_t DEFAULT_FILE_TRANSFER_BUFFER_SIZE = 65536;
 static unsigned long flags_mask;
 
 /* long options */
-static struct option long_options[] = {
+static const struct option long_options[] = {
 #define OPT_HELP		0
 	{"help",          FALSE, NULL, 'h'},
 #define OPT_LISTEN		1
@@ -73,7 +73,9 @@ static struct option long_options[] = {
 	{"nru",           TRUE,  NULL,  0 },
 #define OPT_HALF_CLOSE		11
 	{"half-close",    FALSE, NULL,  0 },
-#define OPT_MAX			12
+#define OPT_DISABLE_NAGLE	12
+	{"disable-nagle", FALSE, NULL,  0 },
+#define OPT_MAX			13
 	{0, 0, 0, 0}
 };
 
@@ -120,6 +122,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				/* keep remote open after half close */
 				ios_set_hold_timeout(
 					&(attrs->remote_stream), -1);
+				break;
+			case OPT_DISABLE_NAGLE:
+				set_flag(DISABLE_NAGLE);
 				break;
 			default:
 				fatal("getopt returned unexpected "
@@ -307,7 +312,8 @@ static void print_usage(FILE *fp)
 "        --buffer-size=BYTES  Set buffer size for network receives\n"
 "        --mtu=BYTES          Set MTU for network connection transmits\n"
 "        --nru=BYTES          Set NRU for network connection receives\n"
-"        --half-close  Handle network half-closes correctly\n"
+"        --half-close     Handle network half-closes correctly\n"
+"        --disable-nagle  Disable nagle algorithm for TCP connections\n"
 "\n");
 }
 

@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include "config.h"
 #include "network.h"
 #include "parser.h"
@@ -32,7 +34,7 @@
 #include "rt_config.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.23 2002-12-29 21:21:18 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.24 2002-12-30 14:44:49 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -43,6 +45,7 @@ void do_connect(connection_attributes *attrs)
 	bool connect_attempted = FALSE;
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
+	bool disable_nagle     = FALSE;
 	char hbuf_rev[NI_MAXHOST + 1];
 	char hbuf_num[NI_MAXHOST + 1];
 	char sbuf_rev[NI_MAXSERV + 1];
@@ -62,8 +65,9 @@ void do_connect(connection_attributes *attrs)
 	assert(local->service == NULL || strlen(local->service) > 0);
 
 	/* setup flags */
-	numeric_mode = is_flag_set(NUMERIC_MODE);
-	verbose_mode = is_flag_set(VERBOSE_MODE);
+	numeric_mode  = is_flag_set(NUMERIC_MODE);
+	verbose_mode  = is_flag_set(VERBOSE_MODE);
+	disable_nagle = is_flag_set(DISABLE_NAGLE);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -153,6 +157,16 @@ void do_connect(connection_attributes *attrs)
 				warn("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
+
+		/* disable the nagle option for TCP sockets */
+		if (disable_nagle == TRUE && ptr->ai_protocol == IPPROTO_TCP) {
+			int on = 1;
+			/* in case of error, we will go on anyway... */
+			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+			                 &on, sizeof(on));
+			if (err < 0) 
+				warn("error with sockopt TCP_NODELAY");
+		}
 
 		/* setup local source address and/or service */
 		if (local->address != NULL || local->service != NULL) {
@@ -316,6 +330,7 @@ void do_listen(connection_attributes *attrs)
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
 	bool dont_reuse_addr   = FALSE;
+	bool disable_nagle     = FALSE;
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
 
@@ -336,6 +351,7 @@ void do_listen(connection_attributes *attrs)
 	numeric_mode    = is_flag_set(NUMERIC_MODE);
 	verbose_mode    = is_flag_set(VERBOSE_MODE);
 	dont_reuse_addr = is_flag_set(DONT_REUSE_ADDR);
+	disable_nagle = is_flag_set(DISABLE_NAGLE);
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -413,7 +429,7 @@ void do_listen(connection_attributes *attrs)
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
-			if (err < 0) perror("error with sockopt IPV6_V6ONLY");
+			if (err < 0) warn("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
 	
@@ -423,7 +439,17 @@ void do_listen(connection_attributes *attrs)
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
 			                 &on, sizeof(on));
-			if (err < 0) perror("error with sockopt SO_REUSEADDR");
+			if (err < 0) warn("error with sockopt SO_REUSEADDR");
+		}
+
+		/* disable the nagle option for TCP sockets */
+		if (disable_nagle == TRUE  && ptr->ai_protocol == IPPROTO_TCP) {
+			int on = 1;
+			/* in case of error, we will go on anyway... */
+			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+			                 &on, sizeof(on));
+			if (err < 0) 
+				warn("error with sockopt TCP_NODELAY");
 		}
 
 		/* bind to the local address */
