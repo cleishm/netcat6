@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.29 2003-01-03 09:30:20 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.30 2003-01-03 23:25:19 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -89,41 +89,43 @@ static const struct option long_options[] = {
 
 static void set_flag(unsigned long mask);
 static void unset_flag(unsigned long mask);
-static void parse_and_set_timeouts(const char *str,
-                                   connection_attributes *attrs);
+static int parse_int_pair(const char *str, int *first, int *second);
 static void print_usage(FILE *fp);
 
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 {
 	int c, ret = -1, verbosity_level = 0;
+	int option_index = 0;
+
+	/* configurable parameters and default values */
+	sock_family family = PROTO_UNSPECIFIED;
+	sock_protocol protocol = TCP_PROTOCOL;
+	address local_address, remote_address;
 	bool listen_mode = FALSE;
 	bool file_transfer = FALSE;
+	bool half_close = FALSE;
+	int connect_timeout = -1;
+	bool set_local_hold_timeout = FALSE;
+	int local_hold_timeout;
+	bool set_remote_hold_timeout = FALSE;
+	int remote_hold_timeout;
 	size_t remote_mtu = 0;
 	size_t remote_nru = 0;
 	size_t remote_buffer_size = 0;
 	size_t local_buffer_size = 0;
-	int option_index = 0;
-	sock_family family;
-	sock_protocol protocol;
-	int connect_timeout = -1;
-	address local_address, remote_address;
-	bool half_close = FALSE;
 
 	/* initialize the addresses of the connection endpoints */
 	address_init(&remote_address);
 	address_init(&local_address);
 
-	/* set socket types to default values */
-	family = PROTO_UNSPECIFIED;
-	protocol = TCP_PROTOCOL;
-
 	/* option recognition loop */
 	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
-	                        long_options, &option_index)) >= 0) {
- 		switch(c) {
+	                        long_options, &option_index)) >= 0)
+	{
+ 		switch (c) {
 		case 0:
-			switch(option_index) {
+			switch (option_index) {
 			case OPT_RECV_ONLY:
 				set_flag(RECV_DATA_ONLY);
 				break;
@@ -182,8 +184,12 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			break;	
 		case 'q':
 			assert(optarg != NULL);
-			/* TODO: clean this code before release!!! */
-			parse_and_set_timeouts(optarg, attrs);
+			switch (parse_int_pair(optarg, &local_hold_timeout,
+			                       &remote_hold_timeout))
+			{
+			case 2: set_remote_hold_timeout = TRUE;
+			case 1: set_local_hold_timeout = TRUE;
+			};
 			break;	
 		case 's':	
 			assert(optarg != NULL);
@@ -254,12 +260,13 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	/* check to make sure the user wasn't silly enough to set both
 	 * --recv-only and --send-only */
 	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
-	    is_flag_set(SEND_DATA_ONLY) == TRUE) {
+	    is_flag_set(SEND_DATA_ONLY) == TRUE)
+	{
 		fatal("Cannot set both --recv-only and --send-only");
 	}
 
 	/* additional arguments are the remote address/service */
-	switch(argc) {
+	switch (argc) {
 	case 0:
 		remote_address.address = NULL;
 		remote_address.service = NULL;
@@ -301,7 +308,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		}
 		
 		if (remote_address.address == NULL ||
-		    remote_address.service == NULL) {
+		    remote_address.service == NULL)
+		{
 			warn("you must specify the address/port couple "
 			     "of the remote endpoint");
 			print_usage(stderr);
@@ -322,11 +330,18 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ca_set_connection_timeout(attrs, connect_timeout);
 	}
 	
-	/* keep remote open after half close */
+	/* setup half close mode */
 	if (half_close == TRUE) {
+		/* keep remote open after half close */
 		ca_suppress_half_close_remote(attrs);
-		ca_set_hold_timeout_remote(attrs);
+		ca_set_hold_timeout_remote(attrs, -1);
 	}
+
+	/* setup hold timeout */
+	if (set_local_hold_timeout == TRUE)
+		ca_set_hold_timeout_local(attrs, local_hold_timeout);
+	if (set_remote_hold_timeout == TRUE)
+		ca_set_hold_timeout_remote(attrs, remote_hold_timeout);
 	
 	/* setup mtu, nru and buffer size if they were specified */
 	if (remote_mtu > 0)
@@ -384,22 +399,23 @@ static void print_usage(FILE *fp)
 
 
 
-static void parse_and_set_timeouts(const char *str,
-                                   connection_attributes *attrs)
+static int parse_int_pair(const char *str, int *first, int *second)
 {
 	char *s;
+	int count = 1;
 
 	assert(str != NULL);
-	assert(attrs != NULL);
 
 	if ((s = strchr(str, ':')) != NULL) {
 		*s++ = '\0';
-		ios_set_hold_timeout(&(attrs->remote_stream),
-		                     (s[0] == '-')? -1 : safe_atoi(s));
+		if (second != NULL)
+			*second = (s[0] == '-')? -1 : safe_atoi(s);
+		count = 2;
 	}
 
-	ios_set_hold_timeout(&(attrs->local_stream),
-	                     (str[0] == '-')? -1 : safe_atoi(str));
+	if (first != NULL)
+		*first = (str[0] == '-')? -1 : safe_atoi(str);
+	return count;
 }
 
 

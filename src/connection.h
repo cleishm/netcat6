@@ -76,10 +76,10 @@ typedef struct connection_attributes_t
 #define ca_suppress_half_close_local(CA)	\
 	ios_suppress_half_close(&((CA)->local_stream), FALSE)
 	
-#define ca_set_hold_timeout_remote(CA)	\
-	ios_set_hold_timeout(&((CA)->remote_stream), -1)
-#define ca_set_hold_timeout_local(CA)	\
-	ios_set_hold_timeout(&((CA)->local_stream), -1)
+#define ca_set_hold_timeout_remote(CA, T)	\
+	ios_set_hold_timeout(&((CA)->remote_stream), (T))
+#define ca_set_hold_timeout_local(CA, T)	\
+	ios_set_hold_timeout(&((CA)->local_stream), (T))
 
 #define ca_resize_local_buf(CA, SIZE)	cb_resize(&((CA)->local_buffer),(SIZE))
 #define ca_resize_remote_buf(CA, SIZE)	cb_resize(&((CA)->remote_buffer),(SIZE))
