@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.11 2003-01-01 10:05:32 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.12 2003-01-01 11:50:08 chris Exp $");
 
 
 
@@ -55,6 +55,7 @@ void io_stream_init(io_stream *ios, circ_buf *inbuf, circ_buf *outbuf)
 	ios->hold_time = -1; /* infinite */
 	timerclear(&(ios->read_closed));
 
+	ios->name = "ios"; /* unspecified */
 	ios->rcvd = 0;
 	ios->sent = 0;
 }

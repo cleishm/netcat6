@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.23 2003-01-01 10:05:32 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.24 2003-01-01 11:50:08 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -111,11 +111,11 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 #ifndef NDEBUG
 		if (very_verbose_mode == TRUE) {
 			if (tvp1)
-				warn("ios1 timer expires in %d.%06d",
-				     tv1.tv_sec, tv1.tv_usec);
+				warn("%s timer expires in %d.%06d",
+				     ios_name(ios1), tv1.tv_sec, tv1.tv_usec);
 			if (tvp2)
-				warn("ios2 timer expires in %d.%06d",
-				     tv2.tv_sec, tv2.tv_usec);
+				warn("%s timer expires in %d.%06d",
+				     ios_name(ios2), tv2.tv_sec, tv2.tv_usec);
 		}
 #endif
 
@@ -151,13 +151,16 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			if (rr > 0) {
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("read %d bytes from ios1", rr);
+					warn("read %d bytes from %s",
+					     rr, ios_name(ios1));
 #endif
 			} else if (rr == 0) {
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE) {
-					warn("closing read of ios1");
-					warn("closing write of ios2");
+					warn("closing read of %s",
+					     ios_name(ios1));
+					warn("closing write of %s",
+					     ios_name(ios2));
 				}
 #endif
 				ios_shutdown(ios1, SHUT_RD);
@@ -165,8 +168,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios1:
 				 * print an error message and exit. */
-				fatal("error reading from ios1: %s", 
-				      strerror(errno));
+				fatal("error reading from %s: %s", 
+				      ios_name(ios1), strerror(errno));
 			}
 		}
 
@@ -177,13 +180,16 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			if (rr > 0) {
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("read %d bytes from ios2", rr);
+					warn("read %d bytes from %s",
+					     rr, ios_name(ios2));
 #endif
 			} else if (rr == 0) {
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE) {
-					warn("closing read of ios2");
-					warn("closing write of ios2");
+					warn("closing read of %s",
+					     ios_name(ios2));
+					warn("closing write of %s",
+					     ios_name(ios1));
 				}
 #endif
 				ios_shutdown(ios2, SHUT_RD);
@@ -191,8 +197,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios2:
 				 * print an error message and exit. */
-				fatal("error reading from ios2: %s", 
-				      strerror(errno));
+				fatal("error reading from %s: %s", 
+				      ios_name(ios2), strerror(errno));
 			}
 		}
 
@@ -204,21 +210,22 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			if (rr > 0) {
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
-					warn("wrote %d bytes to ios1", rr);
+					warn("wrote %d bytes to %s",
+					     rr, ios_name(ios1));
 #endif
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1:
 				 * print an error message and exit. */
 				if (errno != EPIPE)
-					fatal("error writing to fd %d: %s",
-					      ios1_write_fd, strerror(errno));
+					fatal("error writing to %s: %s",
+					      ios_name(ios1), strerror(errno));
 
 				/* the pipe is broken,
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("received SIGPIPE on ios1",
-					     ios1_write_fd);
+					warn("received SIGPIPE on %s",
+					     ios_name(ios1));
 #endif
 
 				ios_shutdown(ios1, SHUT_RDWR);
@@ -238,21 +245,22 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			if (rr > 0) {
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
-					warn("wrote %d bytes to ios2", rr);
+					warn("wrote %d bytes to %s",
+					     rr, ios_name(ios2));
 #endif
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios2:
 				 * print an error message and exit. */
 				if (errno != EPIPE)
-					fatal("error writing to fd %d: %s",
-					      ios2_write_fd, strerror(errno));
+					fatal("error writing to %s: %s",
+					      ios_name(ios2), strerror(errno));
 
 				/* the pipe is broken,
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("received SIGPIPE on ios2",
-					     ios2_write_fd);
+					warn("received SIGPIPE on %s",
+					     ios_name(ios2));
 #endif
 
 				ios_shutdown(ios2, SHUT_RDWR);

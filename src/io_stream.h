@@ -44,6 +44,7 @@ typedef struct io_stream_t
 	                      -1 means hold indefinately */
 	struct timeval read_closed; /* the time that the read was closed */
 
+	const char* name;  /* the name of this io stream (for logging) */
 	size_t rcvd;       /* bytes received */
 	size_t sent;       /* bytes sent */
 } io_stream;
@@ -96,5 +97,10 @@ void ios_shutdown(io_stream *ios, int how);
 
 #define ios_bytes_received(IOS)	((IOS)->rcvd)
 #define ios_bytes_sent(IOS)	((IOS)->sent)
+
+/* set the name of the io_stream */
+#define ios_name(IOS)		((IOS)->name)
+#define ios_set_name(IOS, S)	((IOS)->name = (S))
+
 
 #endif /* IO_STREAM_H */
