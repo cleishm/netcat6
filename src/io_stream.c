@@ -31,12 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.25 2003-01-25 14:42:36 mauro Exp $");
-
-
-static void ios_init(io_stream *ios, const char* name,
-		     int fd_in, int fd_out, int socktype,
-                     circ_buf *inbuf, circ_buf *outbuf);
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.26 2003-03-26 17:43:31 chris Exp $");
 
 
 #ifndef NDEBUG
@@ -96,9 +91,9 @@ void ios_init_stdio(io_stream *ios, const char* name,
 
 
 
-static void ios_init(io_stream *ios, const char* name,
-		     int fd_in, int fd_out, int socktype,
-                     circ_buf *inbuf, circ_buf *outbuf)
+void ios_init(io_stream *ios, const char* name,
+              int fd_in, int fd_out, int socktype,
+              circ_buf *inbuf, circ_buf *outbuf)
 {
 	/* check arguments */
 	assert(ios    != NULL);

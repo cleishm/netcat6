@@ -65,10 +65,13 @@ typedef struct io_stream_t
 
 
 void ios_init_socket(io_stream *ios, const char* name,
-		     int fd, int socktype,
+                     int fd, int socktype,
                      circ_buf *inbuf, circ_buf *outbuf);
 void ios_init_stdio(io_stream *ios, const char* name,
                     circ_buf *inbuf, circ_buf *outbuf);
+void ios_init(io_stream *ios, const char* name,
+              int fd_in, int fd_out, int socktype,
+              circ_buf *inbuf, circ_buf *outbuf);
 
 void io_stream_destroy(io_stream *ios);
 
