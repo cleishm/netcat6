@@ -11,12 +11,17 @@ nc6: error reading from fd 3: Connection refused
 This isn't intuitive at all and should be fixed.
 -----------------------------------------------------------------------------
 
-On some linux systems (and perhaps others), a nc6 listening on all local
-addresses, but using IPv6 only (with the -6 option) will still accept
-connections from clients using IPv4.  This is because these systems don't have
-a separate stack for IPv6 and IPv4 - instead simply treating all IPv4 as being
-encapsulated within IPv6 - and don't have a way to instruct the kernel to only
-accept true IPv6 connections.
+On some systems (notably Linux 2.2 and 2.4 without USAGI patches - and probably 
+many others), an nc6 instance listening on all local addresses, but using only
+IPv6 (with the -6 option) will still accept connections from clients using 
+IPv4. 
+
+This is because these systems have an hybrid IPv4/IPv6 stack which is not
+corformant to the latest IETF drafts. So, their stacks simply treat all IPv4 
+connections as if they were being encapsulated within IPv6. 
+
+There is actually no way to instruct the kernel to only accept true IPv6 
+connections on these systems.
 
 <client>
 $ ./nc6 -4 -v localhost 9876
@@ -29,9 +34,9 @@ nc6: connect to ::ffff:127.0.0.1 8765 from localhost (::ffff:127.0.0.1) 37654
 [37654]
 -----------------------------------------------------------------------------
 
-On the same linux systems (and perhaps others), a nc6 listening on both IPv6
-and IPv4 will report IPv4 client connections using IPv4 mapped IPv6 addresses,
-rather than just IPv4.
+On the same systems, a nc6 instance listening on both IPv6 and IPv4 will 
+report IPv4 client connections using IPv4 mapped IPv6 addresses, rather than 
+just IPv4.
 
 <client>
 $ ./nc6 -4 -v localhost 9876
