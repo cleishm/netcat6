@@ -32,7 +32,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.18 2002-12-29 23:55:07 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.19 2002-12-30 14:06:54 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -41,14 +41,47 @@ static const size_t DEFAULT_UDP_MTU = 8192;
 static const size_t DEFAULT_UDP_NRU = 65536;
 /* default UDP buffer size is 64k */
 static const size_t DEFAULT_UDP_BUFFER_SIZE = 65536;
+/* default buffer size for file transfers is 64k */
+static const size_t DEFAULT_FILE_TRANSFER_BUFFER_SIZE = 65536;
 
-
+/* storage for the global flags */
 static unsigned long flags_mask;
+
+/* long options */
+static struct option long_options[] = {
+#define OPT_HELP		0
+	{"help",          FALSE, NULL, 'h'},
+#define OPT_LISTEN		1
+	{"listen",        FALSE, NULL, 'l'},
+#define OPT_PORT		2
+	{"port",          TRUE,  NULL, 'p'},
+#define OPT_HOLD_TIMEOUTS	3
+	{"hold-timeouts", TRUE,  NULL, 'q'},
+#define OPT_ADDRESS		4
+	{"address",       TRUE,  NULL, 's'},
+#define OPT_UDP			5
+	{"udp",           FALSE, NULL, 'u'},
+#define OPT_TIMEOUT		6
+	{"timeout",       TRUE,  NULL, 'w'},
+#define OPT_TRANSFER		7
+	{"transfer",      FALSE, NULL, 'x'},
+#define OPT_BUFFER_SIZE		8
+	{"buffer-size",   TRUE,  NULL,  0 },
+#define OPT_MTU			9
+	{"mtu",           TRUE,  NULL,  0 },
+#define OPT_NRU			10
+	{"nru",           TRUE,  NULL,  0 },
+#define OPT_HALF_CLOSE		11
+	{"half-close",    FALSE, NULL,  0 },
+#define OPT_MAX			12
+	{0, 0, 0, 0}
+};
+
+
 static void set_flag(unsigned long mask);
 static void parse_and_set_timeouts(const char *str,
                                    connection_attributes *attrs);
 static void print_usage(FILE *fp);
-
 
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
@@ -59,21 +92,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	size_t remote_mtu = 0;
 	size_t remote_nru = 0;
 	size_t remote_buffer_size = 0;
+	size_t local_buffer_size = 0;
 	int option_index = 0;
-	static struct option long_options[] = {
-		{"help",          FALSE, NULL, 'h'},
-		{"listen",        FALSE, NULL, 'l'},
-		{"port",          TRUE,  NULL, 'p'},
-		{"hold-timeouts", TRUE,  NULL, 'q'},
-		{"address",       TRUE,  NULL, 's'},
-		{"udp",           FALSE, NULL, 'u'},
-		{"timeout",       TRUE,  NULL, 'w'},
-		{"transfer",      FALSE, NULL, 'x'},
-		{"buffer-size",   TRUE,  NULL,  0 },
-		{"mtu",           TRUE,  NULL,  0 },
-		{"nru",           TRUE,  NULL,  0 },
-		{0, 0, 0, 0}
-	};
 
 	/* set socket types to default values */
 	attrs->proto = PROTO_UNSPECIFIED;
@@ -85,20 +105,25 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	{
  		switch(c) {
 		case 0:
-			if (strcmp(long_options[option_index].name,
-			    "buffer-size") == 0)
-			{
+			switch(option_index) {
+			case OPT_BUFFER_SIZE:
 				remote_buffer_size = safe_atoi(optarg);
-			}
-			else if (strcmp(long_options[option_index].name,
-			         "mtu") == 0)
-			{
+				break;
+			case OPT_MTU:
 				remote_mtu = safe_atoi(optarg);
-			}
-			else if (strcmp(long_options[option_index].name,
-			         "nru") == 0)
-			{
+				break;
+			case OPT_NRU:
 				remote_nru = safe_atoi(optarg);
+				break;
+			case OPT_HALF_CLOSE:
+				set_flag(HALF_CLOSE_MODE);
+				/* keep remote open after half close */
+				ios_set_hold_timeout(
+					&(attrs->remote_stream), -1);
+				break;
+			default:
+				fatal("getopt returned unexpected "
+				      "long offset index %d\n", option_index);
 			}
 			break;
 		case '4':
@@ -175,8 +200,13 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	set_flag((listen_mode)? LISTEN_MODE : CONNECT_MODE);
 
 	/* setup file transfer depending on the mode */
-	if (file_transfer == TRUE)
+	if (file_transfer == TRUE) {
+		if (remote_buffer_size == 0)
+			remote_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
+		if (local_buffer_size == 0)
+			local_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
 		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
+	}
 
 	/* check nru - if it's too big data will never be received */
 	if (remote_nru > remote_buffer_size)
@@ -189,6 +219,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ios_set_nru(&(attrs->remote_stream), remote_nru);
 	if (remote_buffer_size > 0)
 		cb_resize(&(attrs->remote_buffer), remote_buffer_size);
+	if (local_buffer_size > 0)
+		cb_resize(&(attrs->local_buffer), local_buffer_size);
 
 	/* additional arguments are the remote address/service */
 	switch(argc) {
@@ -222,7 +254,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	if (listen_mode) {	
 		if (attrs->local_address.service == NULL) {
-			warn("in listen mode you must specify a port with the -p switch");
+			warn("in listen mode you must specify a port "
+			     "with the -p switch");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -237,7 +270,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		
 		if (attrs->remote_address.address == NULL ||
 		    attrs->remote_address.service == NULL) {
-			warn("you must specify the address/port couple of the remote endpoint");
+			warn("you must specify the address/port couple "
+			     "of the remote endpoint");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -273,6 +307,7 @@ static void print_usage(FILE *fp)
 "        --buffer-size=BYTES  Set buffer size for network receives\n"
 "        --mtu=BYTES          Set MTU for network connection transmits\n"
 "        --nru=BYTES          Set NRU for network connection receives\n"
+"        --half-close  Handle network half-closes correctly\n"
 "\n");
 }
 

@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.20 2002-12-29 23:55:07 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.21 2002-12-30 14:06:54 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -51,6 +51,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	size_t net_rcvd   = 0;		
 	size_t local_sent = 0;
 	size_t net_sent   = 0;		
+	bool half_close_mode = is_flag_set(HALF_CLOSE_MODE);
 #ifndef NDEBUG
 	bool very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
 #endif
@@ -80,9 +81,9 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		FD_ZERO(&read_fdset);
 		FD_ZERO(&write_fdset);
 
-		ios1_read_fd = ios_schedule_read(ios1);
+		ios1_read_fd  = ios_schedule_read(ios1);
 		ios1_write_fd = ios_schedule_write(ios1);
-		ios2_read_fd = ios_schedule_read(ios2);
+		ios2_read_fd  = ios_schedule_read(ios2);
 		ios2_write_fd = ios_schedule_write(ios2);
 
 		max_fd = -1;
@@ -155,21 +156,25 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				net_rcvd += rr;
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("read %d bytes from ios1 (%d)",
-					     rr, ios1_read_fd);
+					warn("read %d bytes from ios1", rr);
 #endif
 			} else if (rr == 0) {
 #ifndef NDEBUG				
-				if (very_verbose_mode == TRUE)
-					warn("closing read of ios1 (%d)",
-					     ios1_read_fd);
+				if (very_verbose_mode == TRUE) {
+					warn("closing read of ios1");
+					if (half_close_mode == TRUE)
+						warn("closing write of ios2");
+				}
 #endif
 				ios_shutdown(ios1, SHUT_RD);
+				/* send a half close to ios2 */
+				if (half_close_mode == TRUE)
+					ios_shutdown(ios2, SHUT_WR);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios1:
 				 * print an error message and exit. */
-				fatal("error reading from ios1 (%d): %s", 
-				      ios1_read_fd, strerror(errno));
+				fatal("error reading from ios1: %s", 
+				      strerror(errno));
 			}
 		}
 
@@ -181,21 +186,25 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				local_rcvd += rr;
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("read %d bytes from ios2 (%d)",
-					     rr, ios2_read_fd);
+					warn("read %d bytes from ios2", rr);
 #endif
 			} else if (rr == 0) {
 #ifndef NDEBUG				
-				if (very_verbose_mode == TRUE)
-					warn("closing read of ios2 (%d)",
-					     ios2_read_fd);
+				if (very_verbose_mode == TRUE) {
+					warn("closing read of ios2");
+					if (half_close_mode == TRUE)
+						warn("closing write of ios2");
+				}
 #endif
 				ios_shutdown(ios2, SHUT_RD);
+				/* send a half close to ios1 */
+				if (half_close_mode == TRUE)
+					ios_shutdown(ios1, SHUT_WR);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios2:
 				 * print an error message and exit. */
-				fatal("error reading from ios2 (%d): %s", 
-				      ios2_read_fd, strerror(errno));
+				fatal("error reading from ios2: %s", 
+				      strerror(errno));
 			}
 		}
 
@@ -208,8 +217,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				net_sent += rr;
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
-					warn("wrote %d bytes to ios1 (%d)",
-					     rr, ios1_write_fd);
+					warn("wrote %d bytes to ios1", rr);
 #endif
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1:
@@ -222,7 +230,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("received SIGPIPE on ios1 (%d)",
+					warn("received SIGPIPE on ios1",
 					     ios1_write_fd);
 #endif
 
@@ -244,8 +252,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				local_sent += rr;
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
-					warn("wrote %d bytes to ios2 (%d)",
-					     rr, ios2_write_fd);
+					warn("wrote %d bytes to ios2", rr);
 #endif
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios2:
@@ -258,7 +265,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				 * clear buffer and close read/write */
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
-					warn("received SIGPIPE on ios2 (%d)",
+					warn("received SIGPIPE on ios2",
 					     ios2_write_fd);
 #endif
 
