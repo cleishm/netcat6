@@ -41,6 +41,7 @@ int read_to_cb(int fd, circ_buf *cb);
 int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb);
 int write_from_cb(int fd, circ_buf *cb);
 int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen);
+void clear_cb(circ_buf *cb);
 circ_buf *alloc_cb(size_t size);
 void free_cb(circ_buf **cb);
 

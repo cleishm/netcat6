@@ -290,6 +290,15 @@ int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen)
 
 
 
+void clear_cb(circ_buf *cb)
+{
+	assert(cb);
+	cb->ptr = cb->buf;
+	cb->data_size = 0;
+}
+
+
+
 circ_buf *alloc_cb(size_t size)
 {
 	circ_buf *cb;
