@@ -32,7 +32,7 @@
 #include "rt_config.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.22 2002-12-29 17:56:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.23 2002-12-29 21:21:18 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -138,15 +138,8 @@ void do_connect(connection_attributes *attrs)
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (fd < 0) {
 			/* ignore this address if it is not supported */
-			if (unsupported_sock_error(errno)) {
-				/* maybe tell the user that this behaviour is 
-				 * related to a weird implementation of 
-				 * getaddrinfo on his system? */
-				warn("cannot create the socket: %s", 
-				     strerror(errno));
-				errno = 0;
+			if (unsupported_sock_error(errno))
 				continue;
-			} 
 			fatal("cannot create the socket: %s", strerror(errno));
 		}
 		
