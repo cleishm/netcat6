@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.25 2003-01-23 16:29:15 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.26 2003-01-24 14:13:10 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -50,9 +50,11 @@ static int establish_connection(int mode, const connection_attributes *attrs,
 static int connection_main(const connection_attributes *attrs,
                            int fd, int socktype);
 static void setup_local_stream(const connection_attributes *attrs,
-                               io_stream* local);
+                               io_stream* local,
+                               circ_buf* remote_buffer, circ_buf* local_buffer);
 static void setup_remote_stream(const connection_attributes *attrs,
-                                int fd, int socktype, io_stream* remote);
+                                int fd, int socktype, io_stream* remote,
+                                circ_buf* remote_buffer,circ_buf* local_buffer);
 static int run_transfer(io_stream *remote_stream, io_stream *local_stream);
 static void i18n_init(void);
 
@@ -139,15 +141,12 @@ static int connection_main(const connection_attributes *attrs,
 	cb_init(&remote_buffer, ca_buffer_size(attrs));
 	cb_init(&local_buffer, ca_buffer_size(attrs));
 
-	/* initialise io streams */
-	io_stream_init(&remote_stream, "remote", &remote_buffer, &local_buffer);
-	io_stream_init(&local_stream, "local", &local_buffer, &remote_buffer);
-
 	/* setup remote stream */
-	setup_remote_stream(attrs, fd, socktype, &remote_stream);
+	setup_remote_stream(attrs, fd, socktype, &remote_stream,
+	                    &remote_buffer, &local_buffer);
 
 	/* setup local stream */
-	setup_local_stream(attrs, &local_stream);
+	setup_local_stream(attrs, &local_stream, &remote_buffer, &local_buffer);
 	
 	/* set remote mtu & nru */
 	ios_set_mtu(&remote_stream, ca_remote_MTU(attrs));
@@ -189,20 +188,21 @@ static int connection_main(const connection_attributes *attrs,
 
 
 static void setup_local_stream(const connection_attributes *attrs,
-                               io_stream* stream)
+                               io_stream* stream,
+                               circ_buf* remote_buffer, circ_buf* local_buffer)
 {
-	/* suppress unused attrs warning */
-	while (0&&attrs);
+	while (0&&attrs);   /* suppress unused attrs warning */
 	assert(attrs != NULL);
 	assert(stream != NULL);
 
-	ios_assign_stdio(stream);
+	ios_init_stdio(stream, "local", local_buffer, remote_buffer);
 }
 
 
 
 static void setup_remote_stream(const connection_attributes *attrs,
-                                int fd, int socktype, io_stream* stream)
+                                int fd, int socktype, io_stream* stream,
+                                circ_buf* remote_buffer, circ_buf* local_buffer)
 {
 	/* suppress unused attrs warning */
 	while (0&&attrs);
@@ -211,7 +211,8 @@ static void setup_remote_stream(const connection_attributes *attrs,
 	assert(socktype >= 0);
 	assert(stream != NULL);
 
-	ios_assign_socket(stream, fd, socktype);
+	ios_init_socket(stream, "remote", fd, socktype,
+	                remote_buffer, local_buffer);
 }
 
 

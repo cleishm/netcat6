@@ -31,39 +31,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.22 2003-01-20 23:03:05 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.23 2003-01-24 14:13:10 chris Exp $");
 
 
-
-void io_stream_init(io_stream *ios, const char* name,
-                    circ_buf *inbuf, circ_buf *outbuf)
-{
-	assert(ios != NULL);
-	assert(inbuf != NULL);
-	assert(outbuf != NULL);
-	assert(name != NULL);
-
-	ios->fd_in  = -1;
-	ios->fd_out = -1;
-	ios->socktype = 0;  /* unknown */
-
-	ios->buf_in  = inbuf;
-	ios->buf_out = outbuf;
-	ios->out_eof = FALSE;
-
-	ios->mtu = 0; /* unlimited */
-	ios->nru = 0; /* unlimited */
-
-	ios->half_close_suppress = FALSE;
-
-	ios->hold_time = -1; /* infinite */
-	timerclear(&(ios->read_closed));
-
-	ios->name = xstrdup(name);
-	ios->rcvd = 0;
-	ios->sent = 0;
-}
-
+static void ios_init(io_stream *ios, const char* name,
+		     int fd_in, int fd_out, int socktype,
+                     circ_buf *inbuf, circ_buf *outbuf);
 
 
 #ifndef NDEBUG
@@ -82,43 +55,78 @@ static void ios_assert(const io_stream *ios)
 
 
 
+void ios_init_socket(io_stream *ios, const char* name,
+		     int fd, int socktype,
+                     circ_buf *inbuf, circ_buf *outbuf)
+{
+	assert(fd >= 0);
+
+	ios_init(ios, name, fd, fd, socktype, inbuf, outbuf);
+}
+
+
+
+void ios_init_stdio(io_stream *ios, const char* name,
+		    circ_buf *inbuf, circ_buf *outbuf)
+{
+	int fd_in, fd_out;
+
+	if ((fd_in  = dup(STDIN_FILENO)) < 0) 
+		fatal(_("error in duplicating stdin file descriptor: %s"), 
+		      strerror(errno));
+	
+	if ((fd_out = dup(STDOUT_FILENO)) < 0) 
+		fatal(_("error in duplicating stdout file descriptor: %s"), 
+		      strerror(errno));
+
+	/* pretend stdio is a stream socket */
+	ios_init(ios, name, fd_in, fd_out, SOCK_STREAM, inbuf, outbuf);
+}
+
+
+
+static void ios_init(io_stream *ios, const char* name,
+		     int fd_in, int fd_out, int socktype,
+                     circ_buf *inbuf, circ_buf *outbuf)
+{
+	assert(ios    != NULL);
+	assert(inbuf  != NULL);
+	assert(outbuf != NULL);
+	assert(name   != NULL);
+
+	ios->fd_in  = fd_in;
+	ios->fd_out = fd_out;
+	ios->socktype = socktype;
+
+	ios->flags = IOS_OK;
+
+	ios->buf_in  = inbuf;
+	ios->buf_out = outbuf;
+
+	ios->mtu = 0; /* unlimited */
+	ios->nru = 0; /* unlimited */
+
+	ios->half_close_suppress = FALSE;
+
+	ios->idle_timeout = -1;  /* infinite  */
+	gettimeofday(&(ios->last_active), NULL);
+
+	ios->hold_time = -1;     /* infinite */
+	timerclear(&(ios->read_eof));
+
+	ios->name = xstrdup(name);
+	ios->rcvd = 0;
+	ios->sent = 0;
+}
+
+
+
 void io_stream_destroy(io_stream *ios)
 {
 	ios_assert(ios);
 	
 	ios_shutdown(ios, SHUT_RDWR);
 	free(ios->name);
-}
-
-
-
-void ios_assign_socket(io_stream *ios, int fd, int socktype)
-{
-	ios_assert(ios);
-	assert(fd >= 0);
-
-	ios->fd_in  = fd;
-	ios->fd_out = fd;
-	ios->socktype = socktype;
-}
-
-
-
-void ios_assign_stdio(io_stream *ios)
-{
-	assert(ios != NULL);
-	ios_assert(ios);
-
-	if ((ios->fd_in  = dup(STDIN_FILENO)) < 0) 
-		fatal(_("error in duplicating stdin file descriptor: %s"), 
-		      strerror(errno));
-	
-	if ((ios->fd_out = dup(STDOUT_FILENO)) < 0) 
-		fatal(_("error in duplicating stdout file descriptor: %s"), 
-		      strerror(errno));
-
-	/* pretend stdio is a stream socket */
-	ios->socktype = SOCK_STREAM;
 }
 
 
@@ -159,40 +167,74 @@ int ios_schedule_write(io_stream *ios)
 struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 {
 	struct timeval now;
+	struct timeval* tvp = NULL;
 
 	ios_assert(ios);
 	assert(tv != NULL);
 
-	/* no timeout if read is still open or hold time is infinite */
-	if (is_read_open(ios) || ios->hold_time < 0)
-		return NULL;
+	/* no idle timeout if idle_timeout is infinite */
+	if (ios->idle_timeout > 0) {
+		/* check if the idle timeout has been triggered */
+		gettimeofday(&now, NULL);
 
-	if (ios->hold_time == 0) {
-		/* instant timeout */
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("%s hold timed out (instant)"), ios->name);
-		timerclear(tv);
-		return tv;
+		/* calculate the offset from now until the expiry */
+		timersub(&(ios->last_active), &now, tv);
+		tv->tv_sec += ios->idle_timeout;
+		tvp = tv;
+
+		/* check if the timeout has expired */
+		if (istimerexpired(tv)) {
+			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				warn(_("%s idle timed out"), ios->name);
+			ios->flags |= IOS_IDLE_TIMEDOUT;
+			timerclear(tv);
+		}
+	}
+	
+	/* no hold timeout if read hasn't seen EOF or hold time is infinite */
+	if ((ios->flags & IOS_INPUT_EOF) && (ios->hold_time >= 0)) {
+		struct timeval hold_tv;
+		/* check if the hold timeout has been triggered */
+
+		if (ios->hold_time == 0) {
+			/* instant timeout */
+			/* set flag */
+			ios->flags |= IOS_HOLD_TIMEDOUT;
+			timerclear(tv);
+		} else {
+			/* calculate the offset from now until expiry */
+			if (tvp == NULL)
+				gettimeofday(&now, NULL);
+			timersub(&(ios->read_eof), &now, &hold_tv);
+			hold_tv.tv_sec += ios->hold_time;
+		}
+
+		/* check if the timeout has expired */
+		if (istimerexpired(&hold_tv)) {
+			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				warn(_("%s hold timed out"), ios->name);
+			/* set flag */
+			ios->flags |= IOS_HOLD_TIMEDOUT;
+			timerclear(&hold_tv);
+		}
+
+		/* update tv if required */
+		if (tvp == NULL || timercmp(&hold_tv, tv, <)) {
+			*tv = hold_tv;
+			tvp = tv;
+		}
 	}
 
-	/* calculate the offset from now until the hold_time expiry */
-	gettimeofday(&now, NULL);
-	now.tv_sec -= ios->hold_time;
-	timersub(&(ios->read_closed), &now, tv);
-
-	if (tv->tv_sec < 0) {
-		/* timeout has expired */
-		timerclear(tv);
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn(_("%s hold timed out"), ios->name);
 #ifndef NDEBUG
-	} else if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+	if (tvp && !istimerexpired(tvp) &&
+	    is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+	{
 		warn("%s timer expires in %d.%06d",
-		     ios->name, tv->tv_sec, tv->tv_usec);
-#endif
+		     ios->name, tvp->tv_sec, tvp->tv_usec);
 	}
+#endif
 
-	return tv;
+	return tvp;
 }
 
 
@@ -219,12 +261,24 @@ ssize_t ios_read(io_stream *ios)
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("read %d bytes from %s", rr, ios->name);
 #endif
+		/* record that the ios was active */
+		gettimeofday(&(ios->last_active), NULL);
+
 		return rr;
 	} else if (rr == 0) {
 		/* read eof - close read stream */
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn(_("read eof from %s"), ios->name);
+
+		/* record the time eof was received */
+		gettimeofday(&(ios->read_eof), NULL);
+
+		/* set the eof flag */
+		ios->flags |= IOS_INPUT_EOF;
+
+		/* shutdown the read endpoint */
 		ios_shutdown(ios, SHUT_RD);
+
 		return IOS_EOF;
 	} else if (errno == EAGAIN) {
 		/* not ready? */
@@ -262,9 +316,13 @@ ssize_t ios_write(io_stream *ios)
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("wrote %d bytes to %s", rr, ios->name);
 #endif
-		/* shutdown the write if buf_out is empty and out_eof is set */
-		if (ios->out_eof && cb_is_empty(ios->buf_out))
+		/* record that the ios was active */
+		gettimeofday(&(ios->last_active), NULL);
+
+		/* shutdown the write if buf_out is empty and out eof is set */
+		if ((ios->flags & IOS_OUTPUT_EOF) && cb_is_empty(ios->buf_out))
 			ios_shutdown(ios, SHUT_WR);
+
 		return rr;
 	} else if (rr == 0) {
 		/* shouldn't happen? */
@@ -290,7 +348,7 @@ void ios_write_eof(io_stream* ios)
 {
 	ios_assert(ios);
 	
-	ios->out_eof = TRUE;
+	ios->flags |= IOS_OUTPUT_EOF;
 	/* check if the buffer is already empty */
 	if (cb_is_empty(ios->buf_out))
 		ios_shutdown(ios, SHUT_WR);
@@ -307,11 +365,8 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_in < 0 && ios->fd_out < 0)
 			return;
 
-		if (ios->fd_in >= 0) {
+		if (ios->fd_in >= 0)
 			close(ios->fd_in);
-			/* record the read shutdown time */
-			gettimeofday(&(ios->read_closed), NULL);
-		}
 		/* if the same fd is input and output, don't close twice */
 		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
 			close(ios->fd_out);
@@ -337,8 +392,6 @@ void ios_shutdown(io_stream* ios, int how)
 				warn(_("closed %s for read"), ios->name);
 		}
 		ios->fd_in = -1;
-		/* record the read shutdown time */
-		gettimeofday(&(ios->read_closed), NULL);
 	} else {
 		assert(how == SHUT_WR);		
 		/* close the output */

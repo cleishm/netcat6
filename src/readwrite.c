@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.38 2003-01-23 15:39:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.39 2003-01-24 14:13:10 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -47,7 +47,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	fd_set read_fdset, write_fdset;
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
-	bool hold_timedout = FALSE;
+	bool timedout1 = FALSE, timedout2 = FALSE;
 	int retval = 0;
 	
 	/* check function arguments */
@@ -102,37 +102,54 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (max_fd == -1)
 			break;
 
-		if (!hold_timedout) {
-			/* check timeouts */
+		/* check timeouts */
+		tvp1 = tvp2 = NULL;
+		if (!timedout1) {
 			tvp1 = ios_next_timeout(ios1, &tv1);
-			tvp2 = ios_next_timeout(ios2, &tv2);
 
 			/* handle timeouts */
-			if (tvp1 != NULL && istimerexpired(tvp1) == TRUE) {
+			if (ios_idle_timedout(ios1)) {
+				/* stop the readwrite loop */
+				retval = -1;
+				break;
+			}
+			if (ios_hold_timedout(ios1)) {
 				/* stop reading from the other endpoint */
 				ios_shutdown(ios2, SHUT_RD);
 				/* stop sending to this endpoint */
 				ios_shutdown(ios1, SHUT_WR);
-				hold_timedout = TRUE;
+				timedout1 = TRUE;
 				continue;
 			}
-			if (tvp2 != NULL && istimerexpired(tvp2) == TRUE) {
+		}
+		if (!timedout2) {
+			tvp2 = ios_next_timeout(ios2, &tv2);
+
+			/* handle timeouts */
+			if (ios_idle_timedout(ios2)) {
+				/* stop the readwrite loop */
+				retval = -1;
+				break;
+			}
+			if (ios_hold_timedout(ios2)) {
 				/* stop reading from the other endpoint */
 				ios_shutdown(ios1, SHUT_RD);
 				/* stop sending to this endpoint */
 				ios_shutdown(ios2, SHUT_WR);
-				hold_timedout = TRUE;
+				timedout2 = TRUE;
 				continue;
 			}
 		}
 
 		/* select smallest timeout for select */
-		if (tvp1 != NULL && tvp2 != NULL)
-			tvp = timercmp(tvp1, tvp2, <) ? tvp1 : tvp2;
-		else if (tvp1 != NULL)
-			tvp = tvp1;
-		else
+		if (tvp1 != NULL) {
+			if (tvp2 != NULL)
+				tvp = timercmp(tvp1, tvp2, <) ? tvp1 : tvp2;
+			else
+				tvp = tvp1;
+		} else {
 			tvp = tvp2;  /* tvp2 may be NULL */
+		}
 
 		/* blocking select with timeout */		
 		rr = select(max_fd + 1, &read_fdset, &write_fdset, NULL, tvp);

@@ -26,38 +26,51 @@
 #include "circ_buf.h"
 #include <sys/time.h>
 
+
+/* status flags */
+#define IOS_OK			 00
+#define IOS_INPUT_EOF		 01
+#define IOS_OUTPUT_EOF		 02
+#define IOS_HOLD_TIMEDOUT	 04
+#define IOS_IDLE_TIMEDOUT	010
+
+
 typedef struct io_stream_t
 {
 	int fd_in;         /* for reading */
 	int fd_out;        /* for writing */
-	int socktype;      /* the type of the socket */
+	int socktype;      /* type of the socket */
 
-	circ_buf* buf_in;  /* the input buffer */
-	circ_buf* buf_out; /* the output buffer */
-	bool out_eof;      /* true if no more data will be added
-			    * to the output buffer */
+	int flags;         /* flags for status conditions */
+
+	circ_buf* buf_in;  /* input buffer */
+	circ_buf* buf_out; /* output buffer */
 
 	size_t mtu;        /* Maximum Transmition Unit */
 	size_t nru;        /* miNimum Receive Unit */
 
 	bool half_close_suppress; /* true if half-closes should be suppressed */
 
+	int idle_timeout;  /* time that the ios can idle for before timeout */
+	struct timeval last_active; /* the time the ios was last active */
+
 	int hold_time;     /* time to hold the stream open after read closes,
 	                    * -1 means hold indefinately */
-	struct timeval read_closed; /* the time that the read was closed */
-
-	char* name;       /* the name of this io stream (for logging) */
+	struct timeval read_eof;    /* the time that eof was read */
+	
+	char* name;        /* the name of this io stream (for logging) */
 	size_t rcvd;       /* bytes received */
 	size_t sent;       /* bytes sent */
 } io_stream;
 
 
-void io_stream_init(io_stream *ios, const char* name,
+void ios_init_socket(io_stream *ios, const char* name,
+		     int fd, int socktype,
+                     circ_buf *inbuf, circ_buf *outbuf);
+void ios_init_stdio(io_stream *ios, const char* name,
                     circ_buf *inbuf, circ_buf *outbuf);
-void io_stream_destroy(io_stream *ios);
 
-void ios_assign_socket(io_stream *ios, int fd, int socktype);
-void ios_assign_stdio(io_stream *ios);
+void io_stream_destroy(io_stream *ios);
 
 /* sets the Maximum Transmition Unit
  * this is the maximum amount that is sent in any write */
@@ -68,6 +81,9 @@ void ios_assign_stdio(io_stream *ios);
 
 /* sets half closes suppression */
 #define ios_suppress_half_close(IOS, B)	((IOS)->half_close_suppress = (B))
+
+/* sets the time (in sec) before an idle timeout occurs */
+#define ios_set_idle_timeout(IOS, T)	((IOS)->idle_timeout = (T))
 
 /* sets the time (in sec) after read is shutdown that timeout occurs */
 #define ios_set_hold_timeout(IOS, T)	((IOS)->hold_time = (T))
@@ -81,6 +97,10 @@ int ios_schedule_write(io_stream *ios);
 /* writes the interval to the next timeout into tv and returns a pointer
  * to tv.  If no timeout is active, NULL is returned and tv is unchanged. */
 struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv);
+
+/* check what sort of timeout has occured */
+#define ios_idle_timedout(IOS)		((IOS)->flags & IOS_IDLE_TIMEDOUT)
+#define ios_hold_timedout(IOS)		((IOS)->flags & IOS_HOLD_TIMEDOUT)
 
 
 /* read into the input buffer.
