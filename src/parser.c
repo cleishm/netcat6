@@ -86,7 +86,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			attrs->local_address.service = xstrdup(optarg);
 			break;	
 		case 'q':
-			set_flag(TIMEOUT_MODE);
 			parse_and_set_timeouts(optarg, attrs);
 			break;	
 		case 's':	

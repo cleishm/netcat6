@@ -25,16 +25,13 @@
 #include "misc.h"
 
 #define NUMERIC_MODE		0x00000001
-#define USE_UDP			0x00000002
-#define STRICT_IPV6		0x00000004
-#define DONT_REUSE_ADDR      	0x00000008
-#define FILE_TRANSFER_MODE	0x00000010
-#define TIMEOUT_MODE		0x00000020
-#define LISTEN_MODE		0x00000040
-#define CONNECT_MODE		0x00000080
-#define CONTINUOUS_MODE		0x00000100
-#define VERBOSE_MODE		0x00000200
-#define VERY_VERBOSE_MODE	0x00000400
+#define STRICT_IPV6		0x00000002
+#define DONT_REUSE_ADDR      	0x00000004
+#define FILE_TRANSFER_MODE	0x00000008
+#define LISTEN_MODE		0x00000010
+#define CONNECT_MODE		0x00000020
+#define VERBOSE_MODE		0x00000040
+#define VERY_VERBOSE_MODE	0x00000080
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs);
 bool is_flag_set(unsigned long mask);
