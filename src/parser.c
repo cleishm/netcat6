@@ -30,8 +30,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.15 2002-12-28 20:54:22 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.16 2002-12-29 14:22:27 chris Exp $");
 
 
 static unsigned long flags_mask;
@@ -47,16 +48,27 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	int c, verbosity_level = 0;
 	bool listen_mode = FALSE;
 	bool file_transfer = FALSE;
+	int option_index = 0;
+	static struct option long_options[] = {
+		{"help",           FALSE, 0, 'h'},
+		{"listen",         FALSE, 0, 'l'},
+		{"port",           TRUE,  0, 'p'},
+		{"hold-timeouts",  TRUE,  0, 'q'},
+		{"address",        TRUE,  0, 's'},
+		{"udp",            FALSE, 0, 'u'},
+		{"timeout",        TRUE,  0, 'w'},
+		{"transfer",       FALSE, 0, 'x'},
+		{0, 0, 0, 0}
+	};
 
 	/* set socket types to default values */
 	attrs->proto = PROTO_UNSPECIFIED;
 	attrs->type  = TCP_SOCKET;
 
-	/* initialize to zero for correct use of getopt */
-	opterr = 0;
-
 	/* option recognition loop */
-	while ((c = getopt(argc, argv, "46hlnp:q:s:t:uvx")) >= 0) {
+	while ((c = getopt_long(argc, argv, "46hlnp:q:s:t:uvx",
+	                        long_options, &option_index)) >= 0)
+	{
  		switch(c) {
 		case '4':
 			if (attrs->proto != PROTO_UNSPECIFIED) 
@@ -95,9 +107,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		case 's':	
 			attrs->local_address.address = xstrdup(optarg);
 			break;	
-		case 't':
-			attrs->connect_timeout = safe_atoi(optarg);
-			break;
 		case 'u':	
 			attrs->type = UDP_SOCKET;
 			break;
@@ -106,12 +115,17 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				set_flag(VERY_VERBOSE_MODE); 
 			set_flag(VERBOSE_MODE); 
 			break;
+		case 'w':
+			attrs->connect_timeout = safe_atoi(optarg);
+			break;
 		case 'x':	
 			file_transfer = TRUE;
 			break;
-		default:	
+		case '?':
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
+		default:	
+			fatal("getopt returned unexpected character 0%o\n", c);
 		}
 	}
 	
@@ -187,24 +201,25 @@ static void print_usage(FILE *fp)
 {
 	const char *program_name = get_program_name();
 
-	fprintf(fp, "\nUsage:\n"
+	fprintf(fp, "Usage:\n"
 "\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
 "\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
 "Recognized options are:\n", program_name, program_name);
 	fprintf(fp,	
-"    -4         Use only IPv4\n"
-"    -6         Use only IPv6\n"
-"    -d         Disable SO_REUSEADDR socket option (only in listen mode)\n"
-"    -h         Display help\n"
-"    -l         Listen mode, for inbound connects\n"
-"    -n         Numeric-only IP addresses, no DNS\n" 
-"    -p port    Local source port\n"
-"    -q n1[:n2] Hold timeouts\n"
-"    -s addr    Local source address\n"
-"    -t sec     Timeout for connects/accepts\n"
-"    -u         Require use of UDP\n"
-"    -v         Increase program verbosity (call twice for max verbosity)\n"
-"    -x         File transfer mode\n\n");
+"    -4                Use only IPv4\n"
+"    -6                Use only IPv6\n"
+"    -d                Disable SO_REUSEADDR socket option (only in listen mode)\n"
+"    -h, --help        Display help\n"
+"    -l, --listen      Listen mode, for inbound connects\n"
+"    -n                Numeric-only IP addresses, no DNS\n" 
+"    -p, --port=PORT   Local source port\n"
+"    -q, --hold-timeouts=SEC1[:SEC2]  Hold timeouts\n"
+"    -s, --address=ADDRESS  Local source address\n"
+"    -u, --udp         Require use of UDP\n"
+"    -v                Increase program verbosity (call twice for max verbosity)\n"
+"    -w, --timeout=SECONDS  Timeout for connects/accepts\n"
+"    -x, --transfer    File transfer mode\n"
+"\n");
 }
 
 
