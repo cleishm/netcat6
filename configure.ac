@@ -55,7 +55,7 @@ dnl Configure IPv6 support
 ipv6=
 AC_ARG_ENABLE(ipv6,
   AC_HELP_STRING(
-    [--disable-ipv6],[Disable IPv6 support]),
+    [--disable-ipv6],[disable IPv6 support]),
   [case "${enable_ipv6}" in
   no)
     AC_MSG_NOTICE([Disabling IPv6 at user request])
@@ -95,7 +95,7 @@ fi
 AC_ARG_ENABLE(stack-guess,
   AC_HELP_STRING(
     [--disable-stack-guess],
-    [Disable guess of IPv6 stack]
+    [disable guess of IPv6 stack]
   ),
   [case "${enable_stack_guess}" in
   yes)  
@@ -162,7 +162,7 @@ dnl Add extra flags if in debug mode
 AC_ARG_ENABLE(debug,
   AC_HELP_STRING(
     [--enable-debug],
-    [Enable debugging - useful only for developers]
+    [enable debugging - useful only for developers]
   ),
   [case "${enable_debug}" in
   yes)
