@@ -1,0 +1,32 @@
+
+I have to thank (in alphabetical order by email address):
+
+
+Leonardo <benkj _at_ gmx.it> for sending a bug report and a patch for a 
+	compilation problem with openbsd.
+    
+Mark Doll <doll _at_ tm.uka.de> for sending a bug report and a patch for a
+	missing option in the help printed by the nc6 -h command. He has also 
+	provided precious help for defining the future development roadmap of 
+	netcat6 (see the TODO file included in the distribution).
+
+<hendy _at_ team-teso.org> for sending a bug report and a suggestion to fix
+	a weird bug (due to a typo) on the first release of netcat6.
+
+Kunitake Koichi <kunitake _at_ linux-ipv6.org> for sending a bug report and a 
+	patch for a compilation problem with glibc-2.1.3.
+
+Felix von Leitner <leitner _at_ fefe.de> for sending a bug report and a 
+	suggestion to fix a compilation problem with old libraries without 
+	IPV6_V6ONLY support.
+
+<locasciullo _at_ yahoo.it> for sending a bug report for the same compilation 
+	problem reported by Felix von Leitner.
+
+Peter Bieringer <pb _at_ bieringer.de> for providing the .spec file included
+	in nc6, and his invaluable help in many chances.
+
+
+
+						Mauro Tortonesi
+						<mauro _at_ ferrara.linux.it>

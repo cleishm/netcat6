@@ -210,7 +210,7 @@ static int tcp_bind_to(sa_family_t family, unsigned int flags,
 	memcpy(&src, res->ai_addr, res->ai_addrlen);	
 	freeaddrinfo(res);
 
-	fd = socket(src.ss_family, SOCK_STREAM, 0);
+	fd = socket(res->ai_family, SOCK_STREAM, 0);
 	if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
 #ifdef IPV6_V6ONLY

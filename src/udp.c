@@ -186,7 +186,7 @@ static int udp_bind_to(sa_family_t family, unsigned int flags,
 	
 	freeaddrinfo(res);
 
-	fd = socket(src.ss_family, SOCK_DGRAM, 0);
+	fd = socket(res->ai_family, SOCK_DGRAM, 0);
 	if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
 #ifdef IPV6_V6ONLY
