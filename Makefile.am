@@ -15,11 +15,10 @@ AUX_DIST_EXTRA		= $(auxdir)/in6_func_getaddrinfo.m4 \
 EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
 
 AUTOMAKE_OPTIONS 	= foreign dist-bzip2
+ACLOCAL_AMFLAGS		= -I $(auxdir)
 SUBDIRS 		= docs src #config 
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
 			  config.status config.log $(AUX_DIST)
-
-ACLOCAL			= aclocal -I $(auxdir)
 
 dist-hook:
 	cd $(distdir)
