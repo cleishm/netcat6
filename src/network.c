@@ -516,7 +516,7 @@ void do_listen(const address *remote, const address *local,
 		    (remote->address == NULL && remote->port == NULL) ||
 		    (is_allowed((struct sockaddr*)&dest, remote, attrs) == TRUE)) {
 
-			if (attrs->type == SOCK_DGRAM) {
+			if (attrs->type == UDP_SOCKET) {
 				/* connect the socket to ensure we only talk with this client */
 				err = connect(ns, (struct sockaddr*)&dest, destlen);
 				if (err != 0)
