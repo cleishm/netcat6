@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.34 2003-01-13 20:30:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.35 2003-01-14 20:28:18 chris Exp $");
 
 
 int do_connect(const connection_attributes *attrs, int *rt_socktype)
@@ -195,10 +195,19 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			/* get the local IP address of the connection */
 			err = getaddrinfo(local->address, local->service,
 			                  &hints, &src_res);
-			if (err != 0)
-				fatal("forward host lookup failed "
-				      "for source address %s: %s",
-				      local->address, gai_strerror(err));
+			if (err != 0) {
+				if (verbose_mode == TRUE) {
+					warn("bind to source addr/port failed "
+					     "when connecting to "
+					     "%s [%s] %s (%s): %s",
+					     hbuf_rev, hbuf_num,
+					     sbuf_num, sbuf_rev,
+					     gai_strerror(err));
+				}
+				close(fd);
+				fd = -1;
+				continue;
+			}
 
 			/* check the results of getaddrinfo */
 			assert(src_res != NULL);
