@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.16 2002-12-24 20:20:31 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.17 2002-12-24 21:05:37 chris Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
@@ -144,8 +144,11 @@ void do_connect(connection_attributes *attrs)
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
 		/* only accept socktypes we can handle */
-		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
+		if (ptr->ai_socktype != SOCK_STREAM &&
+		    ptr->ai_socktype != SOCK_DGRAM)
+		{
 			continue;
+		}
 
 #if defined(PF_INET6) && !defined(ENABLE_IPV6)
 		/* skip IPv6 if disabled */
@@ -158,8 +161,9 @@ void do_connect(connection_attributes *attrs)
 
 		/* get the numeric name for this destination as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		                  hbuf_num, sizeof(hbuf_num), sbuf_num, 
-		                  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		                  hbuf_num, sizeof(hbuf_num),
+				  sbuf_num, sizeof(sbuf_num),
+				  NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
 		if (err != 0)
@@ -171,8 +175,8 @@ void do_connect(connection_attributes *attrs)
 		{
 			/* get the real name for this destination as a string */
 			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-			                  hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
-			                  sizeof(sbuf_rev), 0);
+			                  hbuf_rev, sizeof(hbuf_rev),
+					  sbuf_rev, sizeof(sbuf_rev), 0);
 
 			if (err != 0)
 				warn("inverse lookup failed for %s: %s",
@@ -200,8 +204,8 @@ void do_connect(connection_attributes *attrs)
 		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on,
-					 sizeof(on));
+			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+			                 &on, sizeof(on));
 			if (err < 0) warn("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
@@ -220,8 +224,9 @@ void do_connect(connection_attributes *attrs)
 			if (is_flag_set(NUMERIC_MODE) == TRUE) 
 				hints.ai_flags |= AI_NUMERICHOST;
 		
-			/* get the IP address of the local end of the connection */
-			err = getaddrinfo(local->address, local->service, &hints, &src_res);
+			/* get the local IP address of the connection */
+			err = getaddrinfo(local->address, local->service,
+			                  &hints, &src_res);
 			if (err != 0)
 				fatal("forward host lookup failed for source address %s: %s",
 				      local->address, gai_strerror(err));
@@ -229,23 +234,28 @@ void do_connect(connection_attributes *attrs)
 			/* check the results of getaddrinfo */
 			assert(src_res != NULL);
 
-			/* try binding to any of the addresses returned by getaddrinfo */
-			for (src_ptr = src_res; src_ptr; src_ptr = src_ptr->ai_next) {
-				err = bind(fd, src_ptr->ai_addr, src_ptr->ai_addrlen);
+			/* try binding to any of the addresses */
+			for (src_ptr = src_res;
+			     src_ptr;
+			     src_ptr = src_ptr->ai_next)
+			{
+				err = bind(fd,
+				           src_ptr->ai_addr,
+					   src_ptr->ai_addrlen);
 				if (err == 0)
 					break;
 			}
 			
 			if (err != 0) {
-				/* make sure we have tried all the addresses returned by 
-				 * getaddrinfo */
+				/* make sure we have tried all addresses */
 				assert(src_ptr == NULL);
 				
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
 					warn("bind to source addr/port failed "
-				             "when connecting %s [%s] %s (%s): %s",
-					     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
-					     strerror(errno));
+					     "when connecting %s [%s] %s (%s): %s",
+					      hbuf_rev, hbuf_num,
+					      sbuf_num, sbuf_rev,
+					      strerror(errno));
 				}
 				freeaddrinfo(src_res);
 				close(fd);
@@ -261,7 +271,8 @@ void do_connect(connection_attributes *attrs)
 		if (err != 0) {
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("%s [%s] %s (%s): %s",
-				     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
+				     hbuf_rev, hbuf_num,
+				     sbuf_num, sbuf_rev, strerror(errno));
 			}
 			close(fd);
 			fd = -1;
@@ -277,7 +288,7 @@ void do_connect(connection_attributes *attrs)
 	
 	/* if the connection failed, output an error message */
 	if (ptr == NULL) {
-		/* if a connection was attempted, an error has already been output */
+		/* if a connection was attempted, an error has been output */
 		if (connect_attempted == FALSE)
 			fatal("forward lookup returned no usable socket types");
 		exit(EXIT_FAILURE);
@@ -285,7 +296,9 @@ void do_connect(connection_attributes *attrs)
 
 	/* let the user know the connection has been established */
 	if (is_flag_set(VERBOSE_MODE)) {
-		warn("%s [%s] %s (%s) open", hbuf_rev, hbuf_num, sbuf_num, sbuf_rev);
+		warn("%s [%s] %s (%s) open",
+		     hbuf_rev, hbuf_num,
+		     sbuf_num, sbuf_rev);
 	}
 
 	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
@@ -413,8 +426,11 @@ void do_listen(connection_attributes *attrs)
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
 		/* only use socktypes we can handle */
-		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
+		if (ptr->ai_socktype != SOCK_STREAM &&
+		    ptr->ai_socktype != SOCK_DGRAM)
+		{
 			continue;
+		}
 
 #if defined(PF_INET6) && !defined(ENABLE_IPV6)
 		/* skip IPv6 if disabled */
@@ -424,8 +440,9 @@ void do_listen(connection_attributes *attrs)
 
 		/* get the numeric name for this source as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		                  hbuf_num, sizeof(hbuf_num), sbuf_num, 
-		                  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		                  hbuf_num, sizeof(hbuf_num),
+				  sbuf_num, sizeof(sbuf_num),
+				  NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
 		if (err != 0)
@@ -444,7 +461,8 @@ void do_listen(connection_attributes *attrs)
 		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
+			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+			                 &on, sizeof(on));
 			if (err < 0) perror("error with sockopt IPV6_V6ONLY");
 		}
 #endif 
@@ -453,7 +471,8 @@ void do_listen(connection_attributes *attrs)
 		if (!(is_flag_set(DONT_REUSE_ADDR) == TRUE)) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+			                 &on, sizeof(on));
 			if (err < 0) perror("error with sockopt SO_REUSEADDR");
 		}
 
@@ -466,10 +485,10 @@ void do_listen(connection_attributes *attrs)
 			continue;
 		}
 
-		/* for stream based sockets, the socket needs to listen for incoming
+		/* for stream based sockets, we need to listen for incoming
 		 * connections. the backlog parameter is set to 5 for backward
-		 * compatibility (it seems that at least some BSD-derived system limit
-		 * the backlog parameter to this value). */
+		 * compatibility (it seems that at least some BSD-derived
+		 * system limit the backlog parameter to this value). */
 		if (ptr->ai_socktype == SOCK_STREAM) {
 			err = listen(fd, 5);
 			if (err != 0)
@@ -482,7 +501,8 @@ void do_listen(connection_attributes *attrs)
 			     hbuf_num, sbuf_num, strerror(errno));
 
 		/* add fd to fd_socktypes (just add to the head of the list) */
-		fd_socktypes = add_fd_socktype(fd_socktypes, fd, ptr->ai_socktype);
+		fd_socktypes =
+			add_fd_socktype(fd_socktypes, fd, ptr->ai_socktype);
 
 		/* add fd to accept_fdset */
 		FD_SET(fd, &accept_fdset);
@@ -525,12 +545,13 @@ void do_listen(connection_attributes *attrs)
 
 		destlen = sizeof(dest);	
 
-		/* for stream sockets we can simply accept a new connection, while for 
-		 * dgram sockets we have to use MSG_PEEK to determine the sender */
+		/* for stream sockets we accept a new connection, whereas for
+		 * dgram sockets we use MSG_PEEK to determine the sender */
 		if (socktype == SOCK_STREAM) {
 			ns = accept(fd, (struct sockaddr *)&dest, &destlen);
 			if (ns < 0)
-				fatal("cannot accept connection: %s", strerror(errno));
+				fatal("cannot accept connection: %s",
+				      strerror(errno));
 		} else {
 			/* this is checked when binding listen sockets */
 			assert(socktype == SOCK_DGRAM);
@@ -538,7 +559,8 @@ void do_listen(connection_attributes *attrs)
 			err = recvfrom(fd, NULL, 0, MSG_PEEK,
 			               (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
-				fatal("cannot recv from socket: %s", strerror(errno));
+				fatal("cannot recv from socket: %s",
+				      strerror(errno));
 
 			ns = dup(fd);
 			if (ns < 0)
@@ -554,7 +576,8 @@ void do_listen(connection_attributes *attrs)
 			/* find out what address the connection was to */
 			err = getsockname(ns, (struct sockaddr *)&src, &srclen);
 			if (err < 0)
-				fatal("getsockname failed: %s", strerror(errno));
+				fatal("getsockname failed: %s",
+				      strerror(errno));
 
 			/* get the numeric name for this source as a string */
 			err = getnameinfo((struct sockaddr *)&src, srclen,
@@ -563,19 +586,23 @@ void do_listen(connection_attributes *attrs)
 
 			/* this should never happen */
 			if (err != 0)
-				fatal("getnameinfo failed: %s", gai_strerror(err));
+				fatal("getnameinfo failed: %s",
+				      gai_strerror(err));
 
 			/* get the numeric name for this client as a string */
 			err = getnameinfo((struct sockaddr *)&dest, destlen,
-			                  c_hbuf_num, sizeof(c_hbuf_num), c_sbuf_num, 
-					  sizeof(c_sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+			                  c_hbuf_num, sizeof(c_hbuf_num),
+					  c_sbuf_num, sizeof(c_sbuf_num),
+					  NI_NUMERICHOST | NI_NUMERICSERV);
 			if (err != 0)
-				fatal("getnameinfo failed: %s", gai_strerror(err));
+				fatal("getnameinfo failed: %s",
+				      gai_strerror(err));
 
 			/* get the real name for this client as a string */
 			if (is_flag_set(NUMERIC_MODE) == FALSE) {
-				err = getnameinfo((struct sockaddr *)&dest, destlen,
-				                  c_hbuf_rev, sizeof(c_hbuf_rev), NULL, 0, 0);
+				err = getnameinfo((struct sockaddr *)&dest,
+				        destlen, c_hbuf_rev, sizeof(c_hbuf_rev),
+					NULL, 0, 0);
 				if (err != 0)
 					warn("inverse lookup failed for %s: %s",
 				             c_hbuf_num, gai_strerror(err));
@@ -591,11 +618,14 @@ void do_listen(connection_attributes *attrs)
 		/* check if connections from this client are allowed */
 		if ((remote == NULL) ||
 		    (remote->address == NULL && remote->service == NULL) ||
-		    (is_allowed((struct sockaddr*)&dest, remote, attrs) == TRUE)) {
+		    (is_allowed((struct sockaddr*)&dest,remote,attrs) == TRUE))
+		{
 
 			if (socktype == SOCK_DGRAM) {
-				/* connect the socket to ensure we only talk with this client */
-				err = connect(ns, (struct sockaddr*)&dest, destlen);
+				/* connect the socket to ensure we only talk
+				 * with this client */
+				err = connect(
+					ns, (struct sockaddr*)&dest, destlen);
 				if (err != 0)
 					fatal("cannot connect datagram socket: %s",
 					      strerror(errno));
@@ -603,18 +633,21 @@ void do_listen(connection_attributes *attrs)
 
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("connect to %s (%s) from %s [%s] %s",
-				     hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				     hbuf_num, sbuf_num,
+				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 				warn("using %s socket",
-				     (socktype == SOCK_STREAM)? "stream":"datagram");
+				     (socktype == SOCK_STREAM)?
+				         "stream":"datagram");
 			}
 
 			break;
 		} else {
 			if (socktype == SOCK_DGRAM) {
-				/* the connection wasn't accepted - remove the queued packet */
+				/* the connection wasn't accepted - 
+				 * remove the queued packet */
 				recvfrom(ns, NULL, 0, 0, NULL, 0);
 			}
 			close(ns);
@@ -622,7 +655,8 @@ void do_listen(connection_attributes *attrs)
 
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("refused connect to %s (%s) from %s [%s] %s",
-				     hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				     hbuf_num, sbuf_num,
+				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 		}
 	}

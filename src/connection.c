@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.6 2002-12-24 19:50:56 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.7 2002-12-24 21:05:37 chris Exp $");
 
 
 void connection_attributes_init(connection_attributes *attrs)
@@ -37,8 +37,10 @@ void connection_attributes_init(connection_attributes *attrs)
 	attrs->proto = PROTO_UNSPECIFIED;
 	attrs->type = TCP_SOCKET;
 
-	memset((void*)&(attrs->remote_address), 0, sizeof(attrs->remote_address));
-	memset((void*)&(attrs->local_address), 0, sizeof(attrs->local_address));
+	memset((void*)&(attrs->remote_address), 0,
+	       sizeof(attrs->remote_address));
+	memset((void*)&(attrs->local_address), 0,
+	       sizeof(attrs->local_address));
 
 	io_stream_init(&(attrs->remote_stream));
 	io_stream_init(&(attrs->local_stream));
@@ -86,16 +88,18 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 	switch (attrs->type) {
 		case UDP_SOCKET:
 			ainfo->ai_protocol = IPPROTO_UDP;
-			/* strictly speaking, this should not be required since UDP
-			 * implies a DGRAM type socket.  However, on some systems 
-			 * getaddrinfo fails if we set IPPROTO_UDP and don't set this */
+			/* strictly speaking, this should not be required
+			 * since UDP implies a DGRAM type socket.  However, on
+			 * some systems getaddrinfo fails if we set
+			 * IPPROTO_UDP and don't set this */
 			ainfo->ai_socktype = SOCK_DGRAM;
 			break;
 		case TCP_SOCKET:
 			ainfo->ai_protocol = IPPROTO_TCP;
-			/* strictly speaking, this should not be required since TCP
-			 * implies a STREAM type socket.  However, on some systems 
-			 * getaddrinfo fails if we set IPPROTO_TCP and don't set this */
+			/* strictly speaking, this should not be required
+			 * since TCP implies a STREAM type socket.  However,
+			 * on some systems getaddrinfo fails if we set
+			 * IPPROTO_TCP and don't set this */
 			ainfo->ai_socktype = SOCK_STREAM;
 			break;
 		default:

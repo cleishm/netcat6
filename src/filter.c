@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.10 2002-12-24 19:50:56 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.11 2002-12-24 21:05:37 chris Exp $");
 
 
 
@@ -44,8 +44,11 @@ inline static bool is_address_ipv4_mapped(const struct sockaddr *a)
 	assert(a != NULL);
 	
 	if ((a->sa_family == AF_INET6) && 
-	    IN6_IS_ADDR_V4MAPPED(&(((const struct sockaddr_in6 *)a)->sin6_addr)))
+	    IN6_IS_ADDR_V4MAPPED(
+	        &(((const struct sockaddr_in6 *)a)->sin6_addr)))
+	{
 		ret = TRUE;
+	}
 			
 	return ret;
 }
@@ -71,10 +74,10 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		ap = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
 		memset(ap, 0, sizeof(struct sockaddr_in));
 		memcpy(&(((struct sockaddr_in *)ap)->sin_addr.s_addr),
-		       &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
-		       sizeof(struct in_addr));
+		    &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
+		    sizeof(struct in_addr));
 		((struct sockaddr_in *)ap)->sin_port =
-			((const struct sockaddr_in6 *)a)->sin6_port;
+		    ((const struct sockaddr_in6 *)a)->sin6_port;
 		aa = ap;
 	}
 
@@ -83,10 +86,10 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		bp = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
 		memset(bp, 0, sizeof(struct sockaddr_in));
 		memcpy(&(((struct sockaddr_in *)bp)->sin_addr.s_addr),
-		       &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
-		       sizeof(struct in_addr));
+		    &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
+		    sizeof(struct in_addr));
 		((struct sockaddr_in *)bp)->sin_port =
-			((const struct sockaddr_in6 *)b)->sin6_port;
+		    ((const struct sockaddr_in6 *)b)->sin6_port;
 		bb = bp;
 	}
 #endif
@@ -102,7 +105,7 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 #ifdef ENABLE_IPV6
 	if (aa->sa_family == AF_INET6) {
 		/* compare address part 
-		 * either address may be IN6ADDR_ANY, resulting in a good match */
+		 * either may be IN6ADDR_ANY, resulting in a good match */
 		if ((memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr,
 		            &in6addr_any, sizeof(struct in6_addr)) != 0) &&
 		    (memcmp(&((const struct sockaddr_in6 *)bb)->sin6_addr,
@@ -118,13 +121,14 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		return ((((const struct sockaddr_in6 *)aa)->sin6_port == 0) ||
 		        (((const struct sockaddr_in6 *)bb)->sin6_port == 0) ||
 		        (((const struct sockaddr_in6 *)aa)->sin6_port ==
-		         ((const struct sockaddr_in6 *)bb)->sin6_port))? TRUE : FALSE;
+		         ((const struct sockaddr_in6 *)bb)->sin6_port))?
+		         TRUE : FALSE;
 	}
 #endif
 
 	if (aa->sa_family == AF_INET) { 
 		/* compare address part
-		 * either address may be INADDR_ANY, resulting in a good match */
+		 * either may be INADDR_ANY, resulting in a good match */
 		if ((((const struct sockaddr_in *)aa)->sin_addr.s_addr != INADDR_ANY) &&
 		    (((const struct sockaddr_in *)bb)->sin_addr.s_addr != INADDR_ANY) &&
 		    (((const struct sockaddr_in *)aa)->sin_addr.s_addr != 
@@ -137,7 +141,8 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		return ((((const struct sockaddr_in *)aa)->sin_port == 0) ||
 		        (((const struct sockaddr_in *)bb)->sin_port == 0) ||
 		        (((const struct sockaddr_in *)aa)->sin_port == 
-		         ((const struct sockaddr_in *)bb)->sin_port))? TRUE : FALSE;
+		         ((const struct sockaddr_in *)bb)->sin_port))?
+		         TRUE : FALSE;
 	}
 	
 	/* for all other socket types, return false */

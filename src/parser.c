@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.13 2002-12-24 20:20:31 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.14 2002-12-24 21:05:37 chris Exp $");
 
 
 static unsigned long flags_mask;
@@ -60,12 +60,12 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
  		switch(c) {
 		case '4':
 			if (attrs->proto != PROTO_UNSPECIFIED) 
-				fatal("cannot specify the address family twice");
+			    fatal("cannot specify the address family twice");
 			attrs->proto = PROTO_IPv4;
 			break;
 		case '6':	
 			if (attrs->proto != PROTO_UNSPECIFIED) 
-				fatal("cannot specify the address family twice");
+			    fatal("cannot specify the address family twice");
 			attrs->proto = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
 			break;
@@ -119,9 +119,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	set_flag((listen_mode)? LISTEN_MODE : CONNECT_MODE);
 
 	/* setup file transfer depending on the mode */
-	if (file_transfer == TRUE) {
+	if (file_transfer == TRUE)
 		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
-	}
 
 	/* additional arguments are the remote address/service */
 	switch(argc) {
@@ -186,22 +185,22 @@ static void print_usage(FILE *fp)
 	const char *program_name = get_program_name();
 
 	fprintf(fp, "\nUsage:\n"
-		"\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
-		"\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
-		"Recognized options are:\n", program_name, program_name);
+"\t%s [-46hnux] [-p port] [-s addr] hostname port\n"
+"\t%s -l -p port [-s addr] [-46dhnux] [hostname] [port]\n\n"
+"Recognized options are:\n", program_name, program_name);
 	fprintf(fp,	
-		"    -4         Use only IPv4\n"
-		"    -6         Use only IPv6\n"
-		"    -d         Disable SO_REUSEADDR socket option (only in listen mode)\n"
-		"    -h         Display help\n"
-		"    -l         Listen mode, for inbound connects\n"
-		"    -n         Numeric-only IP addresses, no DNS\n" 
-		"    -p port    Local source port\n"
-		"    -q n1[:n2] Hold timeouts\n"
-		"    -s addr    Local source address\n"
-		"    -u         Require use of UDP\n"
-		"    -v         Increase program verbosity (call twice for max verbosity)\n"
-		"    -x         File transfer mode\n\n");
+"    -4         Use only IPv4\n"
+"    -6         Use only IPv6\n"
+"    -d         Disable SO_REUSEADDR socket option (only in listen mode)\n"
+"    -h         Display help\n"
+"    -l         Listen mode, for inbound connects\n"
+"    -n         Numeric-only IP addresses, no DNS\n" 
+"    -p port    Local source port\n"
+"    -q n1[:n2] Hold timeouts\n"
+"    -s addr    Local source address\n"
+"    -u         Require use of UDP\n"
+"    -v         Increase program verbosity (call twice for max verbosity)\n"
+"    -x         File transfer mode\n\n");
 }
 
 

@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.7 2002-12-24 20:08:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.8 2002-12-24 21:05:37 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
 	/* run the main read/write loop */
 	retval = readwrite(&(connection_attrs.remote_stream),
-	          &(connection_attrs.local_stream));
+	                   &(connection_attrs.local_stream));
 
 	/* cleanup */
 	connection_attributes_destroy(&connection_attrs);

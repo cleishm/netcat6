@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.5 2002-12-24 20:20:31 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.6 2002-12-24 21:05:37 chris Exp $");
 
 
 /* static void nonblock(int fd); */
@@ -42,7 +42,7 @@ void io_stream_init(io_stream *ios)
 
 	ios->fd_in = -1;
 	ios->fd_out = -1;
-	ios->socktype = 0; /* unknown */
+	ios->socktype = 0;  /* unknown */
 	ios->hold_time = 0; /* instant */
 	timerclear(&(ios->read_closed));
 }
@@ -85,7 +85,8 @@ void ios_assign_stdio(io_stream *ios)
 	/* nonblock(ios->fd_in); */
 	/* nonblock(ios->fd_out); */
 
-	ios->socktype = SOCK_STREAM;   /* pretend stdio is a stream socket */
+	/* pretend stdio is a stream socket */
+	ios->socktype = SOCK_STREAM;
 }
 
 
@@ -170,12 +171,13 @@ static void nonblock(int fd)
 {
 	int arg;
 	if ((arg = fcntl(fd, F_GETFL, 0)) < 0)
-		fatal("error reading file descriptor flags: %s", strerror(errno));
+		fatal("error reading file descriptor flags: %s",
+		      strerror(errno));
 
 	arg |= O_NONBLOCK;
 
 	if (fcntl(fd, F_SETFL, arg) < 0)
 		fatal("error setting flag O_NONBLOCK on file descriptor",
-			strerror(errno));
+		      strerror(errno));
 }
 */
