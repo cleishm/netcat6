@@ -11,10 +11,10 @@ AC_DEFUN([TYPE_SOCKLEN_T],
 [
   AC_CHECK_TYPE([socklen_t], ,[
     AC_MSG_CHECKING([for socklen_t equivalent])
-    AC_CACHE_VAL([cv_type_socklen_t_equiv],[
+    AC_CACHE_VAL([rsync_cv_type_socklen_t_equiv],[
       # Systems have either "struct sockaddr *" or
       # "void *" as the second argument to getpeername
-      cv_type_socklen_t_equiv=
+      rsync_cv_type_socklen_t_equiv=
       for arg2 in "struct sockaddr" void; do
         for t in int size_t unsigned long "unsigned long"; do
           AC_TRY_COMPILE([
@@ -26,18 +26,18 @@ int getpeername (int, $arg2 *, $t *);
 $t len;
 getpeername(0,0,&len);
           ],[
-            cv_type_socklen_t_equiv="$t"
+            rsync_cv_type_socklen_t_equiv="$t"
             break
           ])
         done
       done
 
-      if test "x$cv_type_socklen_t_equiv" = x; then
+      if test "x$rsync_cv_type_socklen_t_equiv" = x; then
         AC_MSG_ERROR([Cannot find a type to use in place of socklen_t])
       fi
     ])
-    AC_MSG_RESULT($cv_type_socklen_t_equiv)
-    AC_DEFINE_UNQUOTED(socklen_t, $cv_type_socklen_t_equiv,
+    AC_MSG_RESULT($rsync_cv_type_socklen_t_equiv)
+    AC_DEFINE_UNQUOTED(socklen_t, $rsync_cv_type_socklen_t_equiv,
             [type to use in place of socklen_t if not defined])
   ],[
 #include <sys/types.h>
