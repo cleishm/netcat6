@@ -22,6 +22,8 @@ nc6_SOURCES = \
   io_stream.c \
   connection.c
 
+localedir=$(datadir)/locale
+
 nc6_LDADD = $(top_builddir)/contrib/libnc6contrib.a @INTLLIBS@
 
 AM_CPPFLAGS = -I$(top_srcdir)/contrib -I../intl -DLOCALEDIR=\"$(localedir)\"

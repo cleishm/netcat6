@@ -153,21 +153,6 @@ GETADDRINFO_AI_ALL(
 )
 
 
-dnl Set the locale directory
-localedir=${datadir}/locale
-AC_ARG_WITH(localedir,
-  AC_HELP_STRING(
-    [--with-localedir=DIR],
-    [locale files [[DATADIR/locale]]]
-  ),[
-    localedir=$with_localedir
-  ],[
-    localedir=${datadir}/locale
-  ]
-)
-AC_SUBST(localedir)
-
-
 dnl The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then
   NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
