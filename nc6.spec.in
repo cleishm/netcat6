@@ -2,8 +2,8 @@ Summary: Reads and writes data across network connections using TCP or UDP with 
 Name: nc6
 Version: @VERSION@
 Release: 1
-Source0: ftp://ftp.ferrara.linux.it/pub/project6/sources/nc6-%{version}.tar.gz
-Packager: Mauro Tortonesi <mauro@ferrara.linux.it>
+Source0: ftp://ftp.deepspace6.net/pub/ds6/sources/nc6/nc6-%{version}.tar.gz
+Packager: Mauro Tortonesi <mauro@deepspace6.net>
 Copyright: GPL
 Group: Applications/Internet
 BuildRoot: %{_tmppath}/%{name}-root

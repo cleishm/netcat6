@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.36 2003-01-11 23:18:31 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.37 2003-01-13 19:48:44 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -326,30 +326,30 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	/* setup connection timeout */
 	if (connect_timeout != -1) {
-		ca_set_connection_timeout(attrs, connect_timeout);
+		ca_set_connect_timeout(attrs, connect_timeout);
 	}
 	
 	/* setup half close mode */
 	if (half_close == TRUE) {
 		/* keep remote open after half close */
-		ca_suppress_half_close_remote(attrs);
-		ca_set_hold_timeout_remote(attrs, -1);
+		ca_set_remote_half_close_suppress(attrs, TRUE);
+		ca_set_remote_hold_timeout(attrs, -1);
 	}
 
 	/* setup hold timeout */
-	if (set_local_hold_timeout == TRUE)
-		ca_set_hold_timeout_local(attrs, local_hold_timeout);
 	if (set_remote_hold_timeout == TRUE)
-		ca_set_hold_timeout_remote(attrs, remote_hold_timeout);
+		ca_set_remote_hold_timeout(attrs, remote_hold_timeout);
+	if (set_local_hold_timeout == TRUE)
+		ca_set_local_hold_timeout(attrs, local_hold_timeout);
 	
 	/* setup mtu, nru and buffer size if they were specified */
 	if (remote_mtu > 0)
-		ca_set_MTU(attrs, remote_mtu);
+		ca_set_remote_MTU(attrs, remote_mtu);
 	if (remote_nru > 0)
-		ca_set_NRU(attrs, remote_nru);
+		ca_set_remote_NRU(attrs, remote_nru);
 	if (buffer_size > 0) {
-		ca_resize_remote_buf(attrs, buffer_size);
-		ca_resize_local_buf(attrs, buffer_size);
+		ca_set_buffer_size(attrs, buffer_size);
+		ca_set_buffer_size(attrs, buffer_size);
 	}
 
 	assert(ret != -1);

@@ -24,8 +24,14 @@
 
 #include "connection.h"
 
-/* establish a connection and fill out the local & remote streams in attrs */
-void do_connect(connection_attributes *attrs);
-void do_listen(connection_attributes *attrs);
+/* establish a connection and return a new fd and socktype */
+int do_connect(const connection_attributes *attrs, int *socktype);
+int do_listen(const connection_attributes *attrs, int *socktype);
+
+typedef void (*listen_callback)(int fd, int socktype, void *cdata);
+
+void do_listen_continuous(const connection_attributes *attrs,
+                          listen_callback callback, void *cdata,
+			  int max_accept);
 
 #endif /* NETWORK_H */

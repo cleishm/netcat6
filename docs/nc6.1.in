@@ -253,7 +253,7 @@ This man page is current for version @VERSION@ of netcat6
 .SH COPYRIGHT
 GPL. 
 .SH AUTHORS
- Mauro Tortonesi <mauro@ferrara.linux.it>
+ Mauro Tortonesi <mauro@deepspace6.net>
  Chris Leishman <chris@leishman.org>
 .P 
 The original netcat was written by a guy we know as

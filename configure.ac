@@ -16,8 +16,10 @@ AC_ISC_POSIX
 AC_PROG_INSTALL
 
 
-# default CFLAGS to use
-CFLAGS=""
+# Check paths
+PATH_BSHELL
+PATH_DEVNULL
+
 
 # default CFLAGS to use for nc6 source
 NC6_CFLAGS=""
@@ -165,11 +167,11 @@ AC_ARG_ENABLE(debug,
 
 if test "X$debug" = "Xyes"; then
   AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
-  CFLAGS="${CFLAGS} -g -O0"
+  CFLAGS="-g -O0"
 else
   AC_DEFINE(NDEBUG, 1,
     [Define if nc6 is to be build without debug information.])
-  CFLAGS="${CFLAGS} -O2"
+  CFLAGS="-O2"
   if test "X$GCC" = "Xyes"; then 
     NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
   fi

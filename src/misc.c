@@ -31,8 +31,12 @@
 #include <errno.h>
 #include <limits.h>
 #endif
+#include <unistd.h>
+#ifdef HAVE_PATHS_H
+#include <paths.h>
+#endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.14 2003-01-11 19:46:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.15 2003-01-13 19:48:44 chris Exp $");
 
 
 
@@ -107,6 +111,91 @@ void nonblock(int fd)
 	if (fcntl(fd, F_SETFL, arg) < 0)
 		fatal("error setting flag O_NONBLOCK on file descriptor",
 		      strerror(errno));
+}
+
+
+
+int open3(char *cmd, int *in, int *out, int *err)
+{
+	int inpipe[2];
+	int outpipe[2];
+	int errpipe[2];
+	int pid;
+
+	if (in != NULL) {
+		if (pipe(inpipe) < 0)
+			return -1;
+	} else {
+		inpipe[0] = open(_PATH_DEVNULL, O_RDONLY);
+		if (inpipe[0] < 0)
+			return -1;
+	}
+
+	if (out != NULL) {
+		if (pipe(outpipe) < 0)
+			return -1;
+	} else {
+		outpipe[1] = open(_PATH_DEVNULL, O_WRONLY);
+		if (outpipe[1] < 0)
+			return -1;
+	}
+
+	if (err != NULL) {
+		if (pipe(errpipe) < 0)
+			return -1;
+	} else {
+		errpipe[1] = open(_PATH_DEVNULL, O_WRONLY);
+		if (errpipe[1] < 0)
+			return -1;
+	}
+
+	/* fork the process */
+	pid = fork();
+	if (pid < 0) {
+		return -1;
+	} else if (pid < 0) {
+		char *argv[4];
+
+		/* child */
+
+		argv[0] = "sh";
+		argv[1] = "-c";
+		argv[2] = cmd;
+		argv[3] = NULL;
+
+		/* replace stdin, stdout and stderr */
+		close(STDIN_FILENO);
+		if (dup2(inpipe[0], STDIN_FILENO) < 0)
+			fatal("dup2 failed: %s", strerror(errno));
+		close(inpipe[0]);
+
+		close(STDOUT_FILENO);
+		if (dup2(outpipe[1], STDOUT_FILENO) < 0)
+			fatal("dup2 failed: %s", strerror(errno));
+		close(outpipe[1]);
+
+		close(STDERR_FILENO);
+		if (dup2(errpipe[1], STDERR_FILENO) < 0)
+			fatal("dup2 failed: %s", strerror(errno));
+		close(errpipe[1]);
+
+		/* exec the required command */
+		execv(_PATH_BSHELL, argv);
+		fatal("execv failed: %s", strerror(errno));
+	}
+
+	/* parent */
+
+	/* close child's descriptors */
+	close(inpipe[0]);
+	close(outpipe[1]);
+	close(errpipe[1]);
+
+	if (in != NULL)  *in  = inpipe[1];
+	if (out != NULL) *out = outpipe[0];
+	if (err != NULL) *err = errpipe[0];
+
+	return pid;
 }
 
 

@@ -2,7 +2,7 @@
  *  netsupport.c - networking support module - implementation
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2003 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *  Copyright (C) 2001-2003 Mauro Tortonesi <mauro _at_ deepspace6.net>
  *  Copyright (C) 2002-2003 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #include "misc.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.5 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.6 2003-01-13 19:48:44 chris Exp $");
 
 
 /* add a new fd/socktype pair to the list */

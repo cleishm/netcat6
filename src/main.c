@@ -20,6 +20,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
 #include "config.h"
+#include "connection.h"
+#include "io_stream.h"
 #include "parser.h"
 #include "network.h"
 #include "readwrite.h"
@@ -28,23 +30,36 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.19 2003-01-11 19:55:41 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.20 2003-01-13 19:48:44 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
 
 
-static void establish_connection(int mode, connection_attributes *attrs);
-static int do_transfer(connection_attributes *attrs);
+/* callback type for establish_connection */
+typedef int (*established_callback)(const connection_attributes *attrs,
+                                    int fd, int socktype);
+
+/* function prototypes */
+static int establish_connection(int mode, const connection_attributes *attrs,
+                                established_callback callback);
+static int connection_main(const connection_attributes *attrs,
+                           int fd, int socktype);
+static void setup_local_stream(const connection_attributes *attrs,
+                               io_stream* local);
+static void setup_remote_stream(const connection_attributes *attrs,
+                                int fd, int socktype, io_stream* remote);
+static int run_transfer(io_stream *remote_stream, io_stream *local_stream);
+
 
 
 int main(int argc, char **argv)
 {
 	connection_attributes connection_attrs;
-	int mode;
 	char *ptr;
-	int retval;
+	int mode, retval;
 
+	/* initialise connection attributes */
 	ca_init(&connection_attrs);
 
 	/* save the program name in a static variable */
@@ -61,17 +76,8 @@ int main(int argc, char **argv)
 	/* set flags and fill out the addresses and connection attributes */
 	mode = parse_arguments(argc, argv, &connection_attrs);
 
-	/* setup local stream */
-	ios_assign_stdio(ca_local_stream(&connection_attrs));
-	
-	/* establish remote connection */
-	establish_connection(mode, &connection_attrs);
-
-	/* give information about the connection in very verbose mode */
-	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-		ca_warn_details(&connection_attrs);
-
-	retval = do_transfer(&connection_attrs);
+	/* establish the connection, and call down to connection_main */
+	retval = establish_connection(mode, &connection_attrs, connection_main);
 
 	/* cleanup */
 	ca_destroy(&connection_attrs);
@@ -80,27 +86,151 @@ int main(int argc, char **argv)
 }
 
 
-static void establish_connection(int mode, connection_attributes *attrs)
+
+static int establish_connection(int mode, const connection_attributes *attrs,
+                                established_callback callback)
 {
+	int fd, socktype;
+
+	assert(attrs != NULL);
+	assert(callback != NULL);
+
 	/* establish remote connection */
 	switch (mode) {
 	case LISTEN_MODE:
-		do_listen(attrs);
+		fd = do_listen(attrs, &socktype);
 		break;
 	case CONNECT_MODE:
-		do_connect(attrs);
+		fd = do_connect(attrs, &socktype);
 		break;
 	default:
 		fatal("internal error: unknown connection mode");
+		/* not reached - but stops warnings about uninitialized fd */
+		fd = -1;
+		break;
 	}
+
+	assert(fd >= 0);
+	assert(socktype >= 0);
+
+	/* announce the socket in very verbose mode */
+	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		switch (socktype) {
+		case SOCK_STREAM:
+			warn("using stream socket");
+			break;
+		case SOCK_DGRAM:
+			warn("using datagram socket");
+			break;
+		default:
+			fatal("internal error: unsupported socktype %d",
+			      socktype);
+		}
+	}
+
+	return callback(attrs, fd, socktype);
 }
 
 
-static int do_transfer(connection_attributes *attrs)
+
+static int connection_main(const connection_attributes *attrs,
+                           int fd, int socktype)
 {
-	io_stream *remote_stream = ca_remote_stream(attrs);
-	io_stream *local_stream = ca_local_stream(attrs);
+	circ_buf remote_buffer, local_buffer;
+	io_stream remote_stream, local_stream;
 	int retval;
+
+	assert(attrs != NULL);
+	assert(fd >= 0);
+	assert(socktype >= 0);
+
+	/* initialise buffers */
+	cb_init(&remote_buffer, ca_buffer_size(attrs));
+	cb_init(&local_buffer, ca_buffer_size(attrs));
+
+	/* initialise io streams */
+	io_stream_init(&remote_stream, "remote", &remote_buffer, &local_buffer);
+	io_stream_init(&local_stream, "local", &local_buffer, &remote_buffer);
+
+	/* setup remote stream */
+	setup_remote_stream(attrs, fd, socktype, &remote_stream);
+
+	/* setup local stream */
+	setup_local_stream(attrs, &local_stream);
+	
+	/* set remote mtu & nru */
+	ios_set_mtu(&remote_stream, ca_remote_MTU(attrs));
+	ios_set_nru(&remote_stream, ca_remote_NRU(attrs));
+
+	/* set stream hold timeouts */
+	ios_set_hold_timeout(&remote_stream, ca_remote_hold_timeout(attrs));
+	ios_set_hold_timeout(&local_stream, ca_local_hold_timeout(attrs));
+
+	/* set stream half close suppression */
+	ios_suppress_half_close(&remote_stream,
+		ca_remote_half_close_suppress(attrs));
+	ios_suppress_half_close(&local_stream,
+		ca_local_half_close_suppress(attrs));
+
+	/* give information about the connection in very verbose mode */
+	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		warn("using buffer size of %d", remote_buffer.buf_size);
+		if (remote_stream.nru > 0)
+			warn("using remote receive nru of %d",
+			     remote_stream.nru);
+		if (remote_stream.mtu > 0)
+			warn("using remote send mtu of %d",
+			     remote_stream.mtu);
+	}
+
+	/* transfer data between endpoints */
+	retval = run_transfer(&remote_stream, &local_stream);
+
+	/* cleanup */
+	io_stream_destroy(&local_stream);
+	io_stream_destroy(&remote_stream);
+	cb_destroy(&local_buffer);
+	cb_destroy(&remote_buffer);
+
+	return retval;
+}
+
+
+
+static void setup_local_stream(const connection_attributes *attrs,
+                               io_stream* stream)
+{
+	/* suppress unused attrs warning */
+	while (0&&attrs);
+	assert(attrs != NULL);
+	assert(stream != NULL);
+
+	ios_assign_stdio(stream);
+}
+
+
+
+static void setup_remote_stream(const connection_attributes *attrs,
+                                int fd, int socktype, io_stream* stream)
+{
+	/* suppress unused attrs warning */
+	while (0&&attrs);
+	assert(attrs != NULL);
+	assert(fd >= 0);
+	assert(socktype >= 0);
+	assert(stream != NULL);
+
+	ios_assign_socket(stream, fd, socktype);
+}
+
+
+
+static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
+{
+	int retval;
+
+	assert(remote_stream != NULL);
+	assert(local_stream != NULL);
 
 	/* setup unidirectional data transfers (if requested) */
 	assert(!(is_flag_set(RECV_DATA_ONLY) && is_flag_set(SEND_DATA_ONLY)));
@@ -140,11 +270,12 @@ static int do_transfer(connection_attributes *attrs)
 
 	if (is_flag_set(VERBOSE_MODE) == TRUE)
 		warn("connection closed (sent %d, rcvd %d)",
-			ios_bytes_sent(remote_stream),
-			ios_bytes_received(remote_stream));
+		     ios_bytes_sent(remote_stream),
+		     ios_bytes_received(remote_stream));
 
 	return retval;
 }
+
 
 
 const char *get_program_name(void)

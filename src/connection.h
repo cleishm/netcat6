@@ -52,51 +52,64 @@ typedef struct connection_attributes_t
 	sock_protocol protocol;
 	address remote_address;
 	address local_address;
-	circ_buf remote_buffer;
-	circ_buf local_buffer;
-	io_stream remote_stream;
-	io_stream local_stream;
+	size_t buffer_size;
+	size_t remote_mtu;
+	size_t remote_nru;
+	int local_hold_timeout;
+	int remote_hold_timeout;
+	bool remote_half_close_suppress;
+	bool local_half_close_suppress;
 	int connect_timeout;
 } connection_attributes;
 
-void ca_init(connection_attributes *attrs);
-void ca_destroy(connection_attributes *attrs);
 
+void ca_init(connection_attributes *attrs);
+
+#ifndef NDEBUG
+void ca_destroy(connection_attributes *attrs);
+#else 
+#define ca_destroy(_x_)		do {} while(0)
+#endif
 
 #define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
+#define ca_family(CA)			((CA)->family)
 #define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
+#define ca_protocol(CA)			((CA)->protocol)
 
 #define ca_remote_address(CA)	((const address*)&((CA)->remote_address))
 #define ca_local_address(CA)	((const address*)&((CA)->local_address))
 #define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
 #define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
 
-#define ca_set_MTU(CA, MTU)	 ios_set_mtu(&((CA)->remote_stream),(MTU))
-#define ca_set_NRU(CA, NRU)	 ios_set_nru(&((CA)->remote_stream),(NRU))
-	
-#define ca_connect_timeout(CA)			((CA)->connect_timeout)
-#define ca_set_connection_timeout(CA, CT)	((CA)->connect_timeout = (CT))
+#define ca_buffer_size(CA)		((CA)->buffer_size)
+#define ca_set_buffer_size(CA, SZ)	((CA)->buffer_size = (SZ))
 
-#define ca_remote_stream(CA)	(&((CA)->remote_stream))
-#define ca_local_stream(CA)	(&((CA)->local_stream))
-	
-#define ca_suppress_half_close_remote(CA)	\
-	ios_suppress_half_close(&((CA)->remote_stream), FALSE)
-#define ca_suppress_half_close_local(CA)	\
-	ios_suppress_half_close(&((CA)->local_stream), FALSE)
-	
-#define ca_set_hold_timeout_remote(CA, T)	\
-	ios_set_hold_timeout(&((CA)->remote_stream), (T))
-#define ca_set_hold_timeout_local(CA, T)	\
-	ios_set_hold_timeout(&((CA)->local_stream), (T))
+#define ca_remote_MTU(CA)		((CA)->remote_mtu)
+#define ca_set_remote_MTU(CA, MTU)	((CA)->remote_mtu = (MTU))
 
-#define ca_resize_local_buf(CA, SIZE)	cb_resize(&((CA)->local_buffer),(SIZE))
-#define ca_resize_remote_buf(CA, SIZE)	cb_resize(&((CA)->remote_buffer),(SIZE))
+#define ca_remote_NRU(CA)		((CA)->remote_nru)
+#define ca_set_remote_NRU(CA, NRU)	((CA)->remote_nru = (NRU))
+	
+#define ca_connect_timeout(CA)		((CA)->connect_timeout)
+#define ca_set_connect_timeout(CA, CT)	((CA)->connect_timeout = (CT))
 
+#define ca_remote_hold_timeout(CA)	((CA)->remote_hold_timeout)
+#define ca_set_remote_hold_timeout(CA, T)		\
+	((CA)->remote_hold_timeout = (T))
+#define ca_local_hold_timeout(CA)	((CA)->local_hold_timeout)
+#define ca_set_local_hold_timeout(CA, T)		\
+	((CA)->local_hold_timeout = (T))
+
+#define ca_remote_half_close_suppress(CA)		\
+	((CA)->remote_half_close_suppress)
+#define ca_set_remote_half_close_suppress(CA, B)	\
+	((CA)->remote_half_close_suppress = (B))
+#define ca_local_half_close_suppress(CA)		\
+	((CA)->local_half_close_suppress)
+#define ca_set_local_half_close_suppress(CA, B)	\
+	((CA)->local_half_close_suppress = (B))
+	
 /* fill out an addrinfo structure with parameters from the ca */
 void ca_to_addrinfo(struct addrinfo *ainfo, const connection_attributes *attrs);
-
-/* display the details of the connection attributes to stderr */
-void ca_warn_details(const connection_attributes *attrs);
 
 #endif /* CONNECTION_H */

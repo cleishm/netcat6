@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.20 2003-01-11 19:46:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.21 2003-01-13 19:48:44 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -44,40 +44,25 @@ void ca_init(connection_attributes *attrs)
 	address_init(&(attrs->remote_address));
 	address_init(&(attrs->local_address));
 
-	cb_init(&(attrs->remote_buffer), DEFAULT_BUFFER_SIZE);
-	cb_init(&(attrs->local_buffer),  DEFAULT_BUFFER_SIZE);
-
-	/* setup the remote stream to read into the remote buffer and write
-	 * from the local buffer */
-	io_stream_init(&(attrs->remote_stream), "remote",
-	               &(attrs->remote_buffer), &(attrs->local_buffer));
-	
-	/* setup the local stream to read into the local buffer and write
-	 * from the remote buffer */
-	io_stream_init(&(attrs->local_stream), "local",
-	               &(attrs->local_buffer), &(attrs->remote_buffer));
-
-	/* the remote stream has an instant hold timeout by default,
-	 * which means that as soon as the remote read stream closes, the
-	 * entire connection will be torn down */
-	ios_set_hold_timeout(&(attrs->remote_stream), 0);
-
-	/* by default we don't send TCP half closes to the remote system */
-	ios_suppress_half_close(&(attrs->remote_stream), TRUE);
-
-	/* no connect timeout */
+	/* set default values for everything */
+	attrs->buffer_size = DEFAULT_BUFFER_SIZE;
+	attrs->remote_mtu = 0;
+	attrs->remote_nru = 0;
+	attrs->local_hold_timeout = -1;
+	attrs->remote_hold_timeout = 0;
+	attrs->remote_half_close_suppress = TRUE;
+	attrs->local_half_close_suppress = FALSE;
 	attrs->connect_timeout = -1;
 }
 
 
 
+#ifndef NDEBUG
 void ca_destroy(connection_attributes *attrs)
 {
 	assert(attrs != NULL);
-
-	io_stream_destroy(&(attrs->remote_stream));
-	io_stream_destroy(&(attrs->local_stream));
 }
+#endif
 
 
 
@@ -125,31 +110,4 @@ void ca_to_addrinfo(struct addrinfo *ainfo,
 		default:
 			fatal("internal error: unknown socket type");
 	}
-}
-
-
-void ca_warn_details(const connection_attributes *attrs)
-{
-	switch (attrs->remote_stream.socktype) {
-	case SOCK_STREAM:
-		warn("using stream socket");
-		break;
-	case SOCK_DGRAM:
-		warn("using datagram socket");
-		break;
-	default:
-		fatal("internal error: unsupported socktype %d",
-		      attrs->remote_stream.socktype);
-	}
-
-	warn("using remote receive buffer size of %d",
-	     attrs->remote_buffer.buf_size);
-
-	if (attrs->remote_stream.nru)
-		warn("using remote receive nru of %d",
-		     attrs->remote_stream.nru);
-
-	if (attrs->remote_stream.mtu)
-		warn("using remote send mtu of %d",
-		     attrs->remote_stream.mtu);
 }

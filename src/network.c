@@ -34,10 +34,10 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.31 2003-01-11 19:46:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.32 2003-01-13 19:48:44 chris Exp $");
 
 
-void do_connect(connection_attributes *attrs)
+int do_connect(const connection_attributes *attrs, int *rt_socktype)
 {
 	const address *remote, *local;
 	int err, fd = -1;
@@ -320,19 +320,23 @@ void do_connect(connection_attributes *attrs)
 		     sbuf_num, sbuf_rev);
 	}
 
-	/* fill out the remote io_stream */
-	ios_assign_socket(ca_remote_stream(attrs), fd, ptr->ai_socktype);
+	/* return the socktype */
+	if (rt_socktype != NULL)
+		*rt_socktype = ptr->ai_socktype;
 
 	/* cleanup addrinfo structure */
 	freeaddrinfo(res);
+
+	return fd;
 }
 
 
 
-void do_listen(connection_attributes *attrs)
+void do_listen_continuous(const connection_attributes* attrs,
+                          listen_callback callback, void* cdata, int max_accept)
 {
 	const address *remote, *local;
-	int nfd, i, fd, err, ns = -1, socktype = -1, maxfd = -1;
+	int nfd, i, fd, err, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	char hbuf_num[NI_MAXHOST + 1];
 	char sbuf_num[NI_MAXSERV + 1];
@@ -350,8 +354,9 @@ void do_listen(connection_attributes *attrs)
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
 
-	/* make sure that attrs is a valid pointer */
+	/* make sure that the arguments are correct */
 	assert(attrs != NULL);
+	assert(callback != NULL);
 	
 	/* setup the addresses of the two connection endpoints */
 	remote = ca_remote_address(attrs);
@@ -362,6 +367,10 @@ void do_listen(connection_attributes *attrs)
 	assert(local->service != NULL && strlen(local->service) > 0);
 	assert(remote->address == NULL || strlen(remote->address) > 0);
 	assert(remote->service == NULL || strlen(remote->service) > 0);
+
+	/* if max_accept is 0, just return */
+	if (max_accept == 0)
+		return;
 
 	/* setup flags */
 	numeric_mode    = is_flag_set(NUMERIC_MODE);
@@ -561,6 +570,7 @@ void do_listen(connection_attributes *attrs)
 		struct timeval tv, *tvp = NULL;
 		struct sockaddr_storage dest;
 		socklen_t destlen;
+		int ns, socktype;
 
 		/* make a copy of accept_fdset before passing to select */
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
@@ -688,7 +698,10 @@ void do_listen(connection_attributes *attrs)
 				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 
-			break;
+			callback(ns, socktype, cdata);
+
+			if (max_accept > 0 && --max_accept == 0)
+				break;
 		} else {
 			if (socktype == SOCK_DGRAM) {
 				/* the connection wasn't accepted - 
@@ -696,7 +709,6 @@ void do_listen(connection_attributes *attrs)
 				recvfrom(ns, NULL, 0, 0, NULL, 0);
 			}
 			close(ns);
-			ns = -1;
 
 			if (verbose_mode == TRUE) {
 				warn("refused connect "
@@ -712,13 +724,38 @@ void do_listen(connection_attributes *attrs)
 		if (FD_ISSET(i, &accept_fdset) != 0) close(i);
 	}
 
-	/* the ns and socktype should be set */
-	assert(ns >= 0);
-	assert(socktype != -1);
-
 	/* free the bound_socket list */
 	destroy_bound_sockets(bound_sockets);
+}
 
-	/* fill out the remote io_stream */
-	ios_assign_socket(ca_remote_stream(attrs), ns, socktype);
+
+typedef struct listen_once_result_t {
+	int fd;
+	int socktype;
+} listen_once_result;
+
+
+static void listen_once_callback(int fd, int socktype, void *cdata)
+{
+	listen_once_result *result = (listen_once_result*)cdata;
+
+	assert(fd >= 0);
+	assert(socktype >= 0);
+	assert(result != NULL);
+
+	result->fd = fd;
+	result->socktype = socktype;
+}
+
+
+int do_listen(const connection_attributes *attrs, int *rt_socktype)
+{
+	listen_once_result result;
+
+	/* listen for exactly one connection */
+	do_listen_continuous(attrs, listen_once_callback, (void*)&result, 1);
+
+	if (rt_socktype != NULL)
+		*rt_socktype = result.socktype;
+	return result.fd;
 }

@@ -38,12 +38,16 @@
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 
 const char *get_program_name(void);
+
 void fatal(const char *template, ...);
 void warn(const char *template, ...);
+
 void *xmalloc(size_t size);
 char *xstrdup(const char* str);
 
 void nonblock(int fd);
+
+int open3(char *cmd, int *in, int *out, int *err);
 
 #ifdef HAVE_STRTOL
 int safe_atoi(const char *str);
