@@ -46,13 +46,13 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.13 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.14 2003-01-01 14:03:45 chris Exp $");
 
 
 
 #ifdef ENABLE_IPV6
 /* returns TRUE if a represents an ipv4-mapped address */
-inline static bool is_address_ipv4_mapped(const struct sockaddr *a)
+bool is_address_ipv4_mapped(const struct sockaddr *a)
 {
 	bool ret = FALSE;
 	

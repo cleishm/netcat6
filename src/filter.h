@@ -27,6 +27,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifdef ENABLE_IPV6
+bool is_address_ipv4_mapped(const struct sockaddr *a);
+#endif
+
 bool is_allowed(const struct sockaddr *sa, const address *addr,
 		const connection_attributes* attrs);
 

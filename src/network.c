@@ -32,10 +32,9 @@
 #include "network.h"
 #include "parser.h"
 #include "filter.h"
-#include "rt_config.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.25 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.26 2003-01-01 14:03:45 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -101,10 +100,19 @@ void do_connect(connection_attributes *attrs)
 		    ptr->ai_socktype != SOCK_DGRAM) 
 			continue;
 
-#if defined(PF_INET6) && !defined(ENABLE_IPV6)
+#ifdef ENABLE_IPV6
+		/* skip IPv4 mapped addresses returned from getaddrinfo,
+		 * for security reasons:
+ http://playground.iijlab.net/i-d/draft-itojun-ipv6-transition-abuse-01.txt
+ 		 */
+		if (is_address_ipv4_mapped(ptr->ai_addr))
+			continue;
+#else
+#ifdef PF_INET6
 		/* skip IPv6 if disabled */
 		if (ptr->ai_family == PF_INET6)
 			continue;
+#endif
 #endif
 
 		/* we are going to try to connect to this address */
@@ -332,6 +340,10 @@ void do_listen(connection_attributes *attrs)
 	bool verbose_mode      = FALSE;
 	bool dont_reuse_addr   = FALSE;
 	bool disable_nagle     = FALSE;
+#ifdef ENABLE_IPV6
+	bool set_ipv6_only     = FALSE;
+	bool bound_ipv6_any    = FALSE;
+#endif
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
 
@@ -368,7 +380,8 @@ void do_listen(connection_attributes *attrs)
 	/* get the IP address of the local end of the connection */
 	err = getaddrinfo(local->address, local->service, &hints, &res);
 	if (err != 0) 
-		fatal("forward host lookup failed for local endpoint %s (%s): %s",
+		fatal("forward host lookup failed "
+		      "for local endpoint %s (%s): %s",
 		      local->address? local->address : "[unspecified]",
 		      local->service, gai_strerror(err));
 		
@@ -376,18 +389,31 @@ void do_listen(connection_attributes *attrs)
 	assert(res != NULL);
 
 #ifdef ENABLE_IPV6
-	/* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
-	 * listening.  Connections will still be accepted from either ipv6 or
-	 * ipv4 clients (ipv4 will be mapped into ipv6).  However, this means
-	 * that we MUST bind the ipv6 address ONLY for these hosts.
+	/* Some systems have a shared stack for ipv6 and ipv4 (eg. linux),
+	 * which means that binding an ipv6 socket to ADDR_ANY will also
+	 * listen for, and accept, ipv4 addresses.  These are returned as ipv4
+	 * mapped ipv6 addresses from accept(2).
 	 *
-	 * TODO: until we add a configure check to determine if the current
-	 * host does this double binding, we will just ensure that ipv6
-	 * sockets are bound first and then attempt to bind the ipv4 ones.  On
-	 * systems that double bind ipv6/ipv4 the ipv4 bind will simply fail.
+	 * However, getaddrinfo will still return results for both ipv6 AND
+	 * ipv4, but the bind to ipv4 will fail (as it is already held by the
+	 * ipv6 bind).
+	 *
+	 * The following algorithm is used to work around this error to some
+	 * degree:
+	 *
+	 * Ensure binds to IPv6 addresses are attempted before IPv4 addresses.
+	 * On systems where IPV6_V6ONLY is not defined or the setsockopt
+	 * fails:
+	 *   - Keep track of whether an IPv6 socket
+	 *     has been bound to in6_addr_any.
+	 *   - If a bind to IPv4 fails with EADDRINUSE and an IPv6 socket
+	 *     has been bound, then just ignore the error.
 	 */
-	if (is_ipv6_enabled() == TRUE && is_double_binding_sane() == FALSE)
-		res = order_ipv6_first(res);
+
+	/* TODO: instead of reordering the results, just loop through the
+	 * results twice - once for ipv6 then for the rest.
+	 */
+	res = order_ipv6_first(res);
 #endif
 
 	/* try binding to all of the addresses returned by getaddrinfo */
@@ -399,10 +425,19 @@ void do_listen(connection_attributes *attrs)
 		    ptr->ai_socktype != SOCK_DGRAM) 
 			continue;
 
-#if defined(PF_INET6) && !defined(ENABLE_IPV6)
+#ifdef ENABLE_IPV6
+		/* skip IPv4 mapped addresses returned from getaddrinfo,
+		 * for security reasons:
+ http://playground.iijlab.net/i-d/draft-itojun-ipv6-transition-abuse-01.txt
+ 		 */
+		if (is_address_ipv4_mapped(ptr->ai_addr))
+			continue;
+#else
+#ifdef PF_INET6
 		/* skip IPv6 if disabled */
 		if (ptr->ai_family == PF_INET6)
 			continue;
+#endif
 #endif
 
 		/* get the numeric name for this source as a string */
@@ -430,7 +465,10 @@ void do_listen(connection_attributes *attrs)
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
-			if (err < 0) warn("error with sockopt IPV6_V6ONLY");
+			if (err < 0)
+				warn("error with sockopt IPV6_V6ONLY");
+			else
+				set_ipv6_only = TRUE;
 		}
 #endif 
 	
@@ -456,6 +494,20 @@ void do_listen(connection_attributes *attrs)
 		/* bind to the local address */
 		err = bind(fd, ptr->ai_addr, ptr->ai_addrlen);
 		if (err != 0) {
+#ifdef ENABLE_IPV6
+			/* suppress ADDRINUSE error for systems that double
+			 * bind ipv6 and ipv4 */
+			if (errno == EADDRINUSE &&
+			    ptr->ai_family == PF_INET &&
+			    set_ipv6_only == FALSE &&
+			    bound_ipv6_any == TRUE)
+			{
+				warn("listening on %s (%s) ...",
+				     hbuf_num, sbuf_num);
+				close(fd);
+				continue;
+			}
+#endif
 			warn("bind to source %s (%s) failed: %s",
 			     hbuf_num, sbuf_num, strerror(errno));
 			close(fd);
@@ -474,8 +526,17 @@ void do_listen(connection_attributes *attrs)
 		}
 
 		if (verbose_mode == TRUE)
-			warn("listening on %s (%s) ...",
-			     hbuf_num, sbuf_num, strerror(errno));
+			warn("listening on %s (%s) ...", hbuf_num, sbuf_num);
+
+#ifdef ENABLE_IPV6
+		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
+		if (ptr->ai_family == PF_INET6 &&
+		    memcmp(&((struct sockaddr_in6*)(ptr->ai_addr))->sin6_addr,
+		           &in6addr_any, sizeof(struct in6_addr)) == 0)
+		{
+			bound_ipv6_any = TRUE;
+		}
+#endif
 
 		/* add fd to bound_sockets (just add to the head of the list) */
 		bound_sockets =	add_bound_socket(bound_sockets, fd, 
@@ -605,7 +666,8 @@ void do_listen(connection_attributes *attrs)
 		/* check if connections from this client are allowed */
 		if ((remote == NULL) ||
 		    (remote->address == NULL && remote->service == NULL) ||
-		    (is_allowed((struct sockaddr*)&dest,remote,attrs) == TRUE)) {
+		    (is_allowed((struct sockaddr*)&dest,remote,attrs) == TRUE))
+		{
 
 			if (socktype == SOCK_DGRAM) {
 				/* connect the socket to ensure we only talk
@@ -613,7 +675,8 @@ void do_listen(connection_attributes *attrs)
 				err = connect(ns, (struct sockaddr*)&dest, 
 				              destlen);
 				if (err != 0)
-					fatal("cannot connect datagram socket: %s",
+					fatal("cannot connect "
+					      "datagram socket: %s",
 					      strerror(errno));
 			}
 
@@ -634,7 +697,8 @@ void do_listen(connection_attributes *attrs)
 			ns = -1;
 
 			if (verbose_mode == TRUE) {
-				warn("refused connect to %s (%s) from %s [%s] %s",
+				warn("refused connect "
+				     "to %s (%s) from %s [%s] %s",
 				     hbuf_num, sbuf_num,
 				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
