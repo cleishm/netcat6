@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.18 2002-12-24 23:47:24 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.19 2002-12-27 22:58:32 chris Exp $");
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = 8192;
@@ -208,7 +208,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				rr = recv(ios_readfd(ios1),
 				        (void *)tbuf1, TEMP_BUFFER_SIZE, 0);
 			} else {
-				rr = cb_read(&buf1, ios_readfd(ios1));
+				rr = cb_read(&buf1, ios_readfd(ios1), 0);
 			}
 			
 			if (rr > 0) {
@@ -267,7 +267,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			assert(cb_is_full(&buf2) == FALSE);
 
 			/* something is ready to read on ios2 (local) */
-			rr = cb_read(&buf2, ios_readfd(ios2));
+			rr = cb_read(&buf2, ios_readfd(ios2), 0);
 			
 			if (rr > 0) {
 				local_rcvd += rr;
@@ -311,9 +311,9 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 
 			/* ios1 may be written to (remote) */
 			if (tbuf1)
-				rr = cb_send(&buf2, ios_writefd(ios1), NULL, 0);
+				rr = cb_send(&buf2, ios_writefd(ios1),0,NULL,0);
 			else
-				rr = cb_write(&buf2, ios_writefd(ios1));
+				rr = cb_write(&buf2, ios_writefd(ios1), 0);
 
 			if (rr > 0) {
 				net_sent += rr;
@@ -363,7 +363,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			assert(cb_is_empty(&buf1) == FALSE);
 
 			/* ios2 may be written to (local) */
-			rr = cb_write(&buf1, ios_writefd(ios2));
+			rr = cb_write(&buf1, ios_writefd(ios2), 0);
 
 			if (rr > 0) {
 				local_sent += rr;

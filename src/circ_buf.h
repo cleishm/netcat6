@@ -47,11 +47,13 @@ void cb_destroy(circ_buf *cb);
 #define cb_is_empty(CB)	(cb_size(CB) == 0)
 #define cb_is_full(CB)	(cb_space(CB) == 0)
 
-ssize_t cb_read(circ_buf *cb, int fd);
-ssize_t cb_recv(circ_buf *cb, int fd, struct sockaddr *from, size_t *fromlen);
+ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes);
+ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
+	struct sockaddr *from, size_t *fromlen);
 
-ssize_t cb_write(circ_buf *cb, int fd);
-ssize_t cb_send(circ_buf *cb, int fd, struct sockaddr *dest, size_t destlen);
+ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes);
+ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
+	struct sockaddr *dest, size_t destlen);
 
 ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len);
 ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len);

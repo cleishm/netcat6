@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.10 2002-12-27 15:56:51 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.11 2002-12-27 22:58:32 chris Exp $");
 
 
 
@@ -76,36 +76,49 @@ void cb_destroy(circ_buf *cb)
 
 
 
-ssize_t cb_read(circ_buf *cb, int fd)
+ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes)
 {
 	ssize_t rr;
 	int count;
 	struct iovec iov[2];
+	size_t len;
 
 	cb_assert(cb);
 	
 	/* buffer is full, return an error condition */
 	if (cb_is_full(cb)) return -1;
+
+	/* set nbytes appropriately */
+	if (nbytes == 0 || (size_t)nbytes > cb_space(cb))
+		nbytes = cb_space(cb);
 	
 	/* prepare for writing to buffer */
 	if (cb->ptr == cb->buf) {
 		/* space only at end of buf */
 		iov->iov_base = cb->ptr + cb->data_size;
-		iov->iov_len  = cb->buf_size - cb->data_size;
+		iov->iov_len  = nbytes;
 		count = 1;
 	} else if (cb->ptr + cb->data_size >= cb->buf + cb->buf_size) {
 		/* space only before cb->ptr */
 		iov->iov_base = cb->ptr + cb->data_size - cb->buf_size;
-		iov->iov_len  = cb->buf_size - cb->data_size;
+		iov->iov_len  = nbytes;
 		count = 1;
 	} else {
 		/* space at end and begining of buf */
 		iov[0].iov_base = cb->ptr + cb->data_size;
-		iov[0].iov_len  = (cb->buf_size - cb->data_size) 
-		                - (cb->ptr - cb->buf);
-		iov[1].iov_base = cb->buf;
-		iov[1].iov_len  = cb->ptr - cb->buf;
-		count = 2;
+		len = (cb->buf_size - cb->data_size) - (cb->ptr - cb->buf);
+
+		if (len >= nbytes) {
+			/* first space provides enough */
+			iov[0].iov_len = nbytes;
+			count = 1;
+		} else {
+			/* need to use both free spaces */
+			iov[0].iov_len = len;
+			iov[1].iov_base = cb->buf;
+			iov[1].iov_len = nbytes - len;
+			count = 2;
+		}
 	}		
 
 	/* do the actual read */
@@ -129,38 +142,53 @@ ssize_t cb_read(circ_buf *cb, int fd)
 
 
 
-ssize_t cb_recv(circ_buf *cb, int fd, struct sockaddr *from, size_t *fromlen)
+ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
+	struct sockaddr *from, size_t *fromlen)
 {
 	ssize_t rr;
 	int count;
 	struct iovec iov[2];
 	struct msghdr msg;
+	size_t len;
 
 	cb_assert(cb);
 
 	/* buffer is full, return an error condition */
 	if (cb_is_full(cb)) return -1;
 
+	/* set nbytes appropriately */
+	if (nbytes == 0 || nbytes > cb_space(cb))
+		nbytes = cb_space(cb);
+	
 	/* prepare for writing to buffer */
 	if (cb->ptr == cb->buf) {
 		/* space only at end of buf */
 		iov->iov_base = cb->ptr + cb->data_size;
-		iov->iov_len  = cb->buf_size - cb->data_size;
+		iov->iov_len  = nbytes;
 		count = 1;
 	} else if (cb->ptr + cb->data_size >= cb->buf + cb->buf_size) {
 		/* space only before cb->ptr */
 		iov->iov_base = cb->ptr + cb->data_size - cb->buf_size;
-		iov->iov_len  = cb->buf_size - cb->data_size;
+		iov->iov_len  = nbytes;
 		count = 1;
 	} else {
 		/* space at end and begining of buf */
 		iov[0].iov_base = cb->ptr + cb->data_size;
-		iov[0].iov_len  = (cb->buf_size - cb->data_size) 
-		                - (cb->ptr - cb->buf);
-		iov[1].iov_base = cb->buf;
-		iov[1].iov_len  = cb->ptr - cb->buf;
-		count = 2;
+		len = (cb->buf_size - cb->data_size) - (cb->ptr - cb->buf);
+
+		if (len >= nbytes) {
+			/* first space provides enough */
+			iov[0].iov_len = nbytes;
+			count = 1;
+		} else {
+			/* need to use both free spaces */
+			iov[0].iov_len = len;
+			iov[1].iov_base = cb->buf;
+			iov[1].iov_len = nbytes - len;
+			count = 2;
+		}
 	}		
+
 
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name    = (void *)from;
@@ -257,27 +285,42 @@ ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
 
 
 
-ssize_t cb_write(circ_buf *cb, int fd)
+ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
 {
 	ssize_t rr;
 	int count;
 	struct iovec iov[2];
+	size_t len;
 	
 	cb_assert(cb);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
 	
+	/* set nbytes appropriately */
+	if (nbytes == 0 || nbytes > cb_size(cb))
+		nbytes = cb_size(cb);
+
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {
+		/* data after ptr and at beginning of buffer */
 		iov[0].iov_base = cb->ptr;
-		iov[0].iov_len  = cb->buf_size - (cb->ptr - cb->buf);
-		iov[1].iov_base = cb->buf;
-		iov[1].iov_len  = cb->data_size - iov[0].iov_len;
-		count = 2;
+		len = cb->buf_size - (cb->ptr - cb->buf);
+
+		if (len >= nbytes) {
+			/* data after ptr is enough */
+			iov[0].iov_len = nbytes;
+			count = 1;
+		} else {
+			iov[0].iov_len  = len;
+			iov[1].iov_base = cb->buf;
+			iov[1].iov_len  = nbytes - len;
+			count = 2;
+		}
 	} else {
+		/* data only after ptr */
 		iov[0].iov_base = cb->ptr;
-		iov[0].iov_len  = cb->data_size;
+		iov[0].iov_len  = nbytes;
 		count = 1;
 	}		
 
@@ -308,28 +351,44 @@ ssize_t cb_write(circ_buf *cb, int fd)
 
 
 
-ssize_t cb_send(circ_buf *cb, int fd, struct sockaddr *dest, size_t destlen)
+ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
+	struct sockaddr *dest, size_t destlen)
 {
 	ssize_t rr;
 	int count;
 	struct iovec iov[2];
 	struct msghdr msg;
+	size_t len;
 	
 	cb_assert(cb);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
 	
+	/* set nbytes appropriately */
+	if (nbytes == 0 || nbytes > cb_size(cb))
+		nbytes = cb_size(cb);
+	
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {
+		/* data after ptr and at beginning of buffer */
 		iov[0].iov_base = cb->ptr;
-		iov[0].iov_len  = cb->buf_size - (cb->ptr - cb->buf);
-		iov[1].iov_base = cb->buf;
-		iov[1].iov_len  = cb->data_size - iov[0].iov_len;
-		count = 2;
+		len = cb->buf_size - (cb->ptr - cb->buf);
+
+		if (len >= nbytes) {
+			/* data after ptr is enough */
+			iov[0].iov_len = nbytes;
+			count = 1;
+		} else {
+			iov[0].iov_len  = len;
+			iov[1].iov_base = cb->buf;
+			iov[1].iov_len  = nbytes - len;
+			count = 2;
+		}
 	} else {
+		/* data only after ptr */
 		iov[0].iov_base = cb->ptr;
-		iov[0].iov_len  = cb->data_size;
+		iov[0].iov_len  = nbytes;
 		count = 1;
 	}		
 	
