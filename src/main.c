@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.13 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.14 2002-12-30 23:14:02 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("File xfer mode: reading remote only");
+			warn("receiving from remote only, transmit disabled");
 #endif
 	}
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("File xfer mode: reading local only");
+			warn("transmitting to remote only, receive disabled");
 #endif
 	}
 

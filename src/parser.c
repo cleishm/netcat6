@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.23 2002-12-30 23:00:46 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.24 2002-12-30 23:14:02 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -86,6 +86,7 @@ static const struct option long_options[] = {
 
 
 static void set_flag(unsigned long mask);
+static void unset_flag(unsigned long mask);
 static void parse_and_set_timeouts(const char *str,
                                    connection_attributes *attrs);
 static void print_usage(FILE *fp);
@@ -222,6 +223,15 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		if (local_buffer_size == 0)
 			local_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
 		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
+		unset_flag((listen_mode)? SEND_DATA_ONLY : RECV_DATA_ONLY);
+	}
+
+	/* check to make sure the user wasn't silly enough to set both
+	 * --recv-only and --send-only */
+	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
+	    is_flag_set(SEND_DATA_ONLY) == TRUE)
+	{
+		fatal("Cannot set both --recv-only and --send-only");
 	}
 
 	/* check nru - if it's too big data will never be received */
@@ -366,4 +376,9 @@ bool is_flag_set(unsigned long mask)
 static void set_flag(unsigned long mask)
 {
 	flags_mask = flags_mask | mask;
+}
+
+static void unset_flag(unsigned long mask)
+{
+	flags_mask = flags_mask & ~mask;
 }
