@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.28 2003-01-03 09:11:59 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.29 2003-01-03 09:30:20 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -104,8 +104,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	size_t remote_buffer_size = 0;
 	size_t local_buffer_size = 0;
 	int option_index = 0;
-	sock_proto protocol;
-	sock_type socket_type;
+	sock_family family;
+	sock_protocol protocol;
 	int connect_timeout = -1;
 	address local_address, remote_address;
 	bool half_close = FALSE;
@@ -115,8 +115,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	address_init(&local_address);
 
 	/* set socket types to default values */
-	protocol = PROTO_UNSPECIFIED;
-	socket_type = TCP_SOCKET;
+	family = PROTO_UNSPECIFIED;
+	protocol = TCP_PROTOCOL;
 
 	/* option recognition loop */
 	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
@@ -157,14 +157,14 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			}
 			break;
 		case '4':
-			if (protocol != PROTO_UNSPECIFIED) 
+			if (family != PROTO_UNSPECIFIED) 
 			    fatal("cannot specify the address family twice");
-			protocol = PROTO_IPv4;
+			family = PROTO_IPv4;
 			break;
 		case '6':	
-			if (protocol != PROTO_UNSPECIFIED) 
+			if (family != PROTO_UNSPECIFIED) 
 			    fatal("cannot specify the address family twice");
-			protocol = PROTO_IPv6;
+			family = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
 			break;
 		case 'h':	
@@ -190,7 +190,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			local_address.address = xstrdup(optarg);
 			break;	
 		case 'u':	
-			socket_type = UDP_SOCKET;
+			protocol = UDP_PROTOCOL;
 			/* set remote buffer sizes and mtu's, iff they haven't
 			 * already been set */
 			if (remote_mtu == 0)
@@ -312,8 +312,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	}
 
 	/* setup attrs */
+	ca_set_family(attrs, family);
 	ca_set_protocol(attrs, protocol);
-	ca_set_socket_type(attrs, socket_type);
 	ca_set_remote_addr(attrs, remote_address);
 	ca_set_local_addr(attrs, local_address);
 

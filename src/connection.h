@@ -26,16 +26,16 @@
 #include <netdb.h>
 #include <sys/time.h>
 
-typedef enum sock_type_t {
-	TCP_SOCKET,
-	UDP_SOCKET
-} sock_type;
-
-typedef enum sock_protocol_t {
+typedef enum sock_family_t {
 	PROTO_UNSPECIFIED,
 	PROTO_IPv6,
 	PROTO_IPv4
-} sock_proto;
+} sock_family;
+
+typedef enum sock_protocol_t {
+	TCP_PROTOCOL,
+	UDP_PROTOCOL
+} sock_protocol;
 
 typedef struct address_t
 {
@@ -47,8 +47,8 @@ typedef struct address_t
 
 typedef struct connection_attributes_t
 {
-	sock_proto proto;
-	sock_type  type;
+	sock_family   family;
+	sock_protocol protocol;
 	address remote_address;
 	address local_address;
 	circ_buf remote_buffer;
@@ -58,8 +58,8 @@ typedef struct connection_attributes_t
 	int connect_timeout;
 } connection_attributes;
 
-#define ca_set_protocol(CA, PROTO)	((CA)->proto = (PROTO))
-#define ca_set_socket_type(CA, ST)	((CA)->type = (ST))
+#define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
+#define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
 #define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
 #define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
 

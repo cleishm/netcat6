@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.16 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.17 2003-01-03 09:30:20 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -38,8 +38,8 @@ void connection_attributes_init(connection_attributes *attrs)
 {
 	assert(attrs != NULL);
 
-	attrs->proto = PROTO_UNSPECIFIED;
-	attrs->type  = TCP_SOCKET;
+	attrs->family    = PROTO_UNSPECIFIED;
+	attrs->protocol  = TCP_PROTOCOL;
 
 	address_init(&(attrs->remote_address));
 	address_init(&(attrs->local_address));
@@ -87,7 +87,7 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 	assert(ainfo != NULL);
 	assert(attrs != NULL);
 
-	switch (attrs->proto) {
+	switch (attrs->family) {
 		case PROTO_IPv6:
 #ifdef ENABLE_IPV6
 			ainfo->ai_family = PF_INET6;
@@ -105,8 +105,8 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 			fatal("internal error: unknown socket domain");
 	}
 	
-	switch (attrs->type) {
-		case UDP_SOCKET:
+	switch (attrs->protocol) {
+		case UDP_PROTOCOL:
 			ainfo->ai_protocol = IPPROTO_UDP;
 			/* strictly speaking, this should not be required
 			 * since UDP implies a DGRAM type socket.  However, on
@@ -114,7 +114,7 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 			 * IPPROTO_UDP and don't set this */
 			ainfo->ai_socktype = SOCK_DGRAM;
 			break;
-		case TCP_SOCKET:
+		case TCP_PROTOCOL:
 			ainfo->ai_protocol = IPPROTO_TCP;
 			/* strictly speaking, this should not be required
 			 * since TCP implies a STREAM type socket.  However,
