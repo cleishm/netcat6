@@ -2,7 +2,8 @@
  *  misc.c - miscellaneous funcions module - implementation 
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
+ *  Copyright (C) 2001-2003 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2003 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +32,7 @@
 #include <limits.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.10 2002-12-28 20:54:22 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.11 2002-12-30 22:35:47 chris Exp $");
 
 
 
