@@ -6,17 +6,11 @@ AUX_DIST		= $(auxdir)/install-sh \
 			  $(auxdir)/missing \
 			  $(auxdir)/mkinstalldirs \
 			  $(auxdir)/depcomp			  
-AUX_DIST_EXTRA		= $(auxdir)/in6_00_header.m4 \
-		          $(auxdir)/in6_enable_ipv6.m4 \
-		          $(auxdir)/in6_func_getaddrinfo.m4 \
-		          $(auxdir)/in6_func_salen.m4 \
+AUX_DIST_EXTRA		= $(auxdir)/in6_func_getaddrinfo.m4 \
 		          $(auxdir)/in6_guess_stack.m4 \
-		          $(auxdir)/in6_struct_sockaddr.m4 \
-		          $(auxdir)/in6_struct_sockaddrin6.m4 \
-		          $(auxdir)/in6x_00_header.m4 \
-		          $(auxdir)/in6x_func_ifaddrs.m4 \
-		          $(auxdir)/in6x_struct_icmp6hdr.m4 \
-		          $(auxdir)/in6x_struct_ip6hdr.m4 \
+			  $(auxdir)/proto_inet6.m4 \
+		          $(auxdir)/type_struct_sockaddr_storage.m4 \
+		          $(auxdir)/type_struct_sockaddr_in6.m4 \
 		          $(auxdir)/type_socklen_t.m4 
 EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
 

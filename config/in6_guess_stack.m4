@@ -24,15 +24,17 @@ AC_DEFUN(IN6_GUESS_STACK,[
 		kame)	
 			dnl http://www.kame.net/
 			eval inet6_ipv6_${inet6_i}=${inet6_i}
-			eval inet6_ipv6lib_${inet6_i}=inet6
-			eval inet6_ipv6libdir_${inet6_i}=/usr/local/v6/lib
 			eval inet6_cflags_${inet6_i}=
 			AC_EGREP_CPP(%%%yes%%%, [
 #include <netinet/in.h>
 #ifdef __KAME__
 %%%yes%%%
 #endif],
-			[if test "$inet6_ipv6type" = "unknown"; then
+			[if test -f /usr/local/v6/lib/libinet6.a; then
+				eval inet6_ipv6lib_${inet6_i}=inet6
+				eval inet6_ipv6libdir_${inet6_i}=/usr/local/v6/lib
+			fi
+			if test "$inet6_ipv6type" = "unknown"; then
 				inet6_ipv6type=${inet6_i}
 			fi])
 			;;

@@ -5,11 +5,13 @@ AM_CONFIG_HEADER(src/config.h)
 AM_INIT_AUTOMAKE(nc6, 0.2pre4b)
 AC_PREREQ(2.52)
 
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
 AC_ISC_POSIX
 AC_PROG_INSTALL
+
 
 # CFLAGS to use during configure (warnings and such are added later)
 CFLAGS=""
@@ -23,17 +25,52 @@ AC_CHECK_HEADERS(
 )
 AC_CHECK_HEADER(stdint.h)
 
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 TYPE_SOCKLEN_T
+TYPE_STRUCT_SOCKADDR_STORAGE(,
+  [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
 
-IN6_STRUCT_SOCKADDR_STORAGE([],
-  [AC_MSG_ERROR([Your system does not support struct sockaddr_storage, which is needed to compile nc6])]
-)
 
 # Configure IPv6 support
+ipv6=
+AC_ARG_ENABLE(ipv6,
+  AC_HELP_STRING(
+    [--disable-ipv6],[Disable IPv6 support]),
+  [case "${enable_ipv6}" in
+  no)
+    AC_MSG_NOTICE([Disabling IPv6 at user request])
+    ipv6=no
+    ;;
+  *)
+    ipv6=yes
+    ;;
+  esac],
+  [ipv6=yes]
+)
+
+if test "X$ipv6" = "Xyes"; then
+  TYPE_STRUCT_SOCKADDR_IN6(,[
+    AC_MSG_NOTICE([Disabling IPv6 support: 'struct sockaddr_in6' is required])
+    ipv6=no
+  ])
+fi
+
+if test "X$ipv6" = "Xyes"; then
+  PROTO_INET6(,[
+    AC_MSG_NOTICE([Disabling IPv6 support: INET6 protocol support is required])
+    ipv6=no
+  ])
+fi
+
+if test "X$ipv6" = "Xyes"; then
+  AC_DEFINE([ENABLE_IPV6], 1, [Define if IPV6 support is enabled.])
+fi
+
+
 AC_ARG_ENABLE(stack-guess,
   AC_HELP_STRING(
     [--enable-stack-guess],
@@ -41,37 +78,24 @@ AC_ARG_ENABLE(stack-guess,
   ),
   [case "${enable_stack_guess}" in
   yes)  
-    guess=yes
+    stack_guess=yes
     ;;
   no) 
-    guess=no
+    stack_guess=no
     ;;
   *)    
     AC_MSG_ERROR(bad value ${enable_stack_guess} for --enable-stack-guess option) 
     ;;
   esac],
-  [guess=yes]
+  [stack_guess=yes]
 )
 
-IN6_ENABLE_IPV6(
-  [
-    AC_DEFINE(INET6, 1, [Define if the system is IPv6-enabled.])
-    ipv6=yes
-  ],
-  [ipv6=no],
-  [ipv6=maybe]
-)
-
-if test "X$guess" != "Xno" -a "X$ipv6" != "Xno"; then
+if test "X$stack_guess" != "Xno"; then
   IN6_GUESS_STACK(ipv6, ipv6libdir, ipv6lib)
   CFLAGS="$CFLAGS $INET6_CFLAGS"
   LIBS="$INET6_LIBS $LIBS"
 fi
 
-# Check for IPv6 structures, only if needed
-IN6_STRUCT_SOCKADDR_IN6([],
-  [AC_MSG_ERROR([Your system does not support struct sockaddr_in6, which is needed to compile nc6])]
-)
 
 # Checks for library functions.
 AC_FUNC_ALLOCA
