@@ -48,9 +48,7 @@ static int local_sent, net_sent;
 /* ios1 is the remote stream, ios2 the local one */
 int readwrite(io_stream *ios1, io_stream *ios2)
 {
-	int rr, max_fd;
-	bool file_xfer_mode;
-	bool listen_mode;
+	int rr, max_fd = -1;
 	fd_set read_fdset, tmp_rd_fdset, write_fdset, tmp_wr_fdset;
 	circ_buf *buf1 = NULL;
 	uint8_t *tbuf1 = NULL;
@@ -84,68 +82,27 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	local_sent = 0;
 	net_sent   = 0;		
 
-	file_xfer_mode = is_flag_set(FILE_TRANSFER_MODE);
-	listen_mode    = is_flag_set(LISTEN_MODE);
-
 	/* setup all the stuff for the select loop */
 	FD_ZERO(&read_fdset);
 	FD_ZERO(&write_fdset);
 
-	if (file_xfer_mode == TRUE) {
-		/* if we are in file transfer mode, setup unidirectional 
-		 * data transfers */
-		if (listen_mode == TRUE) {
-			/* reading only from the remote stream */ 
-			FD_SET(ios_readfd(ios1), &read_fdset);
-
-			/* close the remote stream for writing */
-			ios_shutdown(ios1, SHUT_WR);
-
-			/* close the local stream for reading */
-			ios_shutdown(ios2, SHUT_RD);
-
-			/* don't stop because the read is closed */
-			ios_set_hold_timeout(ios2, -1);
-			
-			max_fd = MAX(ios_readfd(ios1), ios_writefd(ios2));
-
-#ifndef NDEBUG
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("File xfter mode: reading ios1 (remote) only");
-#endif
-		} else {
-			/* reading only from the local stream */ 
-			FD_SET(ios_readfd(ios2), &read_fdset);
-		
-			/* close the remote stream for reading */
-			ios_shutdown(ios1, SHUT_RD);
-
-			/* don't stop because the read is closed */
-			ios_set_hold_timeout(ios1, -1);
-			
-			/* close the local stream for writing */
-			ios_shutdown(ios2, SHUT_WR);
-			
-			max_fd = MAX(ios_writefd(ios1), ios_readfd(ios2));
-
-#ifndef NDEBUG
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("File xfter mode: reading ios2 (local) only");
-#endif
-		}
-	} else {
-		int temp;
-		
-		/* if we are not in file transfer mode, setup bidirectional 
-		 * data transfers */
+	/* calculate max_fd and add initial fd's to be read from to read_fdset */
+	if (is_read_open(ios1)) {
+		/* read from ios1 */
 		FD_SET(ios_readfd(ios1), &read_fdset);
-		FD_SET(ios_readfd(ios2), &read_fdset);
-
-		max_fd = MAX(ios_readfd(ios1), ios_writefd(ios1));
-		temp   = MAX(ios_readfd(ios2), ios_writefd(ios2));
-		if (temp > max_fd) max_fd = temp;
+		max_fd = MAX(ios_readfd(ios1), max_fd);
 	}
-	
+	if (is_write_open(ios1)) 
+		max_fd = MAX(ios_writefd(ios1), max_fd);
+
+	if (is_read_open(ios2)) {
+		/* read from ios2 */
+		FD_SET(ios_readfd(ios2), &read_fdset);
+		max_fd = MAX(ios_readfd(ios2), max_fd);
+	}
+	if (is_write_open(ios2)) 
+		max_fd = MAX(ios_writefd(ios2), max_fd);
+
 	if (max_fd > FD_SETSIZE) {
 		/* with 4 fd's this shouldn't happen */
 		fatal("max_fd > FD_SETSIZE");

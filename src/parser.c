@@ -43,6 +43,8 @@ static void print_usage(FILE *fp);
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 {
 	int c, verbosity_level = 0;
+	bool listen_mode = FALSE;
+	bool file_transfer = FALSE;
 
 	/* set socket types to default values */
 	attrs->proto = PROTO_UNSPECIFIED;
@@ -72,7 +74,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stdout);
 			exit(EXIT_SUCCESS);
 		case 'l':
-			set_flag(LISTEN_MODE);
+			listen_mode = TRUE;
 			break;
 		case 'n':	
 			set_flag(NUMERIC_MODE);
@@ -100,7 +102,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			set_flag(VERBOSE_MODE); 
 			break;
 		case 'x':	
-			set_flag(FILE_TRANSFER_MODE);
+			file_transfer = TRUE;
 			break;
 		default:	
 			print_usage(stderr);
@@ -110,6 +112,14 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	
 	argv += optind;
 	argc -= optind;
+
+	/* set mode flags */
+	set_flag((listen_mode)? LISTEN_MODE : CONNECT_MODE);
+
+	/* setup file transfer depending on the mode */
+	if (file_transfer == TRUE) {
+		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
+	}
 
 	/* additional arguments are the remote address/service */
 	switch(argc) {
@@ -143,7 +153,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		attrs->remote_address.service = NULL;
 	}
 
-	if (is_flag_set(LISTEN_MODE) == TRUE) {	
+	if (listen_mode) {	
 		if (attrs->local_address.service == NULL) {
 			warn("in listen mode you must specify a port with the -p switch");
 			print_usage(stderr);

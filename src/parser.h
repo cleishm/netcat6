@@ -27,11 +27,12 @@
 #define NUMERIC_MODE		0x00000001
 #define STRICT_IPV6		0x00000002
 #define DONT_REUSE_ADDR      	0x00000004
-#define FILE_TRANSFER_MODE	0x00000008
-#define LISTEN_MODE		0x00000010
-#define CONNECT_MODE		0x00000020
-#define VERBOSE_MODE		0x00000040
-#define VERY_VERBOSE_MODE	0x00000080
+#define LISTEN_MODE		0x00000008
+#define CONNECT_MODE		0x00000010
+#define RECV_DATA_ONLY		0x00000020
+#define SEND_DATA_ONLY		0x00000040
+#define VERBOSE_MODE		0x00000080
+#define VERY_VERBOSE_MODE	0x00000100
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs);
 bool is_flag_set(unsigned long mask);

@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /* program name */
 static char *program_name  = NULL;
@@ -66,10 +67,50 @@ int main(int argc, char **argv)
 		break;
 	}
 
+	/* setup unidirectional data transfers (if requested) */
+	assert(!(is_flag_set(RECV_DATA_ONLY) && is_flag_set(SEND_DATA_ONLY)));
+
+	if (is_flag_set(RECV_DATA_ONLY) == TRUE) {
+		/* reading only from the remote stream */
+
+		/* close the remote stream for writing */
+		ios_shutdown(&(connection_attrs.remote_stream), SHUT_WR);
+
+		/* close the local stream for reading */
+		ios_shutdown(&(connection_attrs.local_stream), SHUT_RD);
+
+		/* don't stop because the read is closed */
+		ios_set_hold_timeout(&(connection_attrs.local_stream), -1);
+
+#ifndef NDEBUG
+		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			warn("File xfer mode: reading remote only");
+#endif
+	}
+
+	if (is_flag_set(SEND_DATA_ONLY) == TRUE) {
+		/* reading only from the local stream */
+
+		/* close the remote stream for reading */
+		ios_shutdown(&(connection_attrs.remote_stream), SHUT_RD);
+
+		/* don't stop because the read is closed */
+		ios_set_hold_timeout(&(connection_attrs.remote_stream), -1);
+
+		/* close the local stream for writing */
+		ios_shutdown(&(connection_attrs.local_stream), SHUT_WR);
+
+#ifndef NDEBUG
+		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			warn("File xfer mode: reading local only");
+#endif
+	}
+
 	/* run the main read/write loop */
 	retval = readwrite(&(connection_attrs.remote_stream),
 	          &(connection_attrs.local_stream));
 
+	/* cleanup */
 	connection_attributes_destroy(&connection_attrs);
 
 	return (retval)? EXIT_FAILURE : EXIT_SUCCESS;
