@@ -44,7 +44,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.26 2003-04-14 09:00:50 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.27 2003-07-22 18:51:43 mauro Exp $");
 
 
 

@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.46 2003-01-25 14:42:36 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.47 2003-07-22 18:51:43 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */

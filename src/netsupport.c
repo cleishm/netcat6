@@ -29,7 +29,7 @@
 #include "misc.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.9 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.10 2003-07-22 18:51:43 mauro Exp $");
 
 
 /* add a new fd/socktype pair to the list */

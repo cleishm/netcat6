@@ -37,7 +37,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.34 2003-04-14 09:00:50 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.35 2003-07-22 18:51:43 mauro Exp $");
 
 /* program name */
 static char *program_name  = NULL;

@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.39 2003-01-24 14:13:10 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.40 2003-07-22 18:51:43 mauro Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
