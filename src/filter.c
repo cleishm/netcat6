@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.21 2003-01-14 20:21:19 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.22 2003-01-14 20:39:47 chris Exp $");
 
 
 
@@ -195,8 +195,6 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	/* if no address or port is supplied, match everything */
 	if (addr->address == NULL && addr->service == NULL) return TRUE;
 		
-	ret = FALSE;
-	
 	memset(&hints, 0, sizeof(hints));
 	ca_to_addrinfo(&hints, attrs);
 
@@ -206,9 +204,21 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	hints.ai_flags |= AI_PASSIVE;
 	
 	err = getaddrinfo(addr->address, addr->service, &hints, &res);
-	if (err != 0) 
-		fatal("getaddrinfo error: %s", gai_strerror(err));
+	if (err != 0) {
+		/* some errors just indicate that the address wasn't suitable */
+		switch (err) {
+		case EAI_NODATA:
+		case EAI_ADDRFAMILY:
+		case EAI_SERVICE:
+		case EAI_SOCKTYPE:
+			return FALSE;
+		default:
+			fatal("getaddrinfo error: %s", gai_strerror(err));
+		}
+	}
 
+	ret = FALSE;
+	
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
 #ifdef ENABLE_IPV6
