@@ -1,0 +1,240 @@
+.TH NC6 1 
+.SH NAME
+nc6 \- TCP/IP swiss army knife
+.SH SYNOPSIS
+.B nc6
+.I "[options...] hostname port"
+.br
+.B nc6
+.I "-l -p port [-s addr] [options...] [hostname] [port]"
+.SH "DESCRIPTION"
+.B netcat6
+is a simple unix utility which reads and writes data across network
+connections, using the TCP or UDP protocol over IPv4 or IPv6 networks.
+It is designed to be a reliable "back-end" tool that can be used directly or
+easily driven by other programs and scripts.  At the same time, it is a
+feature-rich network debugging and exploration tool, since it can create
+almost any kind of connection you would need and has several interesting
+built-in capabilities. 
+.B netcat6
+, or
+.B nc6
+as the actual program is named, should have been supplied long ago
+as another one of those cryptic but standard Unix tools.
+.P
+In the simplest usage, "
+.B nc6 host port
+" creates a TCP connection to the
+given port on the given target host.  Your standard input is then sent
+to the host, and anything that comes back across the connection is
+sent to your standard output.  This continues indefinitely, until the
+network side of the connection shuts down.  Note that this behavior is
+different from most other applications which shut everything down and
+exit after an end-of-file on the standard input (though this style of
+operation can easily be enabled).
+.P
+netcat6 can also function as a server, by listening for inbound connections on
+arbitrary ports and then doing the same reading and writing.  With minor
+limitations, netcat6 doesn't really care if it runs in "client" or "server"
+mode -- it still shovels data back and forth until there isn't any more left.
+In this manual page, these two working modes are referred as "connect mode"
+and "listen mode", respectively.
+.SH OPTIONS
+.TP 13
+.I \-4
+Forces the use of IPv4. 
+.TP 13
+.I \-6
+Forces the use of IPv6 and inhibits the use IPV4-mapped addresses.
+.TP 13
+.I \-h, --help
+Display a brief help listing.
+.TP 13
+.I \-l, --listen
+Selects listen mode (for inbound connects).
+.TP 13
+.I \-n
+Disables DNS queries - you'll have to use numeric IP address 
+instead of hostnames.
+.TP 13
+.I \-p, --port=PORT
+Sets the port number for the local endpoint of the connection.
+.TP 13
+.I \-q, --hold-timeout=SEC1[:SEC2]
+Sets the hold timeout(s) (see "timeouts" section).  Specifying just one value
+will set the hold timeout on the local endpoint, specifying a second value will
+set the hold timeout on the remote endpoint as well.  Either value can be '0'
+(for instant timeout) or '-' (for no hold timeout, eg. infinite hold).
+.TP 13
+.I \-s, --address=ADDRESS
+Sets the source address for the local endpoint of the connection.
+.TP 13
+.I \-u, --udp
+With this option set, netcat6 will use UDP as the transport protocol (TCP is
+the default).
+.TP 13
+.I \-v
+Enable verbose mode.  This gives some basic information about what netcat6
+is doing.  Use it twice for extra verbosity.
+.TP 13
+.I \-w, --timeout=SECONDS
+Timeout for network connects and accepts.
+.TP 13
+.I \-x, --transfer
+File transfer mode (see "file transfer" section).  If listen mode is
+specified, this is equivalent to "--recv-only --buffer-size=65536" otherwise
+it is equivalent to "--send-only --buffer-size=65536".
+.TP 13
+.I \--recv-only
+Only receive data, don't transmit.  This also disables any hold timeouts.
+.TP 13
+.I \--send-only
+Only send data, don't receive.  This also disables any hold timeouts.
+.TP 13
+.I \--buffer-size=BYTES
+Set the buffer size for the remote endpoint (network receives).
+netcat6 does all network reads into this buffer, so it should be large enough
+to minimize excessive reads from the socket and in UDP mode it should be large
+enough to receive an entire datagram (also see --nru).  By default, the buffer
+size is 8192 bytes for TCP connections and 65536 bytes for UDP.
+.TP 13
+.I \--mtu=BYTES
+Set the Maximum Transmission Unit for the remote endpoint (network transmits).
+This is only really useful for datagram protocols like UDP.  For TCP the MTU
+is determined by the kernel and this will only affect the amount that is
+passed to the kernel at any one time.  There is no default MTU for TCP
+connections (and there should be no need to change this), and for UDP it is
+8192 bytes.
+.TP 13
+.I \--nru=BYTES
+Set the miNimum Receive Unit for the remote endpoint (network receives).  Note
+that this does not mean that every network read will get the specified number
+of bytes, only that nc6 MUST be able to receive at least that amount of data
+when a read is done.  This is only really useful for datagram protocols like
+UDP where the entire datagram must be received in one call or it is truncated.
+The default NRU for TCP connections is 1 byte, and 65536 bytes for UDP.
+.TP 13
+.I \--half-close
+Properly handle (and send) TCP half closes for protocols that support them
+(eg. TCP).
+.TP 13
+.I \--disable-nagle
+Disable the use of the nagle algorithm for TCP connections (see "nagle
+algorithm" section).
+.TP 13
+.I \--no-reuseaddr
+Disables the SO_REUSEADDR socket option (this is only useful in listen mode).
+.SH UDP
+UDP support in netcat6 works very well in both connect and in listen mode.
+When using UDP in listen mode netcat6 accepts UDP packets from any source that
+matches the optional address and/or port specified (if it was specified).
+However, once the first packet is received, netcat6 will only receive packets from that client in future.  This is done by putting the UDP socket into "connected" state (see udp(4) and connect(2)).  Packets from other sources are discarded by the kernel and an ICMP unreachable response is sent.
+.P
+When connecting to a remote host using UDP, nc6 will report that the
+connection is open regardless of whether a remote server is listening.  This
+is because UDP is a connectionless protocol, and hence no connection
+establishment is actually required.  However, after sending the first packet
+of data, a server may reply with an ICMP unreachable response causing nc6 to
+exit with a 'Connection refused' error message.
+.P
+netcat6 allows for fine control over the buffer sizes, MTU's and NRU's for the
+connection, which is especially useful for UDP connections.  See the
+--buffer-size, --mtu and --nru options.
+.SH TIMEOUTS
+netcat6 currently implements a connect/accept timeout, and hold timeouts on
+both the remote and local endpoints.
+.IP \(bu 4
+The connect/accept timeout is optional and is specified with the -w or
+--timeout option.  If a connection cannot be established within the specified
+time, nc6 will exit with a non-zero exit status.  If the option is not
+specified, nc6 will wait forever when listening for new connections
+(in listen mode), and will use the standard operating system timeout when
+trying to connect to remote systems.  Note that the connect timeout is
+essentially ignored when creating UDP connections to a remote server, as UDP
+is a connectionless protocol.
+.IP \(bu 4
+The hold timeouts specify how long the connection should be held open after a
+given endpoint can no longer be read from.  For example, setting the hold time
+of the local endpoint to 5 would cause the connection to be closed 5 seconds
+after stdin is closed (eg. by using ^D to send EOF).  By default, the hold
+timeout is disabled for the local endpoint (essentially an 'infinite'
+timeout), and the hold timeout is set to 0 for the remote endpoint (an
+\'instant' timeout).  This means that nc6 closes it's connection immediately
+when the read from the remote server is closed (also, see "HALF CLOSE"
+section).
+.SH FILE TRANSFER
+netcat6 can be used to transfer files and data streams efficiently, using the
+\'-x' or '--transfer' command line option.
+.P
+For example, to transfer a file from machine 'foo.example.com' to machine
+\'bar.example.com', one would use the following technique.
+.P
+On 'foo', set up a listening nc6 on any local port:
+.RS
+
+foo$ nc6 -x -l -p 7676 > targetfile
+
+.RE
+Then on 'bar', use nc6 to send the file to the listening nc6:
+.RS
+
+bar$ nc6 -x foo.example.com 7676 < sourcefile
+
+.RE
+You can also use file transfer mode to pipe the output of programs over
+networks.  For example, you can use tar with nc6 to copy entire directories:
+.RS
+
+foo$ nc6 -x -l -p 7676 | tar xpzf -
+
+bar$ tar cpzf - /home | nc6 -x foo.example.com 7676
+
+.RE
+The '-x' or '--transfer' option is just an alias for various other options
+which set the direction of transfer and increase the buffer sizes used.  In
+listen mode, it is equivalent to "--recv-only --buffer-size=65536" otherwise
+it is equivalent to "--send-only --buffer-size=65536".
+.P
+File transfer mode assumes the file will be sent TO the netcat6 process that
+is in listen mode, FROM the netcat6 process that is connecting to it.  It
+won't work the other way around, but you can make it do so by specifying the
+equivalent options instead of using '-x'.
+.SH HALF CLOSE
+Stream based data transfers, such as TCP, have 2 separate streams - the
+receive and the transmit stream (pretty obvious).  Contrary to common belief,
+the streams can be closed independently of each other - in TCP this is called
+a half-close.
+.P
+In standard mode, netcat6 closes the entire remote connection when it detects
+that the remote receive stream has been closed.  This is a common operation
+for most TCP applications, because it is unusual that a server will keep
+accepting data after it has indicated that it will no longer send any.
+netcat6 also doesn't close it's remote transmit when it has no more data to
+send (eg.  when EOF has been received on stdin), so as not to confuse remote
+servers.
+.P
+However, some servers do make active use of TCP half-closes, and the default
+operation of netcat6 doesn't work well with these services.  For example, when
+using netcat6 to simulate a HTTP server, some HTTP clients close their
+transmit stream after they send their request.  In default mode, netcat6 will
+close the entire connection before sending the response back to the client.
+.P
+However, by specifying the "--half-close" option, netcat6 will keep trying to
+send data to the remote server after the receive stream has closed.  It will
+also close the remote transmit stream when there is no more data to send.
+.SH NAGLE ALGORITHM
+TODO
+.SH ERRORS
+TODO
+.SH BUGS
+TODO
+.SH VERSION
+This man page is current for version @VERSION@ of netcat6
+.SH COPYRIGHT
+GPL. 
+.SH AUTHORS
+ Mauro Tortonesi <mauro@ferrara.linux.it>
+ Chris Leishman <chris@leishman.org>
+.P 
+The original netcat was written by a guy we know as
+the Hobbit <hobbit@avian.org>.
