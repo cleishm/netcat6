@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.44 2003-01-23 15:47:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.45 2003-01-24 14:19:31 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -66,29 +66,31 @@ static const struct option long_options[] = {
 	{"udp",                 FALSE, NULL, 'u'},
 #define OPT_TIMEOUT		7
 	{"timeout",             TRUE,  NULL, 'w'},
-#define OPT_TRANSFER		8
+#define OPT_IDLE_TIMEOUT	8
+	{"idle-timeout",        TRUE,  NULL, 't'},
+#define OPT_TRANSFER		9
 	{"transfer",            FALSE, NULL, 'x'},
-#define OPT_RECV_ONLY		9
+#define OPT_RECV_ONLY		10
 	{"recv-only",           FALSE, NULL,  0 },
-#define OPT_SEND_ONLY		10
+#define OPT_SEND_ONLY		11
 	{"send-only",           FALSE, NULL,  0 },
-#define OPT_BUFFER_SIZE		11
+#define OPT_BUFFER_SIZE		12
 	{"buffer-size",         TRUE,  NULL,  0 },
-#define OPT_MTU			12
+#define OPT_MTU			13
 	{"mtu",                 TRUE,  NULL,  0 },
-#define OPT_NRU			13
+#define OPT_NRU			14
 	{"nru",                 TRUE,  NULL,  0 },
-#define OPT_HALF_CLOSE		14
+#define OPT_HALF_CLOSE		15
 	{"half-close",          FALSE, NULL,  0 },
-#define OPT_DISABLE_NAGLE	15
+#define OPT_DISABLE_NAGLE	16
 	{"disable-nagle",       FALSE, NULL,  0 },
-#define OPT_NO_REUSEADDR	16
+#define OPT_NO_REUSEADDR	17
 	{"no-reuseaddr",        FALSE, NULL,  0 },
-#define OPT_SNDBUF_SIZE		17
+#define OPT_SNDBUF_SIZE		18
 	{"sndbuf-size",         TRUE,  NULL,  0 },
-#define OPT_RCVBUF_SIZE		18
+#define OPT_RCVBUF_SIZE		19
 	{"rcvbuf-size",         TRUE,  NULL,  0 },
-#define OPT_MAX			19
+#define OPT_MAX			20
 	{0, 0, 0, 0}
 };
 
@@ -113,6 +115,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	bool file_transfer = FALSE;
 	bool half_close = FALSE;
 	int connect_timeout = -1;
+	int idle_timeout = -1;
 	bool set_local_hold_timeout = FALSE;
 	int local_hold_timeout;
 	bool set_remote_hold_timeout = FALSE;
@@ -165,9 +168,11 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				set_flag(DONT_REUSE_ADDR);
 				break;
 			case OPT_SNDBUF_SIZE:
+				assert(optarg != NULL);
 				sndbuf_size = safe_atoi(optarg);
 				break;
 			case OPT_RCVBUF_SIZE:
+				assert(optarg != NULL);
 				rcvbuf_size = safe_atoi(optarg);
 				break;
 			default:
@@ -208,6 +213,10 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			assert(optarg != NULL);
 			local_address.address = xstrdup(optarg);
 			break;	
+		case 't':
+			assert(optarg != NULL);
+			idle_timeout = safe_atoi(optarg);
+			break;
 		case 'u':	
 			protocol = UDP_PROTOCOL;
 			/* set remote buffer sizes and mtu's, iff they haven't
@@ -343,9 +352,12 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	ca_set_local_addr(attrs, local_address);
 
 	/* setup connection timeout */
-	if (connect_timeout != -1) {
+	if (connect_timeout != -1)
 		ca_set_connect_timeout(attrs, connect_timeout);
-	}
+
+	/* setup idle timeout */
+	if (idle_timeout != -1)
+		ca_set_idle_timeout(attrs, idle_timeout);
 	
 	/* setup half close mode */
 	if (half_close == TRUE) {
@@ -397,6 +409,8 @@ static void print_usage(FILE *fp)
 "                    Set hold timeout(s) for local [and remote]\n"
 "  -s, --address=ADDRESS\n"
 "                    Local source address\n"
+"  -t, --idle-timeout=SEC\n"
+"                    Idle connection timeout\n"
 "  -u, --udp         Require use of UDP\n"
 "  -v                Increase program verbosity (call twice for max verbosity)\n"
 "  -w, --timeout=SECONDS\n"

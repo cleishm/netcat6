@@ -120,6 +120,9 @@ will set the hold timeout on the local endpoint, specifying a second value will
 set the hold timeout on the remote endpoint as well.  Either value can be '0'
 (for instant timeout) or '-' (for no hold timeout, eg. infinite hold).
 .TP 13
+.I \-t, --idle-timeout=SEC
+Sets the idle timeout (see "TIMEOUTS").
+.TP 13
 .I \--rcvbuf-size=SIZE
 Specify the size to be used for the kernel receive buffer for network sockets.
 .TP 13
@@ -147,7 +150,7 @@ is doing.  Use it twice for extra verbosity.
 Print netcat6 version and exit.
 .TP 13
 .I \-w, --timeout=SECONDS
-Timeout for network connects and accepts.
+Timeout for network connects and accepts (see "TIMEOUTS").
 .TP 13
 .I \-x, --transfer
 File transfer mode (see "FILE TRANSFER").  If listen mode is
@@ -173,8 +176,8 @@ netcat6 allows for fine control over the buffer sizes, MTU's and NRU's for the
 connection, which is especially useful for UDP connections.  See the
 --buffer-size, --mtu and --nru options.
 .SH TIMEOUTS
-netcat6 currently implements a connect/accept timeout, and hold timeouts on
-both the remote and local endpoints.
+netcat6 currently implements a connect/accept timeout, and idle timeout, and
+hold timeouts on both the remote and local endpoints.
 .IP \(bu 4
 The connect/accept timeout is optional and is specified with the -w or
 --timeout option.  If a connection cannot be established within the specified
@@ -184,6 +187,11 @@ specified, nc6 will wait forever when listening for new connections
 trying to connect to remote systems.  Note that the connect timeout is
 essentially ignored when creating UDP connections to a remote server, as UDP
 is a connectionless protocol.
+.IP \(bu 4
+The idle timeout is optional and is specified with the -t or --idle-timeout
+option.  If no data is sent or received from the remote host in the specified
+time, nc6 will exit with a non-zero exit status.  The default is to not
+timeout idle connections.
 .IP \(bu 4
 The hold timeouts specify how long the connection should be held open after a
 given endpoint can no longer be read from (because EOF was received).  When

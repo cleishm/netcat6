@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.25 2003-01-23 16:29:15 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.26 2003-01-24 14:19:31 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -50,11 +50,12 @@ void ca_init(connection_attributes *attrs)
 	attrs->remote_nru = 0;
 	attrs->sndbuf_size = 0;
 	attrs->rcvbuf_size = 0;
-	attrs->local_hold_timeout = -1;
+	attrs->connect_timeout = -1;
+	attrs->idle_timeout    = -1;
+	attrs->local_hold_timeout  = -1;
 	attrs->remote_hold_timeout = 0;
 	attrs->remote_half_close_suppress = TRUE;
-	attrs->local_half_close_suppress = FALSE;
-	attrs->connect_timeout = -1;
+	attrs->local_half_close_suppress  = FALSE;
 }
 
 

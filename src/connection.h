@@ -57,11 +57,12 @@ typedef struct connection_attributes_t
 	size_t remote_nru;
 	size_t sndbuf_size;
 	size_t rcvbuf_size;
+	int connect_timeout;
+	int idle_timeout;
 	int local_hold_timeout;
 	int remote_hold_timeout;
 	bool remote_half_close_suppress;
 	bool local_half_close_suppress;
-	int connect_timeout;
 } connection_attributes;
 
 
@@ -100,6 +101,9 @@ void ca_destroy(connection_attributes *attrs);
 	
 #define ca_connect_timeout(CA)		((CA)->connect_timeout)
 #define ca_set_connect_timeout(CA, CT)	((CA)->connect_timeout = (CT))
+
+#define ca_idle_timeout(CA)		((CA)->idle_timeout)
+#define ca_set_idle_timeout(CA, CT)	((CA)->idle_timeout = (CT))
 
 #define ca_remote_hold_timeout(CA)	((CA)->remote_hold_timeout)
 #define ca_set_remote_hold_timeout(CA, T)		\

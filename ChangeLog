@@ -1,3 +1,9 @@
+2003-01-24 Chris Leishman <chris _at_ leishman.org>
+
+ * Restructured io_stream, especially with respect to timeout handling.
+ * Added --idle-timeout option for setting the idle timeout on the remote
+   stream.
+
 2003-01-23 Chris Leishman <chris _at_ leishman.org>
 
  * Fixed bug with --no-reuseaddr option not being recognized.

@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.26 2003-01-24 14:13:10 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.27 2003-01-24 14:19:31 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -151,6 +151,9 @@ static int connection_main(const connection_attributes *attrs,
 	/* set remote mtu & nru */
 	ios_set_mtu(&remote_stream, ca_remote_MTU(attrs));
 	ios_set_nru(&remote_stream, ca_remote_NRU(attrs));
+
+	/* set idle timeouts - only on remote ios */
+	ios_set_idle_timeout(&remote_stream, ca_idle_timeout(attrs));
 
 	/* set stream hold timeouts */
 	ios_set_hold_timeout(&remote_stream, ca_remote_hold_timeout(attrs));
