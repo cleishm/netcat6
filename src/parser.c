@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.27 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.28 2003-01-03 09:11:59 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -96,7 +96,7 @@ static void print_usage(FILE *fp);
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 {
-	int c, ret, verbosity_level = 0;
+	int c, ret = -1, verbosity_level = 0;
 	bool listen_mode = FALSE;
 	bool file_transfer = FALSE;
 	size_t remote_mtu = 0;
@@ -117,8 +117,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	/* set socket types to default values */
 	protocol = PROTO_UNSPECIFIED;
 	socket_type = TCP_SOCKET;
-
-	ret = CONNECT_MODE;
 
 	/* option recognition loop */
 	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
@@ -326,7 +324,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	
 	/* keep remote open after half close */
 	if (half_close == TRUE) {
-		ca_supress_half_close_remote(attrs);
+		ca_suppress_half_close_remote(attrs);
 		ca_set_hold_timeout_remote(attrs);
 	}
 	
@@ -340,6 +338,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	if (local_buffer_size > 0)
 		ca_resize_local_buf(attrs, local_buffer_size);
 
+	assert(ret != -1);
 	return ret;
 }
 

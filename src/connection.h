@@ -71,9 +71,9 @@ typedef struct connection_attributes_t
 #define ca_set_connection_timeout(CA, CT)	\
 	((CA)->connect_timeout = (CT))
 	
-#define ca_supress_half_close_remote(CA)	\
+#define ca_suppress_half_close_remote(CA)	\
 	ios_suppress_half_close(&((CA)->remote_stream), FALSE)
-#define ca_supress_half_close_local(CA)	\
+#define ca_suppress_half_close_local(CA)	\
 	ios_suppress_half_close(&((CA)->local_stream), FALSE)
 	
 #define ca_set_hold_timeout_remote(CA)	\
