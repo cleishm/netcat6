@@ -1,7 +1,7 @@
 dnl ====================================================
 dnl IN6_GUESS_STACK(ipv6,ipv6libdir,ipv6lib,CFLAGS,LIBS)
 dnl ====================================================
-AC_DEFUN(IN6_GUESS_STACK,[
+AC_DEFUN([IN6_GUESS_STACK],[
 	AC_MSG_CHECKING([IPv6 stack type])
 	AC_CACHE_VAL([ds6_cv_ds6_cv_ipv6_stack],[
 	ds6_cv_ipv6_stack=unknown
