@@ -23,8 +23,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "misc.h"
 #include "netsupport.h"
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.3 2002-12-29 14:54:55 chris Exp $");
 
 
 /* add a new fd/socktype pair to the list */
