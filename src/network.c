@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.41 2003-01-20 21:56:09 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.42 2003-01-20 22:16:35 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -611,7 +611,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 
 			ns = dup(fd);
 			if (ns < 0)
-				fatal(_("dup failed: %s", strerror(errno)));
+				fatal(_("dup failed: %s"), strerror(errno));
 		}
 
 		/* get names for each end of the connection */
