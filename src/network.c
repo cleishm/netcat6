@@ -34,7 +34,24 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.35 2003-01-14 20:28:18 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.36 2003-01-14 23:38:26 chris Exp $");
+
+
+/* suggested size for argument to getnameinfo_ex */
+static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
+
+/* return values from connect_with_timeout */
+#define CONNECTION_SUCCESS	0
+#define CONNECTION_TIMEOUT	-1
+#define CONNECTION_FAILED	-2
+
+
+static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout);
+static void listen_once_callback(int fd, int socktype, void *cdata);
+static bool skip_address(const struct addrinfo *ai);
+static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str, 
+                           size_t size, bool numeric_mode);
+
 
 
 int do_connect(const connection_attributes *attrs, int *rt_socktype)
@@ -46,10 +63,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
 	bool disable_nagle     = FALSE;
-	char hbuf_rev[NI_MAXHOST + 1];
-	char hbuf_num[NI_MAXHOST + 1];
-	char sbuf_rev[NI_MAXSERV + 1];
-	char sbuf_num[NI_MAXSERV + 1];
+	char buf[AI_STR_SIZE];
 
 	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
@@ -61,8 +75,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	/* make sure all the preconditions are respected */
 	assert(remote->address != NULL && strlen(remote->address) > 0);
 	assert(remote->service != NULL && strlen(remote->service) > 0);
-	assert(local->address == NULL || strlen(local->address) > 0);
-	assert(local->service == NULL || strlen(local->service) > 0);
+	assert(local->address == NULL  || strlen(local->address)  > 0);
+	assert(local->service == NULL  || strlen(local->service)  > 0);
 
 	/* setup flags */
 	numeric_mode  = is_flag_set(NUMERIC_MODE);
@@ -91,62 +105,12 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 	/* try connecting to any of the addresses returned by getaddrinfo */
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
-		struct timeval tv, *tvp = NULL;
-		fd_set connect_fdset;
-		socklen_t len;
 
 		/* only accept socktypes we can handle */
-		if (ptr->ai_socktype != SOCK_STREAM &&
-		    ptr->ai_socktype != SOCK_DGRAM) 
-			continue;
-
-#ifdef ENABLE_IPV6
-		/* skip IPv4 mapped addresses returned from getaddrinfo,
-		 * for security reasons. see:
-		 * http://playground.iijlab.net/i-d/
-		 *       /draft-itojun-ipv6-transition-abuse-01.txt
- 		 */
-		if (is_address_ipv4_mapped(ptr->ai_addr))
-			continue;
-#else
-#ifdef PF_INET6
-		/* skip IPv6 if disabled */
-		if (ptr->ai_family == PF_INET6)
-			continue;
-#endif
-#endif
+		if (skip_address(ptr) == TRUE) continue;
 
 		/* we are going to try to connect to this address */
 		connect_attempted = TRUE;
-
-		/* get the numeric name for this destination as a string */
-		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		                  hbuf_num, sizeof(hbuf_num),
-				  sbuf_num, sizeof(sbuf_num),
-				  NI_NUMERICHOST | NI_NUMERICSERV);
-
-		/* this should never happen */
-		if (err != 0)
-			fatal("getnameinfo failed: %s", gai_strerror(err));
-
-		/* get the real name for this destination as a string */
-		if (verbose_mode == TRUE && numeric_mode == FALSE) {
-			/* get the real name for this destination as a string */
-			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-			                  hbuf_rev, sizeof(hbuf_rev),
-					  sbuf_rev, sizeof(sbuf_rev), 0);
-			if (err != 0) {
-				warn("inverse lookup failed for %s: %s",
-				     hbuf_num, gai_strerror(err));
-				/* just make the real name the numeric string */
-				strcpy(hbuf_rev, hbuf_num);
-				strcpy(sbuf_rev, sbuf_num);
-			}
-		} else {
-			/* just make the real name the numeric string */
-			strcpy(hbuf_rev, hbuf_num);
-			strcpy(sbuf_rev, sbuf_num);
-		}
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -178,6 +142,11 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				warn("error with sockopt TCP_NODELAY");
 		}
 
+		/* setup buf if we're in verbose mode */
+		if (verbose_mode == TRUE) 
+			getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, buf, 
+			             sizeof(buf), numeric_mode);
+					
 		/* setup local source address and/or service */
 		if (local->address != NULL || local->service != NULL) {
 			struct addrinfo *src_res = NULL, *src_ptr;
@@ -199,10 +168,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				if (verbose_mode == TRUE) {
 					warn("bind to source addr/port failed "
 					     "when connecting to "
-					     "%s [%s] %s (%s): %s",
-					     hbuf_rev, hbuf_num,
-					     sbuf_num, sbuf_rev,
-					     gai_strerror(err));
+					     "%s: %s", buf, gai_strerror(err));
 				}
 				close(fd);
 				fd = -1;
@@ -227,10 +193,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				if (verbose_mode == TRUE) {
 					warn("bind to source addr/port failed "
 					     "when connecting to "
-					     "%s [%s] %s (%s): %s",
-					     hbuf_rev, hbuf_num,
-					     sbuf_num, sbuf_rev,
-					     strerror(errno));
+					     "%s: %s", buf, strerror(errno));
 				}
 				freeaddrinfo(src_res);
 				close(fd);
@@ -241,69 +204,33 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			freeaddrinfo(src_res);
 		}
 
-		/* set connect timeout */
-		if (ca_connect_timeout(attrs) > 0) {
-			tv.tv_sec = (time_t)ca_connect_timeout(attrs);
-			tv.tv_usec = 0;
-			tvp = &tv;
-		}
-
-		/* set fd to nonblocking */
-		nonblock(fd);
-		
 		/* attempt the connection */
-		err = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
+		err = connect_with_timeout(fd, ptr, ca_connect_timeout(attrs));
 		
-		if (err != 0 && errno == EINPROGRESS) {
-			/* connection is proceeding
-			 * it is complete (or failed) when select returns */
-
-			/* initialize connect_fdset */
-			FD_ZERO(&connect_fdset);
-			FD_SET(fd, &connect_fdset);
-
-			/* call select */
-			do {
-				err = select(fd + 1, NULL, &connect_fdset, 
-					     NULL, tvp);
-			} while (err < 0 && errno == EINTR);
-
-			if (err < 0)
-				fatal("select error: %s", strerror(errno));
-			
-			if (err == 0) {
-				/* connection timed out */
-				if (is_flag_set(VERBOSE_MODE) == TRUE) {
-					warn("%s [%s] %s (%s): "
-					     "connect timed out",
-					     hbuf_rev, hbuf_num,
-					     sbuf_num, sbuf_rev);
-				}
-				close(fd);
-				fd = -1;
-				continue;
-			}
-			
-			/* select returned - test socket error for result */
-			len = sizeof(err);
-			if (getsockopt(fd, SOL_SOCKET,SO_ERROR, &err, &len) < 0)
-				fatal("getsockopt error: %s", strerror(errno));
-			if (err != 0)
-				errno = err;
-		}
-		
-		if (err != 0) {
+		switch (err) {
+		case CONNECTION_SUCCESS: 
+			/* everything went ok */
+			break;
+		case CONNECTION_FAILED: 
 			/* connection failed */
-			if (verbose_mode == TRUE) {
-				warn("cannot connect to %s [%s] %s (%s): %s",
-				     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
-				     strerror(errno));
-			}
+			if (verbose_mode == TRUE) 
+				warn("cannot connect to %s: %s",
+				     buf, strerror(errno));
 			close(fd);
 			fd = -1;
 			continue;
+		case CONNECTION_TIMEOUT: 
+			/* connection failed */
+			if (verbose_mode == TRUE) 
+				warn("timeout while connecting to %s", buf);
+			close(fd);
+			fd = -1;
+			continue;
+		default: 
+			fatal("internal error");
 		}
 
+		/* exit from the loop if we have a valid connection */
 		if (fd >= 0)
 			break;
 	}
@@ -324,9 +251,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 	/* let the user know the connection has been established */
 	if (verbose_mode == TRUE) {
-		warn("%s [%s] %s (%s) open",
-		     hbuf_rev, hbuf_num,
-		     sbuf_num, sbuf_rev);
+		warn("%s open", buf);
 	}
 
 	/* return the socktype */
@@ -337,6 +262,66 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	freeaddrinfo(res);
 
 	return fd;
+}
+
+
+
+static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout)
+{
+	int err;
+	struct timeval tv, *tvp = NULL;
+	fd_set connect_fdset;
+	socklen_t len;
+	
+	/* set connect timeout */
+	if (timeout > 0) {
+		tv.tv_sec = (time_t)timeout;
+		tv.tv_usec = 0;
+		tvp = &tv;
+	}
+
+	/* set fd to nonblocking */
+	nonblock(fd);
+	
+	/* attempt the connection */
+	err = connect(fd, ai->ai_addr, ai->ai_addrlen);
+	
+	if (err != 0 && errno == EINPROGRESS) {
+		/* connection is proceeding
+		 * it is complete (or failed) when select returns */
+
+		/* initialize connect_fdset */
+		FD_ZERO(&connect_fdset);
+		FD_SET(fd, &connect_fdset);
+
+		/* call select */
+		do {
+			err = select(fd + 1, NULL, &connect_fdset, 
+				     NULL, tvp);
+		} while (err < 0 && errno == EINTR);
+
+		/* select error */
+		if (err < 0)
+			fatal("select error: %s", strerror(errno));
+	
+		/* we have reached a timeout */
+		if (err == 0) 
+			return CONNECTION_TIMEOUT;
+		
+		/* select returned successfully, but we must test socket 
+		 * error for result */
+		len = sizeof(err);
+		if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
+			fatal("getsockopt error: %s", strerror(errno));
+		
+		/* setup errno according to the result returned by 
+		 * getsockopt */
+		if (err != 0)
+			errno = err;
+	}
+
+	/* return aborted if an error occured, and valid otherwise */
+	return (err != 0)? CONNECTION_FAILED : CONNECTION_SUCCESS;
 }
 
 
@@ -362,6 +347,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 #endif
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
+	char src_buf[AI_STR_SIZE];
 
 	/* make sure that the arguments are correct */
 	assert(attrs != NULL);
@@ -372,8 +358,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 	local  = ca_local_address(attrs);
 
 	/* make sure all the preconditions are respected */
-	assert(local->address == NULL || strlen(local->address) > 0);
-	assert(local->service != NULL && strlen(local->service) > 0);
+	assert(local->address == NULL  || strlen(local->address)  > 0);
+	assert(local->service != NULL  && strlen(local->service)  > 0);
 	assert(remote->address == NULL || strlen(remote->address) > 0);
 	assert(remote->service == NULL || strlen(remote->service) > 0);
 
@@ -410,28 +396,36 @@ void do_listen_continuous(const connection_attributes* attrs,
 	assert(res != NULL);
 
 #ifdef ENABLE_IPV6
-	/* Some systems have a shared stack for ipv6 and ipv4 (eg. linux),
-	 * which means that binding an ipv6 socket to ADDR_ANY will also
-	 * listen for, and accept, ipv4 addresses.  These are returned as ipv4
-	 * mapped ipv6 addresses from accept(2).
+	/* 
+	 * Some systems (notably Linux) with a shared stack for ipv6 and ipv4, 
+	 * have a broken bind(2) implementation. In these systems, binding an 
+	 * ipv6 socket to ipv6_addr_any (::) will also bind the socket to
+	 * the ipv4 unspecified address (0.0.0.0).
+	 * 
+	 * So when listening on ipv6_addr_any (::) accept(2) will return also
+	 * ipv4 connection attemptes, as ipv4 mapped ipv6 addresses.
 	 *
-	 * However, getaddrinfo will still return results for both ipv6 AND
-	 * ipv4, but the bind to ipv4 will fail (as it is already held by the
-	 * ipv6 bind).
+	 * This is a problem, since when called with AF_UNSPEC and AI_PASSIVE, 
+	 * getaddrinfo will return results for both ipv6 AND ipv4, but if we 
+	 * try to bind on the ipv4 unspecified address (0.0.0.0) AFTER we have 
+	 * bound our socket to ipv6_addr_any (::), the syscall bind(2) will 
+	 * fail and return -1, setting errno to EADDRINUSE.
 	 *
 	 * The following algorithm is used to work around this error to some
 	 * degree:
 	 *
 	 * Ensure binds to IPv6 addresses are attempted before IPv4 addresses.
-	 * On systems where IPV6_V6ONLY is not defined or the setsockopt
+	 * On broken systems where IPV6_V6ONLY is not defined or the setsockopt
 	 * fails:
-	 *   - Keep track of whether an IPv6 socket
-	 *     has been bound to in6_addr_any.
+	 * 
+	 *   - Keep track of whether an IPv6 socket has been bound to 
+	 *     in6_addr_any.
 	 *   - If a bind to IPv4 fails with EADDRINUSE and an IPv6 socket
 	 *     has been bound, then just ignore the error.
 	 */
 
-	/* TODO: instead of reordering the results, just loop through the
+	/* 
+	 * TODO: instead of reordering the results, just loop through the
 	 * results twice - once for ipv6 then for the rest.
 	 */
 	res = order_ipv6_first(res);
@@ -441,36 +435,10 @@ void do_listen_continuous(const connection_attributes* attrs,
 	nfd = 0;
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
-		/* only use socktypes we can handle */
-		if (ptr->ai_socktype != SOCK_STREAM &&
-		    ptr->ai_socktype != SOCK_DGRAM) 
-			continue;
-
-#ifdef ENABLE_IPV6
-		/* skip IPv4 mapped addresses returned from getaddrinfo,
-		 * for security reasons. see:
-		 * http://playground.iijlab.net/i-d/
-		 *       /draft-itojun-ipv6-transition-abuse-01.txt
- 		 */
-		if (is_address_ipv4_mapped(ptr->ai_addr))
-			continue;
-#else
-#ifdef PF_INET6
-		/* skip IPv6 if disabled */
-		if (ptr->ai_family == PF_INET6)
-			continue;
-#endif
-#endif
-
-		/* get the numeric name for this source as a string */
-		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		                  hbuf_num, sizeof(hbuf_num),
-				  sbuf_num, sizeof(sbuf_num),
-				  NI_NUMERICHOST | NI_NUMERICSERV);
-
-		/* this should never happen */
-		if (err != 0)
-			fatal("getnameinfo failed: %s", gai_strerror(err));
+		if (skip_address(ptr) == TRUE) continue;
+		
+		getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, src_buf, 
+		             sizeof(src_buf), TRUE);
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -523,14 +491,13 @@ void do_listen_continuous(const connection_attributes* attrs,
 			    ptr->ai_family == PF_INET &&
 			    set_ipv6_only == FALSE &&
 			    bound_ipv6_any == TRUE) {
-				warn("listening on %s (%s) ...",
-				     hbuf_num, sbuf_num);
+				warn("listening on %s ...", src_buf);
 				close(fd);
 				continue;
 			}
 #endif
-			warn("bind to source %s (%s) failed: %s",
-			     hbuf_num, sbuf_num, strerror(errno));
+			warn("bind to source %s failed: %s",
+			     src_buf, strerror(errno));
 			close(fd);
 			continue;
 		}
@@ -542,12 +509,12 @@ void do_listen_continuous(const connection_attributes* attrs,
 		if (ptr->ai_socktype == SOCK_STREAM) {
 			err = listen(fd, 5);
 			if (err != 0)
-				fatal("cannot listen on %s (%s): %s",
-				      hbuf_num, sbuf_num, strerror(errno));
+				fatal("cannot listen on %s: %s",
+				      src_buf, strerror(errno));
 		}
 
 		if (verbose_mode == TRUE)
-			warn("listening on %s (%s) ...", hbuf_num, sbuf_num);
+			warn("listening on %s ...", src_buf);
 
 #ifdef ENABLE_IPV6
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
@@ -744,6 +711,22 @@ typedef struct listen_once_result_t {
 } listen_once_result;
 
 
+int do_listen(const connection_attributes *attrs, int *rt_socktype)
+{
+	listen_once_result result;
+
+	/* listen for exactly one connection, using listen_once_callback
+	 * to capture the fd into the result struct */
+	do_listen_continuous(attrs, listen_once_callback, (void*)&result, 1);
+
+	if (rt_socktype != NULL)
+		*rt_socktype = result.socktype;
+
+	return result.fd;
+}
+
+
+
 static void listen_once_callback(int fd, int socktype, void *cdata)
 {
 	listen_once_result *result = (listen_once_result*)cdata;
@@ -752,19 +735,83 @@ static void listen_once_callback(int fd, int socktype, void *cdata)
 	assert(socktype >= 0);
 	assert(result != NULL);
 
+	/* put the fd and socktype into the result struct for do_listen */
 	result->fd = fd;
 	result->socktype = socktype;
 }
 
 
-int do_listen(const connection_attributes *attrs, int *rt_socktype)
+
+static bool skip_address(const struct addrinfo *ai)
 {
-	listen_once_result result;
+	assert(ai != NULL);
+	
+	/* only use socktypes we can handle */
+	if (ai->ai_socktype != SOCK_STREAM &&
+	    ai->ai_socktype != SOCK_DGRAM) 
+		return TRUE;
 
-	/* listen for exactly one connection */
-	do_listen_continuous(attrs, listen_once_callback, (void*)&result, 1);
+#ifdef ENABLE_IPV6
+	/* 
+	 * skip IPv4 mapped addresses returned from getaddrinfo,
+	 * for security reasons. see:
+	 *
+	 * http://playground.iijlab.net/i-d/
+	 *       /draft-itojun-ipv6-transition-abuse-01.txt
+	 */
+	if (is_address_ipv4_mapped(ai->ai_addr))
+		return TRUE;
+#else
+#ifdef PF_INET6
+	/* skip IPv6 if disabled */
+	if (ai->ai_family == PF_INET6)
+		return TRUE;
+#endif
+#endif
+	
+	return FALSE;
+}
 
-	if (rt_socktype != NULL)
-		*rt_socktype = result.socktype;
-	return result.fd;
+
+
+static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str, 
+                         size_t size, bool numeric_mode)
+{
+	int err;
+	char hbuf_rev[NI_MAXHOST + 1];
+	char hbuf_num[NI_MAXHOST + 1];
+	char sbuf_rev[NI_MAXSERV + 1];
+	char sbuf_num[NI_MAXSERV + 1];
+
+	assert(sa != NULL);
+	assert(len > 0);
+	assert(str != NULL);
+	assert(size > 0);
+	
+	/* get the numeric name for this destination as a string */
+	err = getnameinfo(sa, len, hbuf_num, sizeof(hbuf_num),
+			  sbuf_num, sizeof(sbuf_num),
+			  NI_NUMERICHOST | NI_NUMERICSERV);
+
+	/* this should never happen */
+	if (err != 0)
+		fatal("getnameinfo failed: %s", gai_strerror(err));
+
+	/* get the real name for this destination as a string */
+	if (numeric_mode == FALSE) {
+		/* get the real name for this destination as a string */
+		err = getnameinfo(sa, len, hbuf_rev, sizeof(hbuf_rev),
+				  sbuf_rev, sizeof(sbuf_rev), 0);
+		if (err == 0) {
+			snprintf(str, size, "%s (%s) %s [%s]", hbuf_rev, 
+			         hbuf_num, sbuf_num, sbuf_rev);
+		} else {
+			warn("inverse lookup failed for %s: %s",
+			     hbuf_num, gai_strerror(err));
+			
+			snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
+		}
+	} else {
+		snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
+	}
 }
