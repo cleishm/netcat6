@@ -3,6 +3,7 @@ AC_INIT(src/main.c)
 AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(src/config.h)
 AM_INIT_AUTOMAKE(nc6, 0.2pre4b)
+AC_PREREQ(2.52)
 m4_pattern_allow([dnl])
 
 # Checks for programs.
@@ -14,7 +15,7 @@ AC_PROG_INSTALL
 # Checks for libraries.
 
 # The CFLAGS to always use
-CFLAGS="-pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align -pedantic"
+CFLAGS="-pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
 
 # Check for IPv6 stuff
 AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[Enable debugging - useful only for developers]),
