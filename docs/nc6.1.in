@@ -1,3 +1,23 @@
+.\" @configure_input@
+.\"
+.\" nc6 - an advanced netcat clone
+.\" Copyright (C) 2001-2003 Mauro Tortonesi <mauro _at_ deepspace6.net>
+.\" Copyright (C) 2002-2003 Chris Leishman <chris _at_ leishman.org>
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.\"
 .TH NC6 1 
 .SH NAME
 nc6 \- network swiss army knife
@@ -154,13 +174,21 @@ essentially ignored when creating UDP connections to a remote server, as UDP
 is a connectionless protocol.
 .IP \(bu 4
 The hold timeouts specify how long the connection should be held open after a
-given endpoint can no longer be read from.  For example, setting the hold time
-of the local endpoint to 5 would cause the connection to be closed 5 seconds
-after stdin is closed (eg. by using ^D to send EOF).  By default, the hold
-timeout is disabled for the local endpoint (essentially an 'infinite'
-timeout), and the hold timeout is set to 0 for the remote endpoint (an
-\'instant' timeout).  This means that nc6 closes its connection immediately
-when the read from the remote server is closed (also see "HALF CLOSE").
+given endpoint can no longer be read from (because EOF was received).  When
+the hold timeout occurs for a given endpoint, no more data is read from the
+opposite endpoint.  After data read from the timed out endpoint has been sent,
+then the connection is closed and nc6 exits.
+.P
+For example, setting the hold time of the local endpoint to 5 would cause
+reading from the remote system to stop 5 seconds after stdin is closed (eg. by
+using ^D to send EOF).  All buffered data to be sent to the remote system is
+then sent, after which nc6 exits successfully (if no errors occured).
+.P
+By default, the hold timeout is disabled for the local endpoint (essentially
+an 'infinite' timeout), and the hold timeout is set to 0 for the remote
+endpoint (an 'instant' timeout).  This means that nc6 effectively exits 
+immediately when the read from the remote server is closed (also see "HALF
+CLOSE").
 .SH FILE TRANSFER
 netcat6 can be used to transfer files and data streams efficiently, using the
 \'-x' or '--transfer' command line option.
@@ -245,9 +273,25 @@ algorithm on most systems, using the TCP_NODELAY socket option.
 provides the '--disable-nagle' command line option to disable the Nagle
 algorithm for the connection.
 .SH ERRORS
-TODO
-.SH BUGS
-TODO
+.B netcat6
+attempts to exit cleanly (exit value 0) when all data was sent or received
+successfully, and to exit with an error value otherwise.  However, the
+specific definition of successfully varies depending on the way nc6 is run.
+.P
+In normal mode, nc6 exits successfully when all data from the remote machine
+has been received up to and including an EOF, and the data has been output to
+the stdout without any errors.  It DOES NOT indicate whether all data read
+from stdin has been successfully sent to the remote machine.
+.P
+In --half-close mode, nc6 exists successfully when an EOF has been received
+from both the remote machine AND from stdin, and all data has been
+successfully sent.  Thus the exit status indicates that all data was
+transfered successfully.
+.P
+If hold timeouts (see "TIMEOUTS") have been set for either the remote or local
+endpoint, nc6 will exit successfully if all buffered data from the endpoint
+that timed out is succesfully sent.  It DOES NOT indicate whether all data
+from the opposite endpoint was sent (or even read).
 .SH VERSION
 This man page is current for version @VERSION@ of netcat6
 .SH COPYRIGHT
