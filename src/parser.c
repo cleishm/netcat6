@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.51 2003-03-26 20:18:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.52 2003-03-26 20:34:06 chris Exp $");
 
 
 
@@ -446,40 +446,37 @@ static void print_usage(FILE *fp)
 "Recognized options are:\n"), program_name, program_name);
 	
 	fprintf(fp, _(
-"  -4                Use only IPv4\n"
-"  -6                Use only IPv6\n"
-"  -e, --exec=CMD    Exec command after connect\n"
-"  -h, --help        Display help\n"
-"  -l, --listen      Listen mode, for inbound connects\n"
-"  -n                Numeric-only IP addresses, no DNS\n" 
-"  -p, --port=PORT   Local source port\n"
-"  -q, --hold-timeout=SEC1[:SEC2]\n"
-"                    Set hold timeout(s) for local [and remote]\n"
-"  -s, --address=ADDRESS\n"
-"                    Local source address\n"
-"  -t, --idle-timeout=SECONDS\n"
-"                    Idle connection timeout\n"
-"  -u, --udp         Require use of UDP\n"
-"  -v                Increase program verbosity (call twice for max verbosity)\n"
-"  -w, --timeout=SECONDS\n"
-"                    Timeout for connects/accepts\n"
-"  -x, --transfer    File transfer mode\n"
-"      --continous   Continuously accept connections\n"
-"                    (only in listen mode with --exec)\n"
-"      --recv-only   Only receive data, don't transmit\n"
-"      --send-only   Only transmit data, don't receive\n"
-"      --buffer-size=BYTES\n"
-"                    Set buffer size\n"
-"      --mtu=BYTES   Set MTU for network connection transmits\n"
-"      --nru=BYTES   Set NRU for network connection receives\n"
-"      --half-close  Handle network half-closes correctly\n"
-"      --disable-nagle\n"
-"                    Disable nagle algorithm for TCP connections\n"
-"      --no-reuseaddr\n"
-"                    Disable SO_REUSEADDR socket option (only in listen mode)\n"
-"      --sndbuf-size Kernel send buffer size for network sockets\n"
-"      --rcvbuf-size Kernel receive buffer size for network sockets\n"
-"      --version     Display nc6 version information\n"
+" -4                     Use only IPv4\n"
+" -6                     Use only IPv6\n"
+" --buffer-size=BYTES    Set buffer size\n"
+" --continous            Continuously accept connections\n"
+"                        (only in listen mode with --exec)\n"
+" --disable-nagle        Disable nagle algorithm for TCP connections\n"
+" -e, --exec=CMD         Exec command after connect\n"
+" --half-close           Handle network half-closes correctly\n"
+" -h, --help             Display help\n"
+" -l, --listen           Listen mode, for inbound connects\n"
+" --mtu=BYTES            Set MTU for network connection transmits\n"
+" -n                     Numeric-only IP addresses, no DNS\n" 
+" --no-reuseaddr         Disable SO_REUSEADDR socket option\n"
+"                        (only in listen mode)\n"
+" --nru=BYTES            Set NRU for network connection receives\n"
+" -p, --port=PORT        Local source port\n"
+" -q, --hold-timeout=SEC1[:SEC2]\n"
+"                        Set hold timeout(s) for local [and remote]\n"
+" --rcvbuf-size          Kernel receive buffer size for network sockets\n"
+" --recv-only            Only receive data, don't transmit\n"
+" -s, --address=ADDRESS  Local source address\n"
+" --send-only            Only transmit data, don't receive\n"
+" --sndbuf-size          Kernel send buffer size for network sockets\n"
+" -t, --idle-timeout=SECONDS\n"
+"                        Idle connection timeout\n"
+" -u, --udp              Require use of UDP\n"
+" -v                     Increase program verbosity\n"
+"                        (call twice for max verbosity)\n"
+" --version              Display nc6 version information\n"
+" -w, --timeout=SECONDS  Timeout for connects/accepts\n"
+" -x, --transfer         File transfer mode\n"
 "\n"));
 }
 
