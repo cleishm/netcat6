@@ -1,12 +1,14 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(src/main.c)
+AC_INIT(nc6, 0.2pre4b-cvs, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_SRCDIR(src/main.c)
+AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(src/config.h)
-AM_INIT_AUTOMAKE(nc6, 0.2pre4b-cvs)
 AC_PREREQ(2.52)
 
 
 # Checks for programs.
+AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_CPP
 AC_ISC_POSIX
