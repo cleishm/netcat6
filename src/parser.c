@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.22 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.23 2002-12-30 23:00:46 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -66,17 +66,21 @@ static const struct option long_options[] = {
 	{"timeout",       TRUE,  NULL, 'w'},
 #define OPT_TRANSFER		7
 	{"transfer",      FALSE, NULL, 'x'},
-#define OPT_BUFFER_SIZE		8
+#define OPT_RECV_ONLY		8
+	{"recv-only",     FALSE, NULL,  0 },
+#define OPT_SEND_ONLY		9
+	{"send-only",     FALSE, NULL,  0 },
+#define OPT_BUFFER_SIZE		10
 	{"buffer-size",   TRUE,  NULL,  0 },
-#define OPT_MTU			9
+#define OPT_MTU			11
 	{"mtu",           TRUE,  NULL,  0 },
-#define OPT_NRU			10
+#define OPT_NRU			12
 	{"nru",           TRUE,  NULL,  0 },
-#define OPT_HALF_CLOSE		11
+#define OPT_HALF_CLOSE		13
 	{"half-close",    FALSE, NULL,  0 },
-#define OPT_DISABLE_NAGLE	12
+#define OPT_DISABLE_NAGLE	14
 	{"disable-nagle", FALSE, NULL,  0 },
-#define OPT_MAX			13
+#define OPT_MAX			15
 	{0, 0, 0, 0}
 };
 
@@ -109,6 +113,12 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
  		switch(c) {
 		case 0:
 			switch(option_index) {
+			case OPT_RECV_ONLY:
+				set_flag(RECV_DATA_ONLY);
+				break;
+			case OPT_SEND_ONLY:
+				set_flag(SEND_DATA_ONLY);
+				break;
 			case OPT_BUFFER_SIZE:
 				remote_buffer_size = safe_atoi(optarg);
 				break;
@@ -313,6 +323,8 @@ static void print_usage(FILE *fp)
 "  -w, --timeout=SECONDS\n"
 "                    Timeout for connects/accepts\n"
 "  -x, --transfer    File transfer mode\n"
+"      --recv-only   Only receive data, don't transmit\n"
+"      --send-only   Only transmit data, don't receive\n"
 "      --buffer-size=BYTES\n"
 "                    Set buffer size for network receives\n"
 "      --mtu=BYTES   Set MTU for network connection transmits\n"
