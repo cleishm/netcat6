@@ -17,13 +17,13 @@ AUX_DIST_EXTRA		= $(auxdir)/in6_00_header.m4 \
 		          $(auxdir)/in6x_func_ifaddrs.m4 \
 		          $(auxdir)/in6x_struct_icmp6hdr.m4 \
 		          $(auxdir)/in6x_struct_ip6hdr.m4 \
-		          $(auxdir)/socklen_t.m4 
+		          $(auxdir)/type_socklen_t.m4 
 EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
 
 AUTOMAKE_OPTIONS 	= foreign dist-bzip2
 SUBDIRS 		= docs src #config 
-MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure src/config-h.in \
-			  src/stamp-h.in $(AUX_DIST)
+MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
+			  config.status config.log $(AUX_DIST)
 
 ACLOCAL			= aclocal -I $(auxdir)
 

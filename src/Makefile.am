@@ -19,3 +19,5 @@ nc6_SOURCES = \
   readwrite.c \
   io_stream.c \
   connection.c
+
+MAINTAINERCLEANFILES 	= Makefile.in config.h.in stamp-h.in
