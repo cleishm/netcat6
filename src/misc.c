@@ -36,7 +36,7 @@
 #include <paths.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.18 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.19 2003-03-26 17:42:53 chris Exp $");
 
 
 
@@ -153,10 +153,15 @@ int open3(char *cmd, int *in, int *out, int *err)
 	pid = fork();
 	if (pid < 0) {
 		return -1;
-	} else if (pid < 0) {
+	} else if (pid == 0) {
 		char *argv[4];
 
 		/* child */
+
+		/* close parents descriptors */
+		close(inpipe[1]);
+		close(outpipe[0]);
+		close(errpipe[0]);
 
 		argv[0] = "sh";
 		argv[1] = "-c";
@@ -186,7 +191,7 @@ int open3(char *cmd, int *in, int *out, int *err)
 
 	/* parent */
 
-	/* close child's descriptors */
+	/* close childs descriptors */
 	close(inpipe[0]);
 	close(outpipe[1]);
 	close(errpipe[1]);
