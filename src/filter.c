@@ -31,7 +31,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.11 2002-12-24 21:05:37 chris Exp $");
+#ifndef __GNUC__
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#else
+#ifdef _AIX
+#pragma alloca
+#else
+#ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca();
+#endif
+#endif
+#endif
+#endif
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.12 2002-12-29 14:21:39 chris Exp $");
 
 
 
