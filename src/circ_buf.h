@@ -41,11 +41,13 @@ typedef struct circ_buf_t {
 void cb_init(circ_buf *cb, size_t size);
 void cb_destroy(circ_buf *cb);
 
+void cb_resize(circ_buf *cb, size_t size);
+
 #define cb_size(CB)	((CB)->buf_size)
 #define cb_used(CB)	((CB)->data_size)
 #define cb_space(CB)	((CB)->buf_size - (CB)->data_size)
 
-#define cb_is_empty(CB)	(cb_size(CB) == 0)
+#define cb_is_empty(CB)	(cb_used(CB) == 0)
 #define cb_is_full(CB)	(cb_space(CB) == 0)
 
 ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes);

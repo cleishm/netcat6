@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.12 2002-12-28 18:41:48 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.13 2002-12-28 18:54:41 chris Exp $");
 
 
 
@@ -72,6 +72,30 @@ void cb_destroy(circ_buf *cb)
 
 	free(cb->buf);
 	cb->buf = NULL;
+}
+
+
+
+void cb_resize(circ_buf *cb, size_t size)
+{
+	uint8_t *new_buf;
+
+	cb_assert(cb);
+	assert(size > 0);
+
+	/* create a new buffer and copy the existing data into it */
+	new_buf = (uint8_t *)xmalloc(size);
+	cb_extract(cb, new_buf, size);
+
+	/* replace buffer */
+	free(cb->buf);
+	cb->buf = new_buf;
+
+	/* adjust pointers and sizes */
+	cb->ptr = cb->buf;
+	cb->buf_size = size;
+	if (cb->data_size > size)
+		cb->data_size = size;
 }
 
 
