@@ -31,7 +31,17 @@
 #include <assert.h>
 
 
-
+/* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
+ * listening.  Connections will still be accepted from either ipv6 or
+ * ipv4 clients (ipv4 will be mapped into ipv6).  However, this means
+ * that we MUST bind the ipv6 address ONLY for these hosts.
+ *
+ * To handle this, we will ensure that ipv6 sockets are bound first and then
+ * attempt to bind the ipv4 ones.  On systems that double bind ipv6/ipv4 the
+ * ipv4 bind will simply fail.  This function does the reordering - moving all
+ * ipv6 addresses to the start of the getaddrinfo results.
+ */
+#ifdef ENABLE_IPV6
 inline
 static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 {
@@ -63,6 +73,27 @@ static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 	}
 
 	return ai;
+}
+#else
+/* No ipv6 support - just make it a no-op */
+#define order_ipv6_first(X)	(X)
+#endif
+
+
+
+/* on some systems, getaddrinfo will return results that can't actually be
+ * used - resulting in a failure when trying to create the socket.
+ * This function checks for all the different error codes that indicate this
+ * situation */
+inline
+static bool unsupported_sock_error(int err)
+{
+	return (err == EPFNOSUPPORT ||
+	        err == EAFNOSUPPORT ||
+	        err == EPROTONOSUPPORT ||
+		err == ESOCKTNOSUPPORT ||
+	        err == ENOPROTOOPT)?
+		TRUE : FALSE;
 }
 
 
@@ -116,6 +147,12 @@ void do_connect(connection_attributes *attrs)
 		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
 			continue;
 
+#if defined(PF_INET6) && !defined(ENABLE_IPV6)
+		/* skip IPv6 if disabled */
+		if (ptr->ai_family == PF_INET6)
+			continue;
+#endif
+
 		/* we are going to try to connect to this address */
 		connect_attempted = TRUE;
 
@@ -152,9 +189,14 @@ void do_connect(connection_attributes *attrs)
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-		if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
+		if (fd < 0) {
+			/* ignore this address if it is not supported */
+			if (unsupported_sock_error(errno))
+				continue;
+			fatal("cannot create the socket: %s", strerror(errno));
+		}
 		
-#ifdef IPV6_V6ONLY
+#if defined(ENABLE_IPV6) && defined(IPV6_V6ONLY)
 		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
@@ -378,6 +420,12 @@ void do_listen(connection_attributes *attrs)
 		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
 			continue;
 
+#if defined(PF_INET6) && !defined(ENABLE_IPV6)
+		/* skip IPv6 if disabled */
+		if (ptr->ai_family == PF_INET6)
+			continue;
+#endif
+
 		/* get the numeric name for this source as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
 		        hbuf_num, sizeof(hbuf_num), sbuf_num, 
@@ -389,9 +437,14 @@ void do_listen(connection_attributes *attrs)
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-		if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
+		if (fd < 0) {
+			/* ignore this address if it is not supported */
+			if (unsupported_sock_error(errno))
+				continue;
+			fatal("cannot create the socket: %s", strerror(errno));
+		}
 
-#ifdef IPV6_V6ONLY
+#if defined(ENABLE_IPV6) && defined(IPV6_V6ONLY)
 		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */

@@ -65,7 +65,11 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 
 	switch (attrs->proto) {
 		case PROTO_IPv6:
+#ifdef ENABLE_INET6
 			ainfo->ai_family = PF_INET6;
+#else
+			fatal("internal error: system does not support ipv6");
+#endif
 			break;
 		case PROTO_IPv4:
 			ainfo->ai_family = PF_INET;
