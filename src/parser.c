@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.48 2003-01-25 14:42:36 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.49 2003-03-16 11:53:40 chris Exp $");
 
 
 
@@ -369,7 +369,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	/* setup half close mode */
 	if (half_close == TRUE) {
 		/* keep remote open after half close */
-		ca_set_remote_half_close_suppress(attrs, TRUE);
+		ca_set_remote_half_close_suppress(attrs, FALSE);
 		ca_set_remote_hold_timeout(attrs, -1);
 	}
 
