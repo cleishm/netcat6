@@ -118,6 +118,9 @@ if test "X$stack_guess" != "Xno"; then
   LIBS="${INET6_LIBS} ${LIBS}"
 fi
 
+dnl Check for libraries
+AC_CHECK_LIB(socket, socket)
+
 
 dnl Checks for library functions.
 AC_FUNC_ALLOCA
