@@ -36,7 +36,7 @@
 #include <paths.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.16 2003-01-13 20:07:05 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.17 2003-01-13 20:30:35 chris Exp $");
 
 
 

@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.21 2003-01-13 20:07:05 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.22 2003-01-13 20:30:35 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
