@@ -46,7 +46,7 @@ typedef struct io_stream_t
 	                    * -1 means hold indefinately */
 	struct timeval read_closed; /* the time that the read was closed */
 
-	const char* name;  /* the name of this io stream (for logging) */
+	char* name;       /* the name of this io stream (for logging) */
 	size_t rcvd;       /* bytes received */
 	size_t sent;       /* bytes sent */
 } io_stream;
