@@ -22,13 +22,14 @@
 #include "config.h"
 #include "misc.h"
 #include "connection.h"
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.27 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.28 2003-03-26 17:44:59 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -57,16 +58,25 @@ void ca_init(connection_attributes *attrs)
 	attrs->remote_hold_timeout = 0;
 	attrs->remote_half_close_suppress = TRUE;
 	attrs->local_half_close_suppress  = FALSE;
+	attrs->local_exec = NULL;
 }
 
 
 
-#ifndef NDEBUG
 void ca_destroy(connection_attributes *attrs)
 {
 	assert(attrs != NULL);
+	ca_set_local_exec(attrs, NULL);
 }
-#endif
+
+
+
+void ca_set_local_exec(connection_attributes *attrs, const char *exec)
+{
+	if (attrs->local_exec)
+		free(attrs->local_exec);
+	attrs->local_exec = exec? xstrdup(exec) : NULL;
+}
 
 
 

@@ -28,13 +28,14 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <assert.h>
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.29 2003-01-25 14:42:36 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.30 2003-03-26 17:44:59 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -191,11 +192,25 @@ static void setup_local_stream(const connection_attributes *attrs,
                                io_stream* stream,
                                circ_buf* remote_buffer, circ_buf* local_buffer)
 {
-	while (0&&attrs);   /* suppress unused attrs warning */
+	char* cmd;
 	assert(attrs != NULL);
 	assert(stream != NULL);
 
-	ios_init_stdio(stream, "local", local_buffer, remote_buffer);
+	cmd = ca_local_exec(attrs);
+	if (cmd != NULL) {
+		int in, out;
+		if (very_verbose_mode())
+			warn(_("Executing '%s'"), cmd);
+		if (open3(cmd, &in, &out, NULL) < 0) {
+			fatal(_("Failed to exec '%s': %s"),
+			      cmd, strerror(errno));
+		}
+		ios_init(stream, "local", out, in, SOCK_STREAM,
+		         local_buffer, remote_buffer);
+	}
+	else {
+		ios_init_stdio(stream, "local", local_buffer, remote_buffer);
+	}
 }
 
 

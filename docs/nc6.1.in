@@ -78,6 +78,11 @@ buffer size is 8 kilobytes for TCP connections and 128 kilobytes for UDP.
 Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
 ALGORITHM").
 .TP 13
+.I \-e, --exec=CMD
+Exec the listed CMD after a connect is established.  All input from the remote
+client will be available on stdin to the command, and all output from the
+command will be sent back to the remote client.
+.TP 13
 .I \-h, --help
 Display a brief help listing.
 .TP 13

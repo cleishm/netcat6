@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.49 2003-03-16 11:53:40 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.50 2003-03-26 17:44:59 chris Exp $");
 
 
 
@@ -96,7 +96,9 @@ static const struct option long_options[] = {
 	{"sndbuf-size",         TRUE,  NULL,  0 },
 #define OPT_RCVBUF_SIZE		19
 	{"rcvbuf-size",         TRUE,  NULL,  0 },
-#define OPT_MAX			20
+#define OPT_EXEC		20
+	{"exec",                TRUE,  NULL, 'e'},
+#define OPT_MAX			21
 	{0, 0, 0, 0}
 };
 
@@ -144,7 +146,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
+	while ((c = getopt_long(argc, argv, "46ehlnp:q:s:uvw:x",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
@@ -199,6 +201,10 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		case '6':	
 			family = PROTO_IPv6;
 			ca_set_flag(attrs, CA_STRICT_IPV6);
+			break;
+		case 'e':
+			assert(optarg != NULL);
+			ca_set_local_exec(attrs, optarg);
 			break;
 		case 'h':	
 			print_usage(stdout);
@@ -423,6 +429,7 @@ static void print_usage(FILE *fp)
 	fprintf(fp, _(
 "  -4                Use only IPv4\n"
 "  -6                Use only IPv6\n"
+"  -e, --exec=CMD    Exec command after connect\n"
 "  -h, --help        Display help\n"
 "  -l, --listen      Listen mode, for inbound connects\n"
 "  -n                Numeric-only IP addresses, no DNS\n" 

@@ -74,16 +74,12 @@ typedef struct connection_attributes_t
 	int remote_hold_timeout;
 	bool remote_half_close_suppress;
 	bool local_half_close_suppress;
+	char* local_exec;
 } connection_attributes;
 
 
 void ca_init(connection_attributes *attrs);
-
-#ifndef NDEBUG
 void ca_destroy(connection_attributes *attrs);
-#else 
-#define ca_destroy(_x_)		do {} while(0)
-#endif
 
 #define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
 #define ca_family(CA)			((CA)->family)
@@ -135,6 +131,9 @@ void ca_destroy(connection_attributes *attrs);
 	((CA)->local_half_close_suppress)
 #define ca_set_local_half_close_suppress(CA, B)	\
 	((CA)->local_half_close_suppress = (B))
+
+#define ca_local_exec(CA)		(((CA)->local_exec))
+void ca_set_local_exec(connection_attributes *attrs, const char* exec);
 	
 /* fill out an addrinfo structure with parameters from the ca */
 void ca_to_addrinfo(struct addrinfo *ainfo, const connection_attributes *attrs);
