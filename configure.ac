@@ -216,63 +216,8 @@ GETADDRINFO_EAI_NODATA(
 
 dnl The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then
-  NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
+  NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align -finline-functions"
 fi
-
-dnl Add extra flags if in debug mode
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING(
-    [--enable-debug],
-    [enable debugging - useful only for developers]
-  ),
-  [case "${enable_debug}" in
-  yes)
-    debug=yes
-    ;;
-  no) 
-    debug=no
-    ;;
-  *)    
-    AC_MSG_ERROR(bad value ${enable_debug} for --enable-debug option) 
-    ;;
-  esac],
-)
-
-if test "X$debug" = "Xyes"; then
-  AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
-  CFLAGS="${CFLAGS} -g -O0"
-else
-  AC_DEFINE(NDEBUG, 1,
-    [Define if nc6 is to be build without debug information.])
-  CFLAGS="${CFLAGS} -O2"
-  if test "X$GCC" = "Xyes"; then 
-    NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
-  fi
-fi
-
-dnl Add extra flags if in profiling mode
-AC_ARG_ENABLE(profiling,
-  AC_HELP_STRING(
-    [--enable-profiling],
-    [Enable profiling - useful only for developers]
-  ),
-  [case "${enable_profiling}" in
-  yes)
-    profiling=yes
-    ;;
-  no) 
-    profiling=no
-    ;;
-  *)    
-    AC_MSG_ERROR(bad value ${enable_profiling} for --enable-profiling option) 
-    ;;
-  esac],
-)
-
-if test "X$profiling" = "Xyes"; then
-  NC6_CFLAGS="${NC6_CFLAGS} -pg"
-fi
-
 
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
