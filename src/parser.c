@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.46 2003-01-24 14:20:55 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.47 2003-01-24 23:44:02 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -46,7 +46,7 @@ static const size_t DEFAULT_UDP_BUFFER_SIZE = 131072;
 static const size_t DEFAULT_FILE_TRANSFER_BUFFER_SIZE = 65536;
 
 /* storage for the global flags */
-static unsigned long flags_mask;
+int _verbosity_level = 0;
 
 /* long options */
 static const struct option long_options[] = {
@@ -95,16 +95,14 @@ static const struct option long_options[] = {
 };
 
 
-static void set_flag(unsigned long mask);
-static void unset_flag(unsigned long mask);
 static int parse_int_pair(const char *str, int *first, int *second);
 static void print_usage(FILE *fp);
 static void print_version(FILE *fp);
 
 
-int parse_arguments(int argc, char **argv, connection_attributes *attrs)
+void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 {
-	int c, ret = -1, verbosity_level = 0;
+	int c;
 	int option_index = 0;
 
 	/* configurable parameters and default values */
@@ -130,6 +128,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	address_init(&remote_address);
 	address_init(&local_address);
 
+	/* set verbosity back to 0 */
+	_verbosity_level = 0;
+
 	/* option recognition loop */
 	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
 	                        long_options, &option_index)) >= 0)
@@ -141,10 +142,10 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				print_version(stdout);
 				exit(EXIT_SUCCESS);
 			case OPT_RECV_ONLY:
-				set_flag(RECV_DATA_ONLY);
+				ca_set_flag(attrs, CA_RECV_DATA_ONLY);
 				break;
 			case OPT_SEND_ONLY:
-				set_flag(SEND_DATA_ONLY);
+				ca_set_flag(attrs, CA_SEND_DATA_ONLY);
 				break;
 			case OPT_BUFFER_SIZE:
 				assert(optarg != NULL);
@@ -162,10 +163,10 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				half_close = TRUE;
 				break;
 			case OPT_DISABLE_NAGLE:
-				set_flag(DISABLE_NAGLE);
+				ca_set_flag(attrs, CA_DISABLE_NAGLE);
 				break;
 			case OPT_NO_REUSEADDR:
-				set_flag(DONT_REUSE_ADDR);
+				ca_set_flag(attrs, CA_DONT_REUSE_ADDR);
 				break;
 			case OPT_SNDBUF_SIZE:
 				assert(optarg != NULL);
@@ -185,7 +186,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			break;
 		case '6':	
 			family = PROTO_IPv6;
-			set_flag(STRICT_IPV6);
+			ca_set_flag(attrs, CA_STRICT_IPV6);
 			break;
 		case 'h':	
 			print_usage(stdout);
@@ -194,7 +195,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			listen_mode = TRUE;
 			break;
 		case 'n':	
-			set_flag(NUMERIC_MODE);
+			ca_set_flag(attrs, CA_NUMERIC_MODE);
 			break;
 		case 'p':	
 			assert(optarg != NULL);
@@ -229,9 +230,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				buffer_size = DEFAULT_UDP_BUFFER_SIZE;
 			break;
 		case 'v':	
-			if (++verbosity_level > 1) 
-				set_flag(VERY_VERBOSE_MODE); 
-			set_flag(VERBOSE_MODE); 
+			++_verbosity_level;
 			break;
 		case 'w':
 			assert(optarg != NULL);
@@ -253,11 +252,11 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	/* set mode flags */
 	if (listen_mode == TRUE) {
-		set_flag(LISTEN_MODE);
-		unset_flag(CONNECT_MODE);
+		ca_set_flag(attrs, CA_LISTEN_MODE);
+		ca_clear_flag(attrs, CA_CONNECT_MODE);
 	} else {
-		set_flag(CONNECT_MODE);
-		unset_flag(LISTEN_MODE);
+		ca_set_flag(attrs, CA_CONNECT_MODE);
+		ca_clear_flag(attrs, CA_LISTEN_MODE);
 	}
 
 	/* setup file transfer depending on the mode */
@@ -265,11 +264,11 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		if (buffer_size == 0)
 			buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
 		if (listen_mode == TRUE) {
-			set_flag(RECV_DATA_ONLY);
-			unset_flag(SEND_DATA_ONLY);
+			ca_set_flag(attrs, CA_RECV_DATA_ONLY);
+			ca_clear_flag(attrs, CA_SEND_DATA_ONLY);
 		} else {
-			set_flag(SEND_DATA_ONLY);
-			unset_flag(RECV_DATA_ONLY);
+			ca_set_flag(attrs, CA_SEND_DATA_ONLY);
+			ca_clear_flag(attrs, CA_RECV_DATA_ONLY);
 		}
 	}
 
@@ -279,8 +278,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	/* check to make sure the user wasn't silly enough to set both
 	 * --recv-only and --send-only */
-	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
-	    is_flag_set(SEND_DATA_ONLY) == TRUE)
+	if (ca_is_flag_set(attrs, CA_RECV_DATA_ONLY) &&
+	    ca_is_flag_set(attrs, CA_SEND_DATA_ONLY))
 	{
 		fatal(_("Cannot set both --recv-only and --send-only"));
 	}
@@ -323,10 +322,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
-
-		ret = LISTEN_MODE;
 	} else {
-		if (is_flag_set(DONT_REUSE_ADDR) == TRUE) {
+		if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 			warn(_("--no-reuseaddr option "
 			       "can be used only in listen mode"));
 			print_usage(stderr);
@@ -341,8 +338,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
-
-		ret = CONNECT_MODE;
 	}
 
 	/* setup attrs */
@@ -383,9 +378,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ca_set_sndbuf_size(attrs, sndbuf_size);
 	if (rcvbuf_size > 0)
 		ca_set_rcvbuf_size(attrs, rcvbuf_size);
-
-	assert(ret != -1);
-	return ret;
 }
 
 
@@ -476,25 +468,3 @@ static int parse_int_pair(const char *str, int *first, int *second)
 		*first = (str[0] == '-')? -1 : safe_atoi(str);
 	return count;
 }
-
-
-
-bool is_flag_set(unsigned long mask)
-{
-	return ((flags_mask & mask) ? TRUE : FALSE);
-}
-
-
-
-static void set_flag(unsigned long mask)
-{
-	flags_mask = flags_mask | mask;
-}
-
-
-
-static void unset_flag(unsigned long mask)
-{
-	flags_mask = flags_mask & ~mask;
-}
-

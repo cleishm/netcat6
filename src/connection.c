@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.26 2003-01-24 14:19:31 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.27 2003-01-24 23:44:02 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -45,6 +45,7 @@ void ca_init(connection_attributes *attrs)
 	address_init(&(attrs->local_address));
 
 	/* set default values for everything */
+	attrs->flags = 0;
 	attrs->buffer_size = DEFAULT_BUFFER_SIZE;
 	attrs->remote_mtu = 0;
 	attrs->remote_nru = 0;

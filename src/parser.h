@@ -25,18 +25,14 @@
 #include "connection.h"
 #include "misc.h"
 
-#define NUMERIC_MODE		0x00000001
-#define STRICT_IPV6		0x00000002
-#define DONT_REUSE_ADDR      	0x00000004
-#define LISTEN_MODE		0x00000008
-#define CONNECT_MODE		0x00000010
-#define RECV_DATA_ONLY		0x00000020
-#define SEND_DATA_ONLY		0x00000040
-#define VERBOSE_MODE		0x00000080
-#define VERY_VERBOSE_MODE	0x00000100
-#define DISABLE_NAGLE		0x00000200
+extern int _verbosity_level;
 
-int parse_arguments(int argc, char **argv, connection_attributes *attrs);
-bool is_flag_set(unsigned long mask);
+#define VERBOSE_MODE		0x01
+#define VERY_VERBOSE_MODE	0x02
+
+#define verbose_mode()		(_verbosity_level >= VERBOSE_MODE)
+#define very_verbose_mode()	(_verbosity_level >= VERY_VERBOSE_MODE)
+
+void parse_arguments(int argc, char **argv, connection_attributes *attrs);
 
 #endif /* PARSER_H */

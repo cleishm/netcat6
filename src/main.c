@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.27 2003-01-24 14:19:31 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.28 2003-01-24 23:44:02 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -45,7 +45,7 @@ typedef int (*established_callback)(const connection_attributes *attrs,
                                     int fd, int socktype);
 
 /* function prototypes */
-static int establish_connection(int mode, const connection_attributes *attrs,
+static int establish_connection(const connection_attributes *attrs,
                                 established_callback callback);
 static int connection_main(const connection_attributes *attrs,
                            int fd, int socktype);
@@ -55,7 +55,8 @@ static void setup_local_stream(const connection_attributes *attrs,
 static void setup_remote_stream(const connection_attributes *attrs,
                                 int fd, int socktype, io_stream* remote,
                                 circ_buf* remote_buffer,circ_buf* local_buffer);
-static int run_transfer(io_stream *remote_stream, io_stream *local_stream);
+static int run_transfer(const connection_attributes* attrs,
+                        io_stream *remote_stream, io_stream *local_stream);
 static void i18n_init(void);
 
 
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
 {
 	connection_attributes connection_attrs;
 	char *ptr;
-	int mode, retval;
+	int retval;
 
 	i18n_init();
 
@@ -82,10 +83,10 @@ int main(int argc, char **argv)
 	signal(SIGPIPE, SIG_IGN);
 
 	/* set flags and fill out the addresses and connection attributes */
-	mode = parse_arguments(argc, argv, &connection_attrs);
+	parse_arguments(argc, argv, &connection_attrs);
 
 	/* establish the connection, and call down to connection_main */
-	retval = establish_connection(mode, &connection_attrs, connection_main);
+	retval = establish_connection(&connection_attrs, connection_main);
 
 	/* cleanup */
 	ca_destroy(&connection_attrs);
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
 
 
 
-static int establish_connection(int mode, const connection_attributes *attrs,
+static int establish_connection(const connection_attributes *attrs,
                                 established_callback callback)
 {
 	int fd, socktype;
@@ -104,18 +105,14 @@ static int establish_connection(int mode, const connection_attributes *attrs,
 	assert(callback != NULL);
 
 	/* establish remote connection */
-	switch (mode) {
-	case LISTEN_MODE:
+	if (ca_is_flag_set(attrs, CA_LISTEN_MODE)) {
 		fd = do_listen(attrs, &socktype);
-		break;
-	case CONNECT_MODE:
+	} else if (ca_is_flag_set(attrs, CA_CONNECT_MODE)) {
 		fd = do_connect(attrs, &socktype);
-		break;
-	default:
+	} else {
 		fatal(_("internal error: unknown connection mode"));
 		/* not reached - but stops warnings about uninitialized fd */
-		fd = -1;
-		break;
+		while (0) { fd = -1; }
 	}
 
 	assert(fd >= 0);
@@ -166,7 +163,7 @@ static int connection_main(const connection_attributes *attrs,
 		ca_local_half_close_suppress(attrs));
 
 	/* give information about the connection in very verbose mode */
-	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+	if (very_verbose_mode()) {
 		warn(_("using buffer size of %d"), remote_buffer.buf_size);
 		if (remote_stream.nru > 0)
 			warn(_("using remote receive nru of %d"),
@@ -177,7 +174,7 @@ static int connection_main(const connection_attributes *attrs,
 	}
 
 	/* transfer data between endpoints */
-	retval = run_transfer(&remote_stream, &local_stream);
+	retval = run_transfer(attrs, &remote_stream, &local_stream);
 
 	/* cleanup */
 	io_stream_destroy(&local_stream);
@@ -220,7 +217,8 @@ static void setup_remote_stream(const connection_attributes *attrs,
 
 
 
-static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
+static int run_transfer(const connection_attributes* attrs,
+                        io_stream *remote_stream, io_stream *local_stream)
 {
 	int retval;
 
@@ -228,9 +226,10 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 	assert(local_stream != NULL);
 
 	/* setup unidirectional data transfers (if requested) */
-	assert(!(is_flag_set(RECV_DATA_ONLY) && is_flag_set(SEND_DATA_ONLY)));
+	assert(!ca_is_flag_set(attrs, CA_RECV_DATA_ONLY) ||
+	       !ca_is_flag_set(attrs, CA_SEND_DATA_ONLY));
 
-	if (is_flag_set(RECV_DATA_ONLY) == TRUE) {
+	if (ca_is_flag_set(attrs, CA_RECV_DATA_ONLY)) {
 		/* reading only from the remote stream */
 
 		/* close the remote stream for writing */
@@ -241,12 +240,12 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 		ios_set_hold_timeout(remote_stream, -1);
 		ios_set_hold_timeout(local_stream, -1);
 
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn(_("receiving from remote only, "
 			     "transmit disabled"));
 	}
 
-	if (is_flag_set(SEND_DATA_ONLY) == TRUE) {
+	if (ca_is_flag_set(attrs, CA_SEND_DATA_ONLY)) {
 		/* reading only from the local stream */
 
 		/* close the remote stream for reading */
@@ -257,7 +256,7 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 		ios_set_hold_timeout(remote_stream, -1);
 		ios_set_hold_timeout(local_stream, -1);
 
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn(_("transmitting to remote only, "
 			     "receive disabled"));
 	}
@@ -265,12 +264,12 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 	/* run the main read/write loop */
 	retval = readwrite(remote_stream, local_stream);
 
-	if (is_flag_set(VERBOSE_MODE) == TRUE)
+	if (very_verbose_mode())
 		warn(_("connection closed (sent %d, rcvd %d)"),
 		     ios_bytes_sent(remote_stream),
 		     ios_bytes_received(remote_stream));
 #ifndef NDEBUG
-	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+	if (very_verbose_mode())
 		warn("readwrite returned %d", retval);
 #endif
 

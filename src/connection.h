@@ -46,12 +46,23 @@ typedef struct address_t
 #define address_init(AD)	((AD)->address = (AD)->service = NULL)
 
 
+#define CA_NUMERIC_MODE		0x000001
+#define CA_STRICT_IPV6		0x000002
+#define CA_DONT_REUSE_ADDR	0x000004
+#define CA_LISTEN_MODE		0x000008
+#define CA_CONNECT_MODE		0x000010
+#define CA_RECV_DATA_ONLY	0x000020
+#define CA_SEND_DATA_ONLY	0x000040
+#define CA_DISABLE_NAGLE	0x000080
+
+
 typedef struct connection_attributes_t
 {
 	sock_family   family;
 	sock_protocol protocol;
 	address remote_address;
 	address local_address;
+	int flags;
 	size_t buffer_size;
 	size_t remote_mtu;
 	size_t remote_nru;
@@ -83,6 +94,10 @@ void ca_destroy(connection_attributes *attrs);
 #define ca_local_address(CA)	((const address*)&((CA)->local_address))
 #define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
 #define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
+
+#define ca_is_flag_set(CA, FLG)		((CA)->flags & (FLG))
+#define ca_set_flag(CA, FLG)		((CA)->flags |=  (FLG))
+#define ca_clear_flag(CA, FLG)		((CA)->flags &= ~(FLG))
 
 #define ca_buffer_size(CA)		((CA)->buffer_size)
 #define ca_set_buffer_size(CA, SZ)	((CA)->buffer_size = (SZ))

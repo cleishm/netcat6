@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.44 2003-01-23 16:29:15 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.45 2003-01-24 23:44:02 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -65,8 +65,6 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool connect_attempted = FALSE;
 	bool numeric_mode      = FALSE;
-	bool verbose_mode      = FALSE;
-	bool very_verbose_mode = FALSE;
 	char name_buf[AI_STR_SIZE];
 
 	/* make sure that attrs is a valid pointer */
@@ -83,9 +81,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	assert(local->service == NULL  || strlen(local->service)  > 0);
 
 	/* setup flags */
-	numeric_mode      = is_flag_set(NUMERIC_MODE);
-	verbose_mode      = is_flag_set(VERBOSE_MODE);
-	very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
+	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE)? TRUE : FALSE;
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -142,7 +138,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 		set_sockopts(attrs, fd, ptr);
 
 		/* setup buf if we're in verbose mode */
-		if (verbose_mode == TRUE) 
+		if (verbose_mode())
 			getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, 
 			               name_buf, sizeof(name_buf),
 				       numeric_mode);
@@ -158,14 +154,14 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			hints.ai_socktype = ptr->ai_socktype;
 			hints.ai_protocol = ptr->ai_protocol;
 	
-			if (is_flag_set(NUMERIC_MODE) == TRUE) 
+			if (ca_is_flag_set(attrs, CA_NUMERIC_MODE))
 				hints.ai_flags |= AI_NUMERICHOST;
 		
 			/* get the local IP address of the connection */
 			err = getaddrinfo(local->address, local->service,
 			                  &hints, &src_res);
 			if (err != 0) {
-				if (verbose_mode == TRUE) {
+				if (verbose_mode()) {
 					warn(_("bind to source addr/port "
 					     "failed when connecting to "
 					     "%s: %s"), name_buf,
@@ -192,7 +188,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				/* make sure we have tried all addresses */
 				assert(src_ptr == NULL);
 				
-				if (verbose_mode == TRUE) {
+				if (verbose_mode()) {
 					warn(_("bind to source addr/port "
 					     "failed when connecting to "
 					     "%s: %s"), name_buf,
@@ -216,7 +212,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			break;
 		case CONNECTION_FAILED: 
 			/* connection failed */
-			if (verbose_mode == TRUE) 
+			if (verbose_mode())
 				warn(_("cannot connect to %s: %s"),
 				     name_buf, strerror(errno));
 			close(fd);
@@ -224,7 +220,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			continue;
 		case CONNECTION_TIMEOUT: 
 			/* connection failed */
-			if (verbose_mode == TRUE) 
+			if (verbose_mode())
 				warn(_("timeout while connecting to %s"),
 				     name_buf);
 			close(fd);
@@ -255,11 +251,11 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	}
 
 	/* let the user know the connection has been established */
-	if (verbose_mode == TRUE)
+	if (verbose_mode())
 		warn(_("%s open"), name_buf);
 
 	/* give details about the new socket */
-	if (very_verbose_mode == TRUE)
+	if (very_verbose_mode())
 		warn_socket_details(attrs, fd, ptr->ai_socktype);
 
 	/* return the socktype */
@@ -341,8 +337,6 @@ void do_listen_continuous(const connection_attributes* attrs,
 	int nfd, i, fd, err, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool numeric_mode      = FALSE;
-	bool verbose_mode      = FALSE;
-	bool very_verbose_mode = FALSE;
 #ifdef ENABLE_IPV6
 	bool set_ipv6_only     = FALSE;
 	bool bound_ipv6_any    = FALSE;
@@ -370,9 +364,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		return;
 
 	/* setup flags */
-	numeric_mode      = is_flag_set(NUMERIC_MODE);
-	verbose_mode      = is_flag_set(VERBOSE_MODE);
-	very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
+	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE)? TRUE : FALSE;
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -481,7 +473,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 			    set_ipv6_only == FALSE &&
 			    bound_ipv6_any == TRUE)
 			{
-				if (verbose_mode == TRUE)
+				if (verbose_mode())
 					warn(_("listening on %s ..."),name_buf);
 				close(fd);
 				continue;
@@ -504,7 +496,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 				      name_buf, strerror(errno));
 		}
 
-		if (verbose_mode == TRUE)
+		if (verbose_mode())
 			warn(_("listening on %s ..."), name_buf);
 
 #ifdef ENABLE_IPV6
@@ -598,7 +590,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		}
 
 		/* get names for each end of the connection */
-		if (verbose_mode == TRUE) {
+		if (verbose_mode()) {
 			struct sockaddr_storage src;
 			socklen_t srclen = sizeof(src);
 
@@ -635,13 +627,13 @@ void do_listen_continuous(const connection_attributes* attrs,
 					      strerror(errno));
 			}
 
-			if (verbose_mode == TRUE) {
+			if (verbose_mode()) {
 				warn(_("connect to %s from %s"),
 				     name_buf, c_name_buf);
 			}
 
 			/* give details about the new socket */
-			if (very_verbose_mode == TRUE)
+			if (very_verbose_mode())
 				warn_socket_details(attrs, ns, socktype);
 
 			callback(ns, socktype, cdata);
@@ -656,7 +648,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 			}
 			close(ns);
 
-			if (verbose_mode == TRUE) {
+			if (verbose_mode()) {
 				warn(_("refused connect to %s from %s"),
 				     name_buf, c_name_buf);
 			}
@@ -791,7 +783,7 @@ static void set_sockopts(const connection_attributes *attrs,
 	int on, err;
 
 	/* set the reuse address socket option */
-	if (is_flag_set(DONT_REUSE_ADDR) == FALSE) {
+	if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 		on = 1;
 		/* in case of error, we will go on anyway... */
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
@@ -802,7 +794,7 @@ static void set_sockopts(const connection_attributes *attrs,
 	}
 
 	/* disable the nagle option for TCP sockets */
-	if (is_flag_set(DISABLE_NAGLE) == TRUE &&
+	if (ca_is_flag_set(attrs, CA_DISABLE_NAGLE) &&
 	    sockinfo->ai_protocol == IPPROTO_TCP)
 	{
 		on = 1;

@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.23 2003-01-24 14:13:10 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.24 2003-01-24 23:44:02 chris Exp $");
 
 
 static void ios_init(io_stream *ios, const char* name,
@@ -184,7 +184,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 		/* check if the timeout has expired */
 		if (istimerexpired(tv)) {
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			if (very_verbose_mode())
 				warn(_("%s idle timed out"), ios->name);
 			ios->flags |= IOS_IDLE_TIMEDOUT;
 			timerclear(tv);
@@ -211,7 +211,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 		/* check if the timeout has expired */
 		if (istimerexpired(&hold_tv)) {
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			if (very_verbose_mode())
 				warn(_("%s hold timed out"), ios->name);
 			/* set flag */
 			ios->flags |= IOS_HOLD_TIMEDOUT;
@@ -219,19 +219,16 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 		}
 
 		/* update tv if required */
-		if (tvp == NULL || timercmp(&hold_tv, tv, <)) {
+		if ((tvp == NULL) || (timercmp(&hold_tv, tv, <))) {
 			*tv = hold_tv;
 			tvp = tv;
 		}
 	}
 
 #ifndef NDEBUG
-	if (tvp && !istimerexpired(tvp) &&
-	    is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-	{
+	if (tvp && !istimerexpired(tvp) && very_verbose_mode())
 		warn("%s timer expires in %d.%06d",
 		     ios->name, tvp->tv_sec, tvp->tv_usec);
-	}
 #endif
 
 	return tvp;
@@ -258,7 +255,7 @@ ssize_t ios_read(io_stream *ios)
 	if (rr > 0) {
 		ios->rcvd += rr;
 #ifndef NDEBUG
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn("read %d bytes from %s", rr, ios->name);
 #endif
 		/* record that the ios was active */
@@ -267,7 +264,7 @@ ssize_t ios_read(io_stream *ios)
 		return rr;
 	} else if (rr == 0) {
 		/* read eof - close read stream */
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn(_("read eof from %s"), ios->name);
 
 		/* record the time eof was received */
@@ -285,7 +282,7 @@ ssize_t ios_read(io_stream *ios)
 		return 0;
 	} else {
 		/* weird error */
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn(_("error reading from %s: %s"),
 			     ios->name, strerror(errno));
 		return IOS_FAILED;
@@ -313,7 +310,7 @@ ssize_t ios_write(io_stream *ios)
 	if (rr > 0) {
 		ios->sent += rr;
 #ifndef NDEBUG
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn("wrote %d bytes to %s", rr, ios->name);
 #endif
 		/* record that the ios was active */
@@ -331,7 +328,7 @@ ssize_t ios_write(io_stream *ios)
 		/* not ready? */
 		return 0;
 	} else {
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		if (very_verbose_mode()) {
 			if (errno == EPIPE)
 				warn(_("received SIGPIPE on %s"), ios->name);
 			else
@@ -370,7 +367,7 @@ void ios_shutdown(io_stream* ios, int how)
 		/* if the same fd is input and output, don't close twice */
 		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
 			close(ios->fd_out);
-		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		if (very_verbose_mode())
 			warn(_("closed %s"), ios->name);
 		ios->fd_in = ios->fd_out = -1;
 	} else if (how == SHUT_RD) {
@@ -382,13 +379,13 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_in == ios->fd_out) {
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_in, SHUT_RD);
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode())
 					warn(_("shutdown %s for read"),
 					     ios->name);
 			}
 		} else {
 			close(ios->fd_in);
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			if (very_verbose_mode())
 				warn(_("closed %s for read"), ios->name);
 		}
 		ios->fd_in = -1;
@@ -402,13 +399,13 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_in == ios->fd_out) {
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_out, SHUT_WR);
-				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+				if (very_verbose_mode())
 					warn(_("shutdown %s for write"),
 					     ios->name);
 			}
 		} else {
 			close(ios->fd_out);
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			if (very_verbose_mode())
 				warn(_("closed %s for write"), ios->name);
 		}
 		ios->fd_out = -1;
