@@ -24,4 +24,9 @@ nc6_SOURCES = \
   io_stream.c \
   connection.c
 
+nc6_LDADD = ../contrib/libnc6contrib.a
+
+CPPFLAGS = -I../contrib
+CFLAGS = @CFLAGS@ @NC6_CFLAGS@
+
 MAINTAINERCLEANFILES 	= Makefile.in config.h.in stamp-h.in
