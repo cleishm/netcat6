@@ -1,13 +1,13 @@
-# Process this file with autoconf to produce a configure script.
+dnl Process this file with autoconf to produce a configure script.
 AC_INIT(nc6, 0.2pre4b-cvs, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
-AM_CONFIG_HEADER(src/config.h)
-AC_PREREQ(2.52)
+AM_CONFIG_HEADER(config.h)
+AC_PREREQ(2.52)              dnl Autoconf 2.52 or better is required
 
 
-# Checks for programs.
+dnl Checks for programs.
 AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_CPP
@@ -16,16 +16,16 @@ AC_ISC_POSIX
 AC_PROG_INSTALL
 
 
-# Check paths
+dnl Check paths
 PATH_BSHELL
 PATH_DEVNULL
 
 
-# default CFLAGS to use for nc6 source
+dnl default CFLAGS to use for nc6 source
 NC6_CFLAGS=""
 
 
-# Checks for header files.
+dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(
   [errno.h fcntl.h limits.h netdb.h netinet/in.h signal.h sys/socket.h sys/time.h unistd.h],,
@@ -34,7 +34,7 @@ AC_CHECK_HEADERS(
 AC_CHECK_HEADER(stdint.h)
 
 
-# Checks for typedefs, structures, and compiler characteristics.
+dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
@@ -44,7 +44,7 @@ TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
 
 
-# Configure IPv6 support
+dnl Configure IPv6 support
 ipv6=
 AC_ARG_ENABLE(ipv6,
   AC_HELP_STRING(
@@ -106,7 +106,7 @@ if test "X$stack_guess" != "Xno"; then
 fi
 
 
-# Checks for library functions.
+dnl Checks for library functions.
 AC_FUNC_ALLOCA
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
@@ -117,8 +117,8 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Missing functions required to compile nc6])]
 )
 
-# actually, the GETADDRINFO_AI_* macros do __NOT__ check if getaddrinfo 
-# supports the AI_* flag, but only if the flag is defined in <netdb.h>
+dnl actually, the GETADDRINFO_AI_* macros do __NOT__ check if getaddrinfo 
+dnl supports the AI_* flag, but only if the flag is defined in <netdb.h>
 GETADDRINFO_AI_ADDRCONFIG(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_ADDRCONFIG], 1, 
@@ -141,12 +141,12 @@ GETADDRINFO_AI_ALL(
 )
 
 
-# The CFLAGS to use with GCC
+dnl The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then
   NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
 fi
 
-# Add extra flags if in debug mode
+dnl Add extra flags if in debug mode
 AC_ARG_ENABLE(debug,
   AC_HELP_STRING(
     [--enable-debug],

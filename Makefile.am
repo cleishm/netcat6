@@ -18,7 +18,7 @@ AUTOMAKE_OPTIONS 	= dist-bzip2
 ACLOCAL_AMFLAGS		= -I $(auxdir)
 SUBDIRS 		= docs contrib src #config 
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
-			  config.status config.log $(AUX_DIST)
+			  config.h.in config.status config.log $(AUX_DIST)
 
 dist-hook:
 	cd $(distdir)
