@@ -30,8 +30,6 @@
 #include "rt_config.h"
 #include "netsupport.h"
 
-#define MAX_IP_ADDR_STR_LEN	sizeof("1234:5678:90AB:CDEF:1234:5678:255.255.255.255")
-#define MAX_SERVICE_STR_LEN	80
 
 #if defined(ENABLE_IPV6)
 bool is_ipv6_enabled(void)
@@ -87,8 +85,8 @@ static bool check_gai_results(const char *address, const char *service,
 {
 	int i, err;
 	struct addrinfo hints, *res = NULL, *ptr;
-	char addr[MAX_IP_ADDR_STR_LEN + 1];
-	char serv[MAX_SERVICE_STR_LEN + 1];
+	char addr[NI_MAXHOST + 1];
+	char serv[NI_MAXSERV + 1];
 
 	/* verify preconditions */
 	assert((address != NULL) || (service != NULL));
