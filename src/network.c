@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.28 2003-01-05 13:40:01 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.29 2003-01-06 15:04:44 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -83,7 +83,7 @@ void do_connect(connection_attributes *attrs)
 	/* get the address of the remote end of the connection */
 	err = getaddrinfo(remote->address, remote->service, &hints, &res);
 	if (err != 0)
-		fatal("forward host lookup failed for remote enpoint %s: %s",
+		fatal("forward host lookup failed for remote endpoint %s: %s",
 		      remote->address, gai_strerror(err));
 
 	/* check the results of getaddrinfo */
