@@ -50,6 +50,7 @@ AC_CHECK_TYPE(ssize_t, int)
 TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
+DEFINED_SOMAXCONN(,AC_DEFINE([SOMAXCONN], 5, [Default backlog parameter for listen(2).]))
 
 
 dnl Configure IPv6 support

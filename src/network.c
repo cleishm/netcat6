@@ -41,7 +41,7 @@
 #include <bluetooth/l2cap.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.49 2004-01-08 17:18:54 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.50 2004-01-09 16:35:33 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -52,13 +52,6 @@ static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
 #define CONNECTION_TIMEOUT	-1
 #define CONNECTION_FAILED	-2
 
-/* for SOCK_STREAM and SOCK_SEQPACKET sockets, we need to listen for 
- * incoming connections. the backlog parameter is set to 5 for backward
- * compatibility (as it seems that at least some BSD-derived system limit 
- * the backlog parameter to this value). */
-#ifndef SOMAXCONN
-#define SOMAXCONN 5
-#endif
 
 static int connect_with_timeout(int fd, const struct sockaddr *sa, 
 		                socklen_t salen, int timeout);

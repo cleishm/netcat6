@@ -18,6 +18,7 @@ EXTRA_DIST		= bootstrap BUGS CREDITS \
 			  config/type_struct_sockaddr_storage.m4 \
 			  config/type_struct_sockaddr_in6.m4 \
 			  config/type_socklen_t.m4 \
+			  config/somaxconn_constant.m4 \
 			  config/gettext.m4
 
 AUTOMAKE_OPTIONS 	= 1.6 dist-bzip2

@@ -37,11 +37,13 @@
 #endif
 
 #ifdef HAVE_BLUEZ
+#ifdef HAVE_STDINT_H
 #include <stdint.h> /* needed for uint8_t */
+#endif
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.22 2004-01-08 17:18:54 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.23 2004-01-09 16:35:33 mauro Exp $");
 
 
 
