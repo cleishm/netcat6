@@ -1,3 +1,7 @@
+2003-03-16 Chris Leishman <chris _at_ leishman.org>
+
+ * Fixed bug in --half-close mode where the remote transmit stream wasn't
+   actually being half-closed.
 
 2003-01-25 Mauro Tortonesi <mauro _at_ deepspace6.net>
 
