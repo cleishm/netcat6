@@ -38,29 +38,67 @@ static const size_t MAX_LISTEN_FDS = 8;
 
 
 
-static bool have_both_ipv4_and_ipv6_addresses(const struct addrinfo *ai)
+static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 {
-	bool have_ipv4_addresses = FALSE;
-	bool have_ipv6_addresses = FALSE;
-	const struct addrinfo *ptr;
-	
-	for (ptr = ai; ptr != NULL; ptr = ptr->ai_next) {
-		switch (ptr->ai_family) {
-			case AF_INET:
-				if (have_ipv6_addresses == TRUE) return TRUE;
-				have_ipv4_addresses = TRUE;
-				break;
-			case AF_INET6:
-				if (have_ipv4_addresses == TRUE) return TRUE;
-				have_ipv6_addresses = TRUE;
-				break;
-			default:
-				/* should this be a fatal error? i don't think so */
-				warn("unknown address family");
+	struct addrinfo* ptr;
+	struct addrinfo* lastv6 = NULL;
+	struct addrinfo* tmp;
+
+	assert(ai != NULL);
+
+	/* Move all ipv6 addresses to the start of the list - keeping
+	 * them in original order */
+
+	if (ai->ai_family == AF_INET6)
+		lastv6 = ai;
+
+	for (ptr = ai; ptr && ptr->ai_next; ptr = ptr->ai_next) {
+		if (ptr->ai_next->ai_family == AF_INET6) {
+			tmp = ptr->ai_next;
+			ptr->ai_next = tmp->ai_next;
+			if (lastv6) {
+				tmp->ai_next = lastv6->ai_next;
+				lastv6->ai_next = tmp;
+			} else {
+				tmp->ai_next = ai;
+				ai = tmp;
+			}
+			lastv6 = tmp;
 		}
 	}
 
-	return FALSE;
+	return ai;
+}
+
+
+
+void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
+		const connection_attributes *attrs)
+{
+	switch (attrs->proto) {
+		case PROTO_IPv6:
+			ainfo->ai_family = AF_INET6;
+			break;
+		case PROTO_IPv4:
+			ainfo->ai_family = AF_INET;
+			break;
+		case PROTO_UNSPECIFIED:
+			ainfo->ai_family = AF_UNSPEC;
+			break;
+		default:
+			fatal("internal error: unknown socket domain");
+	}
+	
+	switch (attrs->type) {
+		case UDP_SOCKET:
+			ainfo->ai_socktype = SOCK_DGRAM;
+			break;
+		case TCP_SOCKET:
+			ainfo->ai_socktype = SOCK_STREAM;
+			break;
+		default:
+			fatal("internal error: unknown socket type");
+	}
 }
 
 
@@ -71,48 +109,24 @@ void do_connect(const address *remote, const address *local,
 	io_stream remote_stream, local_stream;
 	int err, fd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
-	bool have_rev = FALSE;
 	bool connect_attempted = FALSE;
-	char hbuf_rev[NI_MAXHOST + 1]; /* MAX_IP_ADDRLEN + 1 should be enough */
+	char hbuf_rev[NI_MAXHOST + 1];
 	char hbuf_num[NI_MAXHOST + 1];
-	char sbuf_rev[NI_MAXSERV + 1]; /* MAX_PORTLEN + 1 should be enough */
+	char sbuf_rev[NI_MAXSERV + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 
 	/* make sure that all the preconditions are respected */
 	assert(remote != NULL);
 	assert(remote->address != NULL);
 	assert(remote->port != NULL);
-	assert(local == NULL || ((local->address == NULL || strlen(local->address) > 0) &&
-	                         (local->port    == NULL || strlen(local->port)    > 0)));
+	assert(local == NULL ||
+	    ((local->address == NULL || strlen(local->address) > 0) &&
+	     (local->port    == NULL || strlen(local->port)    > 0)));
 	assert(attrs != NULL);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
-
-	switch (attrs->proto) {
-		case PROTO_IPv6:
-			hints.ai_family = AF_INET6;
-			break;
-		case PROTO_IPv4:
-			hints.ai_family = AF_INET;
-			break;
-		case PROTO_UNSPECIFIED:
-			hints.ai_family = AF_UNSPEC;
-			break;
-		default:
-			fatal("internal error: unknown socket domain");
-	}
-	
-	switch (attrs->type) {
-		case UDP_SOCKET:
-			hints.ai_socktype = SOCK_DGRAM;
-			break;
-		case TCP_SOCKET:
-			hints.ai_socktype = SOCK_STREAM;
-			break;
-		default:
-			fatal("internal error: unknown socket type");
-	}
+	connection_attributes_to_addrinfo(&hints, attrs);
 
 #ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
 	hints.ai_flags |= AI_ADDRCONFIG;
@@ -133,9 +147,6 @@ void do_connect(const address *remote, const address *local,
 	/* try connecting to any of the addresses returned by getaddrinfo */
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
-		/* reset have_rev */
-		have_rev = FALSE;
-		
 		/* only accept socktypes we can handle */
 		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
 			continue;
@@ -145,29 +156,33 @@ void do_connect(const address *remote, const address *local,
 
 		/* get the numeric name for this destination as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		                  hbuf_num, sizeof(hbuf_num), sbuf_num, 
-				  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		        hbuf_num, sizeof(hbuf_num), sbuf_num, 
+		        sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
-		if(err != 0)
+		if (err != 0)
 			fatal("getnameinfo failed: %s", gai_strerror(err));
 
 		/* get the real name for this destination as a string */
-		if ((is_flag_set(NUMERIC_MODE) == FALSE) && 
-		    (is_flag_set(VERY_VERBOSE_MODE) == TRUE)) { /* should this be VERBOSE_MODE? */
-			
-			/* try reverse dns lookup */
+		if ((is_flag_set(VERBOSE_MODE) == TRUE) &&
+		    (is_flag_set(NUMERIC_MODE) == FALSE)) 
+		{
+			/* get the real name for this destination as a string */
 			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-				          hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
-				          sizeof(sbuf_rev), 0);
-			if(err != 0) {
-				/* this is not a fatal error */
+					hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
+					sizeof(sbuf_rev), 0);
+
+			if(err != 0)
 				warn("inverse lookup failed for %s: %s",
-				     hbuf_num, gai_strerror(err));
-			} else {
-				/* we have reverse dns information */
-				have_rev = TRUE; 
-			}
+					 hbuf_num, gai_strerror(err));
+		} else {
+			err = 1;
+		}
+
+		if (err != 0) {
+			/* just make the real name the numeric string */
+			strcpy(hbuf_rev, hbuf_num);
+			strcpy(sbuf_rev, sbuf_num);
 		}
 
 		/* create the socket */
@@ -201,7 +216,7 @@ void do_connect(const address *remote, const address *local,
 			/* get the IP address of the local end of the connection */
 			err = getaddrinfo(local->address, local->port, &hints, &src_res);
 			if(err != 0) {
-				warn("forward host lookup failed for local endpoint %s: %s",
+				warn("forward host lookup failed for source address %s: %s",
 				     local->address, gai_strerror(err));
 				close(fd);
 				fd = -1;
@@ -212,7 +227,7 @@ void do_connect(const address *remote, const address *local,
 			assert(src_res != NULL);
 
 			/* try binding to any of the addresses returned by getaddrinfo */
-			for (src_ptr = src_res; src_ptr != NULL; src_ptr = src_ptr->ai_next) {
+			for (src_ptr = src_res; src_ptr; src_ptr = src_ptr->ai_next) {
 				err = bind(fd, src_ptr->ai_addr, src_ptr->ai_addrlen);
 				if (err == 0)
 					break;
@@ -223,21 +238,12 @@ void do_connect(const address *remote, const address *local,
 				 * getaddrinfo */
 				assert(src_ptr->ai_next == NULL);
 				
-				/* print error message */
-				if (have_rev == TRUE) {
-					warn("bind to source addr/port failed when "
-					     "connecting to %s (addr. %s, rev. name %s) "
-					     "port %s (number %s, name %s): %s",
-					     remote->address, hbuf_num, hbuf_rev, 
-					     remote->port, sbuf_num, sbuf_rev, strerror(errno));
-				} else {
-					warn("bind to source addr/port failed when "
-					     "connecting to %s (addr. %s) "
-					     "port %s (number %s): %s",
-					     remote->address, hbuf_num,  
-					     remote->port, sbuf_num, strerror(errno));
+				if (is_flag_set(VERBOSE_MODE) == TRUE) {
+					warn("bind to source addr/port failed "
+						 "when connecting %s [%s] %s (%s): %s",
+						 hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
+						 strerror(errno));
 				}
-				
 				freeaddrinfo(src_res);
 				close(fd);
 				fd = -1;
@@ -251,17 +257,8 @@ void do_connect(const address *remote, const address *local,
 		err = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
 		if (err != 0) {
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
-				if (have_rev == TRUE) {
-					warn("connection to %s (addr. %s, rev. name %s) "
-					     "port %s (number %s, name %s) failed: %s",
-					     remote->address, hbuf_num, hbuf_rev, 
-					     remote->port, sbuf_num, sbuf_rev, strerror(errno));
-				} else {
-					warn("connection to %s (addr. %s) "
-					     "port %s (number %s) failed: %s",
-					     remote->address, hbuf_num,  
-					     remote->port, sbuf_num, strerror(errno));
-				}
+				warn("%s [%s] %s (%s): %s",
+				    hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
 			}
 			close(fd);
 			fd = -1;
@@ -276,12 +273,9 @@ void do_connect(const address *remote, const address *local,
 	
 	/* if the connection failed, output an error message */
 	if (ptr == NULL) {
-		if (connect_attempted == FALSE) {
+		if (connect_attempted == FALSE)
 			fatal("forward lookup returned no usable socket types");
-		} else {
-			fatal("cannot connect to %s port %s", 
-			      remote->address, remote->port);
-		}
+		exit(EXIT_FAILURE);
 	}
 
 	/* cleanup addrinfo structure */
@@ -289,17 +283,7 @@ void do_connect(const address *remote, const address *local,
 
 	/* let the user know the connection has been established */
 	if (is_flag_set(VERBOSE_MODE)) {
-		if (have_rev == TRUE) {
-			warn("connection to %s (addr. %s, rev. name %s) "
-			     "port %s (number %s, name %s) opened",
-			     remote->address, hbuf_num, hbuf_rev, 
-			     remote->port, sbuf_num, sbuf_rev);
-		} else {
-			warn("connection to %s (addr. %s) "
-			     "port %s (number %s) opened",
-			     remote->address, hbuf_num,  
-			     remote->port, sbuf_num);
-		}
+		warn("%s [%s] %s (%s) open", hbuf_rev, hbuf_num, sbuf_num, sbuf_rev);
 	}
 
 	/* create io_streams for the local and remote streams */
@@ -318,85 +302,58 @@ void do_listen(const address *remote, const address *local,
 	io_stream remote_stream, local_stream;
 	int nfd, i, fd, err, ns = -1, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
-	char hbuf_num[NI_MAXHOST + 1], sbuf_num[NI_MAXSERV + 1];
-#if 0 /* REVERSE_DNS */
-	cher hbuf_rev[NI_MAXHOST + 1], sbuf_rev[NI_MAXSERV + 1];
-#endif
+	char hbuf_rev[NI_MAXHOST + 1];
+	char hbuf_num[NI_MAXHOST + 1];
+	char sbuf_rev[NI_MAXSERV + 1];
+	char sbuf_num[NI_MAXSERV + 1];
 	fd_set accept_fdset;
-	char *address;
 
 	/* make sure all the preconditions are respected */
 	assert(attrs != NULL);
 	assert(local != NULL);
 	assert(local->address == NULL || strlen(local->address) > 0);
 	assert(local->port != NULL && strlen(local->port) > 0);
-	assert(remote == NULL || ((remote->address == NULL || strlen(remote->address) > 0) &&
-	                          (remote->port    == NULL || strlen(remote->port)    > 0)));
-	
-	/* setup this once for all */
-	address = (local->address != NULL ? local->address : "UNSPECIFIED ADDRESS");
+	assert(remote == NULL ||
+	    ((remote->address == NULL || strlen(remote->address) > 0) &&
+	     (remote->port    == NULL || strlen(remote->port)    > 0)));
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
-
-	switch (attrs->proto) {
-		case PROTO_IPv6:
-			hints.ai_family = AF_INET6;
-			break;
-		case PROTO_IPv4:
-			hints.ai_family = AF_INET;
-			break;
-		case PROTO_UNSPECIFIED:
-			hints.ai_family = AF_UNSPEC;
-			break;
-		default:
-			fatal("internal error: unknown socket domain");
-	}
-	
-	switch (attrs->type) {
-		case UDP_SOCKET:
-			hints.ai_socktype = SOCK_DGRAM;
-			break;
-		case TCP_SOCKET:
-			hints.ai_socktype = SOCK_STREAM;
-			break;
-		default:
-			fatal("internal error: unknown socket type");
-	}
+	connection_attributes_to_addrinfo(&hints, attrs);
 
 	hints.ai_flags = AI_PASSIVE;
-
 	if (is_flag_set(NUMERIC_MODE) == TRUE)
 		hints.ai_flags |= AI_NUMERICHOST;
 
 	/* get the IP address of the local end of the connection */
 	err = getaddrinfo(local->address, local->port, &hints, &res);
 	if (err != 0) 
-		fatal("forward host lookup failed for local endpoint %s port %s: %s",
-		      address, local->port, gai_strerror(err));
+		fatal("forward host lookup failed for local endpoint %s (%s): %s",
+		      local->address? local->address : "[unspecified]",
+			  local->port, gai_strerror(err));
 		
 	/* check the results of getaddrinfo */
 	assert(res != NULL);
 
-#ifndef CAN_DOUBLE_BIND
-	/* workaround for those systems that don't allow double binding */
-	if (local->address == NULL && have_both_ipv4_and_ipv6_addresses(res) == TRUE)
-		fatal("your host does not support indipendent double binding."
-		      "Please specify the IP protocol version to use with -4 or -6.");
-#endif
-	
-	nfd = 0;	
-	
+	/* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
+	 * listening.  Connections will still be accepted from either ipv6 or
+	 * ipv4 clients (ipv4 will be mapped into ipv6).  However, this means
+	 * that we MUST bind the ipv6 address ONLY for these hosts.
+	 *
+	 * TODO: until we add a configure check to determine if the current
+	 * host does this double binding, we will just ensure that ipv6
+	 * sockets are bound first and then attempt to bind the ipv4 ones.  On
+	 * systems that double bind ipv6/ipv4 the ipv4 bind will simply fail.
+	 */
+	res = order_ipv6_first(res);
+
 	/* try binding to all of the addresses returned by getaddrinfo */
+	nfd = 0;	
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
-#if 0 /* REVERSE_DNS */
-		have_rev = FALSE;
-#endif
-		
 		/* only accept socktypes we can handle */
 		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
 			continue;
@@ -407,32 +364,33 @@ void do_listen(const address *remote, const address *local,
 
 		/* get the numeric name for this source as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-				  hbuf_num, sizeof(hbuf_num), sbuf_num, 
-				  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		        hbuf_num, sizeof(hbuf_num), sbuf_num, 
+		        sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
-		if(err != 0)
+		if (err != 0)
 			fatal("getnameinfo failed: %s", gai_strerror(err));
 
-#if 0 /* REVERSE_DNS */
 		/* get the real name for this destination as a string */
 		if ((is_flag_set(NUMERIC_MODE) == FALSE) && 
-		    (is_flag_set(VERY_VERBOSE_MODE) == TRUE)) { /* should this be VERBOSE_MODE? */
-			
+		    (is_flag_set(VERY_VERBOSE_MODE) == TRUE))
+		{
 			/* try reverse dns lookup */
 			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
 				          hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
 				          sizeof(sbuf_rev), 0);
-			if(err != 0) {
-				/* this is not a fatal error */
+			if(err != 0)
 				warn("inverse lookup failed for %s: %s",
 				     hbuf_num, gai_strerror(err));
-			} else {
-				/* we have reverse dns information */
-				have_rev = TRUE; 
-			}
+		} else {
+			err = 1;
 		}
-#endif 
+
+		if (err != 0) {
+			/* just make the real name the numeric string */
+			strcpy(hbuf_rev, hbuf_num);
+			strcpy(sbuf_rev, sbuf_num);
+		}
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -448,7 +406,7 @@ void do_listen(const address *remote, const address *local,
 #endif 
 	
 		/* set the reuse address socket option */
-		if (is_flag_set(DONT_REUSE_ADDR) == FALSE) {
+		if (!(is_flag_set(DONT_REUSE_ADDR) == TRUE)) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
@@ -458,25 +416,8 @@ void do_listen(const address *remote, const address *local,
 		/* bind to the local address */
 		err = bind(fd, ptr->ai_addr, ptr->ai_addrlen);
 		if (err != 0) {
-			/* print error message */
-#if 0 /* REVERSE_DNS */
-			if (have_rev == TRUE) {
-				warn("bind to source addr/port failed when "
-				     "connecting to %s (addr. %s, rev. name %s) "
-				     "port %s (number %s, name %s): %s",
-				     remote->address, hbuf_num, hbuf_rev, 
-				     remote->port, sbuf_num, sbuf_rev, strerror(errno));
-			} else {
-				warn("bind to source addr/port failed when "
-				     "connecting to %s (addr. %s) "
-				     "port %s (number %s): %s",
-				     remote->address, hbuf_num,  
-				     remote->port, sbuf_num, strerror(errno));
-			}
-#else
-			warn("bind to source address %s (%s) port %s (%s) failed: %s",
-			     address, hbuf_num, remote->port, sbuf_num, strerror(errno));
-#endif
+			warn("bind to source %s [%s] %s (%s) failed: %s",
+			     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
 			close(fd);
 			continue;
 		}
@@ -488,13 +429,13 @@ void do_listen(const address *remote, const address *local,
 		if (ptr->ai_socktype == SOCK_STREAM) {
 			err = listen(fd, 5);
 			if (err != 0)
-				fatal("cannot listen on source address %s (%s) port %s (%s): %s",
-				      address, hbuf_num, remote->port, sbuf_num, strerror(errno));
+				fatal("cannot listen on %s [%s] %s (%s): %s",
+				      hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
 		}
 
 		if (is_flag_set(VERBOSE_MODE) == TRUE)
-			fatal("listening on source address %s (%s) port %s (%s)",
-			      address, hbuf_num, remote->port, sbuf_num, strerror(errno));
+			warn("listening on %s [%s] %s (%s) ...",
+			      hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
 
 		/* add fd to accept_fdset */
 		FD_SET(fd, &accept_fdset);
@@ -512,6 +453,9 @@ void do_listen(const address *remote, const address *local,
 		fd_set tmp_ap_fdset;
 		struct sockaddr_storage dest;
 		socklen_t destlen;
+		char c_hbuf_rev[NI_MAXHOST + 1];
+		char c_hbuf_num[NI_MAXHOST + 1];
+		char c_sbuf_num[NI_MAXSERV + 1];
 
 		/* make a copy of accept_fdset before passing to select */
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
@@ -525,11 +469,11 @@ void do_listen(const address *remote, const address *local,
 		}
 
 		/* find the ready filedescriptor */
-		for (i = 0; i < maxfd && !FD_ISSET(i, &tmp_ap_fdset); ++i)
+		for (i = 0; i <= maxfd && !FD_ISSET(i, &tmp_ap_fdset); ++i)
 			;
 
 		/* if none were ready, loop to select again */
-		if (i == maxfd)
+		if (i > maxfd)
 			continue;
 
 		destlen = sizeof(dest);	
@@ -541,20 +485,19 @@ void do_listen(const address *remote, const address *local,
 			if (ns < 0)
 				fatal("cannot accept connection: %s", strerror(errno));
 		} else {
-			err = recvfrom(i, NULL, 0, MSG_PEEK, (struct sockaddr*)&dest, &destlen);
+			err = recvfrom(i, NULL, 0, MSG_PEEK,
+			        (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
 				fatal("cannot recv from socket: %s", strerror(errno));
 
 			ns = dup(i);
 			if (ns < 0)
-				fatal("cannot duplicate file descriptor %d: %s", i, strerror(errno));
+				fatal("cannot duplicate file descriptor %d: %s",
+				      i, strerror(errno));
 		}
 
-#if 0 /* REVERSE_DNS */
 		/* get names for each end of the connection */
 		if (is_flag_set(VERBOSE_MODE) == TRUE) {
-			char c_hbuf[NI_MAXHOST + 1], c_hbuf_n[NI_MAXHOST + 1];
-			char c_sbuf_n[NI_MAXSERV + 1];
 			struct sockaddr_storage src;
 			socklen_t srclen = sizeof(src);
 
@@ -565,8 +508,8 @@ void do_listen(const address *remote, const address *local,
 
 			/* get the numeric name for this source as a string */
 			err = getnameinfo((struct sockaddr *)&src, srclen,
-				          hbuf_num, sizeof(hbuf_num), NULL, 0,
-				          NI_NUMERICHOST | NI_NUMERICSERV);
+			        hbuf_num, sizeof(hbuf_num), NULL, 0,
+			        NI_NUMERICHOST | NI_NUMERICSERV);
 
 			/* this should never happen */
 			if(err != 0)
@@ -574,58 +517,58 @@ void do_listen(const address *remote, const address *local,
 
 			/* get the numeric name for this client as a string */
 			err = getnameinfo((struct sockaddr *)&dest, destlen,
-				          c_hbuf_n, sizeof(c_hbuf_n), c_sbuf_n, 
-					  sizeof(c_sbuf_n), NI_NUMERICHOST | NI_NUMERICSERV);
+			        c_hbuf_num, sizeof(c_hbuf_num), c_sbuf_num, 
+					  sizeof(c_sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 			if(err != 0)
 				fatal("getnameinfo failed: %s", gai_strerror(err));
 
 			/* get the real name for this client as a string */
 			if (is_flag_set(NUMERIC_MODE) == FALSE) {
 				err = getnameinfo((struct sockaddr *)&dest, destlen,
-					c_hbuf, sizeof(c_hbuf), NULL, 0, 0);
+					c_hbuf_rev, sizeof(c_hbuf_rev), NULL, 0, 0);
 				if(err != 0)
-					fatal("inverse lookup failed for %s: %s",
-					c_hbuf_n, gai_strerror(err));
+					warn("inverse lookup failed for %s: %s",
+					      c_hbuf_num, gai_strerror(err));
 			} else {
-				strcpy(c_hbuf, c_hbuf_n);
+				err = 1;
+			}
+
+			if (err != 0) {
+				strcpy(c_hbuf_rev, c_hbuf_num);
 			}
 		}
-#endif
 
 		/* check if connections from this client are allowed */
 		if ((remote == NULL) ||
 		    (remote->address == NULL && remote->port == NULL) ||
 		    (is_allowed((struct sockaddr*)&dest, remote, attrs) == TRUE)) {
 
-			if (ptr->ai_socktype == SOCK_DGRAM) {
+			if (attrs->type == SOCK_DGRAM) {
 				/* connect the socket to ensure we only talk with this client */
 				err = connect(ns, (struct sockaddr*)&dest, destlen);
 				if (err != 0)
-					fatal("cannot connect datagram socket: %s", strerror(errno));
+					fatal("cannot connect datagram socket: %s",
+					      strerror(errno));
 			}
 
-#if 0 /* REVERSE_DNS */
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
-				warn("connect to [%s] from %s [%s] %s",
-				hbuf_n, c_hbuf, c_hbuf_n, c_sbuf_n);
+				warn("connect to %s (%s) from %s [%s] %s",
+				      hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
-#endif
 
 			break;
 		} else {
-			if (ptr->ai_socktype == SOCK_DGRAM) {
+			if (attrs->type == SOCK_DGRAM) {
 				/* the connection wasn't accepted - remove the queued packet */
 				recvfrom(ns, NULL, 0, 0, NULL, 0);
 			}
 			close(ns);
 			ns = -1;
 
-#if 0 /* REVERSE_DNS */
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
-				warn("refused connect to [%s] from %s [%s] %s",
-					hbuf, c_hbuf, c_hbuf_n, c_sbuf_n);
+				warn("refused connect to %s (%s) from %s [%s] %s",
+					hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
-#endif
 		}
 	}
 
@@ -636,7 +579,7 @@ void do_listen(const address *remote, const address *local,
 
 	/* create io_streams for the local and remote streams */
 	stdio_to_io_stream(&local_stream);
-	socket_to_io_stream(&remote_stream, ns, ptr->ai_socktype);
+	socket_to_io_stream(&remote_stream, ns, attrs->type);
 
 	/* read and write from the streams until they are closed */
 	readwrite(&remote_stream, &local_stream);
