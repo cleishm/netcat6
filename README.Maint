@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.7 2003-01-03 14:41:49 chris Exp $
+$Id: README.Maint,v 1.8 2003-01-18 15:40:58 chris Exp $
 
 
 Source layout
@@ -212,13 +212,14 @@ To make a new release, the following process should be followed:
 6) ./bootstrap
 7) ./configure
 8) make dist
+9) make distcheck
 
 This will build a tar.gz and tar.bz2 in the root of the source tree.  These
 should be made available for download from the deepspace6 website.
 
-9) Clean the source tree again (make maintainer-clean)
-10) Edit configure.ac to add '-cvs' onto the end of the version number
-11) Commit changes
+10) Clean the source tree again (make maintainer-clean)
+11) Edit configure.ac to add '-cvs' onto the end of the version number
+12) Commit changes
 
 
 Release Announcements
