@@ -99,8 +99,8 @@ AC_ARG_ENABLE(stack-guess,
 
 if test "X$stack_guess" != "Xno"; then
   IN6_GUESS_STACK(ipv6, ipv6libdir, ipv6lib)
-  CFLAGS="$CFLAGS $INET6_CFLAGS"
-  LIBS="$INET6_LIBS $LIBS"
+  NC6_CFLAGS="${NC6_CFLAGS} ${INET6_CFLAGS}"
+  LIBS="${INET6_LIBS} ${LIBS}"
 fi
 
 
@@ -155,22 +155,28 @@ AC_ARG_ENABLE(debug,
   ),
   [case "${enable_debug}" in
   yes)
-    AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
-    CFLAGS="${CFLAGS} -g -O0"
+    debug=yes
     ;;
   no) 
-    AC_DEFINE(NDEBUG, 1, [Define if nc6 is to be build without debug information.])
-    CFLAGS="${CFLAGS} -O2"
-    if test "X$GCC" = "Xyes"; then 
-      NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
-    fi
+    debug=no
     ;;
   *)    
     AC_MSG_ERROR(bad value ${enable_debug} for --enable-debug option) 
     ;;
   esac],
-  AC_DEFINE(NDEBUG,1)
 )
+
+if test "X$debug" = "Xyes"; then
+  AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
+  CFLAGS="${CFLAGS} -g -O0"
+else
+  AC_DEFINE(NDEBUG, 1,
+    [Define if nc6 is to be build without debug information.])
+  CFLAGS="${CFLAGS} -O2"
+  if test "X$GCC" = "Xyes"; then 
+    NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
+  fi
+fi
     
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
