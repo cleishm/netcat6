@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.18 2003-01-11 19:46:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.19 2003-01-11 19:55:41 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -116,10 +116,8 @@ static int do_transfer(connection_attributes *attrs)
 		ios_set_hold_timeout(remote_stream, -1);
 		ios_set_hold_timeout(local_stream, -1);
 
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("receiving from remote only, transmit disabled");
-#endif
 	}
 
 	if (is_flag_set(SEND_DATA_ONLY) == TRUE) {
@@ -133,10 +131,8 @@ static int do_transfer(connection_attributes *attrs)
 		ios_set_hold_timeout(remote_stream, -1);
 		ios_set_hold_timeout(local_stream, -1);
 
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("transmitting to remote only, receive disabled");
-#endif
 	}
 
 	/* run the main read/write loop */

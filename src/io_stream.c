@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.19 2003-01-11 19:46:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.20 2003-01-11 19:55:41 chris Exp $");
 
 
 
@@ -181,9 +181,9 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 	if (tv->tv_sec < 0) {
 		/* timeout has expired */
 		timerclear(tv);
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("%s hold timed out", ios->name);
+#ifndef NDEBUG
 	} else if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 		warn("%s timer expires in %d.%06d",
 		     ios->name, tv->tv_sec, tv->tv_usec);
@@ -220,10 +220,8 @@ ssize_t ios_read(io_stream *ios)
 		return rr;
 	} else if (rr == 0) {
 		/* read eof - close read stream */
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("read eof from %s", ios->name);
-#endif
 		ios_shutdown(ios, SHUT_RD);
 		return IOS_EOF;
 	} else if (errno == EAGAIN) {
@@ -231,11 +229,9 @@ ssize_t ios_read(io_stream *ios)
 		return 0;
 	} else {
 		/* weird error */
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("error reading from %s: %s",
 			     ios->name, strerror(errno));
-#endif
 		return IOS_FAILED;
 	}
 }
@@ -275,7 +271,6 @@ ssize_t ios_write(io_stream *ios)
 		/* not ready? */
 		return 0;
 	} else {
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 			if (errno == EPIPE)
 				warn("received SIGPIPE on %s", ios->name);
@@ -283,7 +278,6 @@ ssize_t ios_write(io_stream *ios)
 				warn("error writing to %s: %s",
 				     ios->name, strerror(errno));
 		}
-#endif
 		return IOS_FAILED;
 	}
 }
@@ -319,10 +313,8 @@ void ios_shutdown(io_stream* ios, int how)
 		/* if the same fd is input and output, don't close twice */
 		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
 			close(ios->fd_out);
-#ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 			warn("closed %s", ios->name);
-#endif
 		ios->fd_in = ios->fd_out = -1;
 	} else if (how == SHUT_RD) {
 		/* close the input */
@@ -333,17 +325,13 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_in == ios->fd_out) {
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_in, SHUT_RD);
-#ifndef NDEBUG
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 					warn("shutdown %s for read", ios->name);
-#endif
 			}
 		} else {
 			close(ios->fd_in);
-#ifndef NDEBUG
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 				warn("closed %s for read", ios->name);
-#endif
 		}
 		ios->fd_in = -1;
 		/* record the read shutdown time */
@@ -358,17 +346,13 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_in == ios->fd_out) {
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_out, SHUT_WR);
-#ifndef NDEBUG
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 					warn("shutdown %s for write",ios->name);
-#endif
 			}
 		} else {
 			close(ios->fd_out);
-#ifndef NDEBUG
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 				warn("closed %s for write", ios->name);
-#endif
 		}
 		ios->fd_out = -1;
 	}
