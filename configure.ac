@@ -54,7 +54,7 @@ AC_ARG_ENABLE(ipv6,
 
 if test "X$ipv6" = "Xyes"; then
   TYPE_STRUCT_SOCKADDR_IN6(,[
-    AC_MSG_NOTICE([Disabling IPv6 support: 'struct sockaddr_in6' is required])
+    AC_MSG_NOTICE([Disabling IPv6 support: 'struct sockaddr_in6' support is required])
     ipv6=no
   ])
 fi
@@ -153,5 +153,5 @@ AC_ARG_ENABLE(debug,
     
 
 AC_SUBST(ac_aux_dir)
-AC_OUTPUT([Makefile docs/Makefile src/Makefile],
+AC_OUTPUT([Makefile docs/Makefile src/Makefile nc6.spec],
 [test -z "$CONFIG_HEADERS" || echo timestamp > src/stamp-h.in])
