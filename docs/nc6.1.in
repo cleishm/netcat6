@@ -120,6 +120,9 @@ will set the hold timeout on the local endpoint, specifying a second value will
 set the hold timeout on the remote endpoint as well.  Either value can be '0'
 (for instant timeout) or '-' (for no hold timeout, eg. infinite hold).
 .TP 13
+.I \--rcvbuf-size=SIZE
+Specify the size to be used for the kernel receive buffer for network sockets.
+.TP 13
 .I \--recv-only
 Only receive data, don't transmit.  This also disables any hold timeouts.
 .TP 13
@@ -128,6 +131,9 @@ Sets the source address for the local endpoint of the connection.
 .TP 13
 .I \--send-only
 Only send data, don't receive.  This also disables any hold timeouts.
+.TP 13
+.I \--sndbuf-size=SIZE
+Specify the size to be used for the kernel send buffer for network sockets.
 .TP 13
 .I \-u, --udp
 With this option set, netcat6 will use UDP as the transport protocol (TCP is

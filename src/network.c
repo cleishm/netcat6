@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.42 2003-01-20 22:16:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.43 2003-01-23 15:47:35 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -51,6 +51,8 @@ static void listen_once_callback(int fd, int socktype, void *cdata);
 static bool skip_address(const struct addrinfo *ai);
 static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str, 
                            size_t size, bool numeric_mode);
+static void set_sockopts(const connection_attributes* attrs,
+		         int socket, const struct addrinfo* sockinfo);
 
 
 
@@ -62,7 +64,6 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	bool connect_attempted = FALSE;
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
-	bool disable_nagle     = FALSE;
 	char name_buf[AI_STR_SIZE];
 
 	/* make sure that attrs is a valid pointer */
@@ -81,7 +82,6 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	/* setup flags */
 	numeric_mode  = is_flag_set(NUMERIC_MODE);
 	verbose_mode  = is_flag_set(VERBOSE_MODE);
-	disable_nagle = is_flag_set(DISABLE_NAGLE);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -134,15 +134,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 		}
 #endif 
 
-		/* disable the nagle option for TCP sockets */
-		if (disable_nagle == TRUE && ptr->ai_protocol == IPPROTO_TCP) {
-			int on = 1;
-			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-			                 &on, sizeof(on));
-			if (err < 0) 
-				warn(_("error with sockopt TCP_NODELAY"));
-		}
+		/* setup configurable socket options */
+		set_sockopts(attrs, fd, ptr);
 
 		/* setup buf if we're in verbose mode */
 		if (verbose_mode == TRUE) 
@@ -341,8 +334,6 @@ void do_listen_continuous(const connection_attributes* attrs,
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
-	bool dont_reuse_addr   = FALSE;
-	bool disable_nagle     = FALSE;
 #ifdef ENABLE_IPV6
 	bool set_ipv6_only     = FALSE;
 	bool bound_ipv6_any    = FALSE;
@@ -372,8 +363,6 @@ void do_listen_continuous(const connection_attributes* attrs,
 	/* setup flags */
 	numeric_mode    = is_flag_set(NUMERIC_MODE);
 	verbose_mode    = is_flag_set(VERBOSE_MODE);
-	dont_reuse_addr = is_flag_set(DONT_REUSE_ADDR);
-	disable_nagle   = is_flag_set(DISABLE_NAGLE);
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -463,26 +452,10 @@ void do_listen_continuous(const connection_attributes* attrs,
 				set_ipv6_only = TRUE;
 		}
 #endif 
+
+		/* setup configurable socket options */
+		set_sockopts(attrs, fd, ptr);
 	
-		/* set the reuse address socket option */
-		if (dont_reuse_addr == FALSE) {
-			int on = 1;
-			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
-			                 &on, sizeof(on));
-			if (err < 0) warn(_("error with sockopt SO_REUSEADDR"));
-		}
-
-		/* disable the nagle option for TCP sockets */
-		if (disable_nagle == TRUE  && ptr->ai_protocol == IPPROTO_TCP) {
-			int on = 1;
-			/* in case of error, we will go on anyway... */
-			err = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-			                 &on, sizeof(on));
-			if (err < 0) 
-				warn(_("error with sockopt TCP_NODELAY"));
-		}
-
 		/* get the numeric name for this source address */
 		getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, name_buf, 
 		               sizeof(name_buf), TRUE);
@@ -793,5 +766,57 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 		}
 	} else {
 		snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
+	}
+}
+
+
+
+static void set_sockopts(const connection_attributes* attrs,
+		         int sock, const struct addrinfo* sockinfo)
+{
+	int on, err;
+
+	/* set the reuse address socket option */
+	if (is_flag_set(DONT_REUSE_ADDR) == FALSE) {
+		on = 1;
+		/* in case of error, we will go on anyway... */
+		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+				 &on, sizeof(on));
+		if (err < 0)
+			warn(_("error with sockopt SO_REUSEADDR: %s"),
+			     strerror(errno));
+	}
+
+	/* disable the nagle option for TCP sockets */
+	if (is_flag_set(DISABLE_NAGLE) == TRUE &&
+	    sockinfo->ai_protocol == IPPROTO_TCP)
+	{
+		on = 1;
+		/* in case of error, we will go on anyway... */
+		err = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+				 &on, sizeof(on));
+		if (err < 0) 
+			warn(_("error with sockopt TCP_NODELAY: %s"),
+			     strerror(errno));
+	}
+
+	/* setup the kernel sndbuf size */
+	if ((on = ca_sndbuf_size(attrs)) > 0) {
+		/* in case of error, we will go on anyway... */
+		err = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, 
+				 &on, sizeof(on));
+		if (err < 0)
+			warn(_("error with sockopt SO_SNDBUF: %s"),
+			     strerror(errno));
+	}
+
+	/* setup the kernel rcvbuf size */
+	if ((on = ca_rcvbuf_size(attrs)) > 0) {
+		/* in case of error, we will go on anyway... */
+		err = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, 
+				 &on, sizeof(on));
+		if (err < 0)
+			warn(_("error with sockopt SO_RCVBUF: %s"),
+			     strerror(errno));
 	}
 }

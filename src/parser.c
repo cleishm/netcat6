@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.43 2003-01-23 15:15:59 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.44 2003-01-23 15:47:35 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -84,7 +84,11 @@ static const struct option long_options[] = {
 	{"disable-nagle",       FALSE, NULL,  0 },
 #define OPT_NO_REUSEADDR	16
 	{"no-reuseaddr",        FALSE, NULL,  0 },
-#define OPT_MAX			17
+#define OPT_SNDBUF_SIZE		17
+	{"sndbuf-size",         TRUE,  NULL,  0 },
+#define OPT_RCVBUF_SIZE		18
+	{"rcvbuf-size",         TRUE,  NULL,  0 },
+#define OPT_MAX			19
 	{0, 0, 0, 0}
 };
 
@@ -116,6 +120,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	size_t remote_mtu = 0;
 	size_t remote_nru = 0;
 	size_t buffer_size = 0;
+	size_t sndbuf_size = 0;
+	size_t rcvbuf_size = 0;
 
 	/* initialize the addresses of the connection endpoints */
 	address_init(&remote_address);
@@ -158,9 +164,15 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			case OPT_NO_REUSEADDR:
 				set_flag(DONT_REUSE_ADDR);
 				break;
+			case OPT_SNDBUF_SIZE:
+				sndbuf_size = safe_atoi(optarg);
+				break;
+			case OPT_RCVBUF_SIZE:
+				rcvbuf_size = safe_atoi(optarg);
+				break;
 			default:
-				fatal(_("getopt returned unexpected long option "
-				        "offset index %d\n"), option_index);
+				fatal(_("getopt returned unexpected long "
+				     "option offset index %d\n"), option_index);
 			}
 			break;
 		case '4':
@@ -348,15 +360,17 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	if (set_local_hold_timeout == TRUE)
 		ca_set_local_hold_timeout(attrs, local_hold_timeout);
 	
-	/* setup mtu, nru and buffer size if they were specified */
+	/* setup mtu, nru, and buffer sizes if they were specified */
 	if (remote_mtu > 0)
 		ca_set_remote_MTU(attrs, remote_mtu);
 	if (remote_nru > 0)
 		ca_set_remote_NRU(attrs, remote_nru);
-	if (buffer_size > 0) {
+	if (buffer_size > 0)
 		ca_set_buffer_size(attrs, buffer_size);
-		ca_set_buffer_size(attrs, buffer_size);
-	}
+	if (sndbuf_size > 0)
+		ca_set_sndbuf_size(attrs, sndbuf_size);
+	if (rcvbuf_size > 0)
+		ca_set_rcvbuf_size(attrs, rcvbuf_size);
 
 	assert(ret != -1);
 	return ret;
@@ -399,6 +413,8 @@ static void print_usage(FILE *fp)
 "                    Disable nagle algorithm for TCP connections\n"
 "      --no-reuseaddr\n"
 "                    Disable SO_REUSEADDR socket option (only in listen mode)\n"
+"      --sndbuf-size Kernel send buffer size for network sockets\n"
+"      --rcvbuf-size Kernel receive buffer size for network sockets\n"
 "      --version     Display nc6 version information\n"
 "\n"));
 }

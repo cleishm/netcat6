@@ -55,6 +55,8 @@ typedef struct connection_attributes_t
 	size_t buffer_size;
 	size_t remote_mtu;
 	size_t remote_nru;
+	size_t sndbuf_size;
+	size_t rcvbuf_size;
 	int local_hold_timeout;
 	int remote_hold_timeout;
 	bool remote_half_close_suppress;
@@ -89,6 +91,12 @@ void ca_destroy(connection_attributes *attrs);
 
 #define ca_remote_NRU(CA)		((CA)->remote_nru)
 #define ca_set_remote_NRU(CA, NRU)	((CA)->remote_nru = (NRU))
+
+#define ca_sndbuf_size(CA)		((CA)->sndbuf_size)
+#define ca_set_sndbuf_size(CA, SZ)	((CA)->sndbuf_size = (SZ))
+	
+#define ca_rcvbuf_size(CA)		((CA)->rcvbuf_size)
+#define ca_set_rcvbuf_size(CA, SZ)	((CA)->rcvbuf_size = (SZ))
 	
 #define ca_connect_timeout(CA)		((CA)->connect_timeout)
 #define ca_set_connect_timeout(CA, CT)	((CA)->connect_timeout = (CT))

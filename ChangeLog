@@ -1,7 +1,9 @@
 2003-01-23 Chris Leishman <chris _at_ leishman.org>
 
- * Fixed bug with --no-reuseaddr option not being recognized
- * Fixed bug in readwrite that could result in non-termination
+ * Fixed bug with --no-reuseaddr option not being recognized.
+ * Fixed bug in readwrite that could result in non-termination.
+ * Added --sndbuf-size and --rcvbuf-size options for setting SO_RCVBUF and
+   SO_SNDBUF respectively.
 
 2003-01-21 Mauro Tortonesi <mauro _at_ deepspace6.net>
 
