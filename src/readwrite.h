@@ -22,17 +22,8 @@
 #ifndef READWRITE_H
 #define READWRITE_H
 
-#include "misc.h"
+#include "io_stream.h"
 
-typedef struct io_stream_t
-{
-	int fd_in;       /* for reading */
-	int fd_out;      /* for writing */
-	int socktype;    /* the type of the socket */
-} io_stream;
-
-void readwrite(io_stream *ios1, io_stream *ios2);
-void stdio_to_io_stream(io_stream *ios);
-void socket_to_io_stream(io_stream *ios, int fd, int socktype);
+int readwrite(io_stream *ios1, io_stream *ios2);
 
 #endif /* READWRITE_H */

@@ -18,15 +18,15 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
+#include "config.h"
+#include "circ_buf.h"
+#include "misc.h"
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/uio.h>
-#include "circ_buf.h"
-#include "misc.h"
 
 
 

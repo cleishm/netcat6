@@ -21,11 +21,10 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include "misc.h"
+#include "connection.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
-#include "misc.h"
-#include "network.h"
 
 bool is_allowed(const struct sockaddr *sa, const address *addr,
 		const connection_attributes* attrs);

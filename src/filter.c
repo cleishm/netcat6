@@ -18,6 +18,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
+#include "config.h"
+#include "filter.h"
+#include "misc.h"
+#include "network.h"
+#include "parser.h"
 #include <assert.h>
 #include <netdb.h>
 #include <stdlib.h>
@@ -25,11 +30,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "config.h"
-#include "filter.h"
-#include "misc.h"
-#include "network.h"
-#include "parser.h"
 
 
 /* compare two sockaddr structs to see if they represent the same address */
@@ -143,14 +143,14 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	assert(sa != NULL);
 	assert(addr != NULL);	
 	assert(addr->address == NULL || strlen(addr->address) > 0);
-	assert(addr->port    == NULL || strlen(addr->port) > 0);
+	assert(addr->service == NULL || strlen(addr->service) > 0);
 		
-	if (addr->address == NULL && addr->port == NULL) return TRUE;
+	if (addr->address == NULL && addr->service == NULL) return TRUE;
 		
-	/* if the address is unspecified and the port is allowed, 
+	/* if the address is unspecified and the service is allowed, 
 	 * then return TRUE */
 	if ((addr->address == NULL) && 
-	    ((safe_atoi(addr->port) == ntohs(get_port(sa))))) 
+	    ((safe_atoi(addr->service) == ntohs(get_port(sa))))) 
 		return TRUE;
 	
 	ret = FALSE;
@@ -182,7 +182,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 			fatal("internal error: unknown socket type");
 	}
 	
-	err = getaddrinfo(addr->address, addr->port, &hints, &res);
+	err = getaddrinfo(addr->address, addr->service, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
@@ -192,8 +192,8 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 			continue;
 		}
 		if ((are_address_equal(sa, ptr->ai_addr) == TRUE) &&
-		    (addr->port == NULL || 
-		     (safe_atoi(addr->port) == ntohs(get_port(sa))))) {
+		    (addr->service == NULL || 
+		     (safe_atoi(addr->service) == ntohs(get_port(sa))))) {
 			ret = TRUE;
 			break;
 		}

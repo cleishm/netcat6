@@ -18,18 +18,24 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
+#include "config.h"
+#include "network.h"
+#include "parser.h"
+#include "filter.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
-#include "network.h"
-#include "parser.h"
-#include "filter.h"
-#include "readwrite.h"
+
+/* buffer size for warning messages */
+static const size_t WARN_MESSAGE_SIZE = 512;
+
+/* maximum number of fd's to listen for connections on */
+static const size_t MAX_LISTEN_FDS = 8;
+
 
 
 static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
@@ -66,41 +72,9 @@ static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 
 
 
-void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
-		const connection_attributes *attrs)
+void do_connect(connection_attributes *attrs)
 {
-	switch (attrs->proto) {
-		case PROTO_IPv6:
-			ainfo->ai_family = AF_INET6;
-			break;
-		case PROTO_IPv4:
-			ainfo->ai_family = AF_INET;
-			break;
-		case PROTO_UNSPECIFIED:
-			ainfo->ai_family = AF_UNSPEC;
-			break;
-		default:
-			fatal("internal error: unknown socket domain");
-	}
-	
-	switch (attrs->type) {
-		case UDP_SOCKET:
-			ainfo->ai_protocol = IPPROTO_UDP;
-			break;
-		case TCP_SOCKET:
-			ainfo->ai_protocol = IPPROTO_TCP;
-			break;
-		default:
-			fatal("internal error: unknown socket type");
-	}
-}
-
-
-
-void do_connect(const address *remote, const address *local,
-		const connection_attributes *attrs)
-{
-	io_stream remote_stream, local_stream;
+	address *remote, *local;
 	int err, fd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool connect_attempted = FALSE;
@@ -109,14 +83,16 @@ void do_connect(const address *remote, const address *local,
 	char sbuf_rev[NI_MAXSERV + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 
-	/* make sure that all the preconditions are respected */
-	assert(remote != NULL);
-	assert(remote->address != NULL);
-	assert(remote->port != NULL);
-	assert(local == NULL ||
-	    ((local->address == NULL || strlen(local->address) > 0) &&
-	     (local->port    == NULL || strlen(local->port)    > 0)));
 	assert(attrs != NULL);
+
+	remote = &(attrs->remote_address);
+	local = &(attrs->local_address);
+
+	/* make sure all the preconditions are respected */
+	assert(remote->address != NULL && strlen(remote->address) > 0);
+	assert(remote->service != NULL && strlen(remote->service) > 0);
+	assert(local->address == NULL || strlen(local->address) > 0);
+	assert(local->service == NULL || strlen(local->service) > 0);
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -130,7 +106,7 @@ void do_connect(const address *remote, const address *local,
 		hints.ai_flags |= AI_NUMERICHOST;
 
 	/* get the address of the remote end of the connection */
-	err = getaddrinfo(remote->address, remote->port, &hints, &res);
+	err = getaddrinfo(remote->address, remote->service, &hints, &res);
 	if (err != 0)
 		fatal("forward host lookup failed for remote enpoint %s: %s",
 		      remote->address, gai_strerror(err));
@@ -166,7 +142,7 @@ void do_connect(const address *remote, const address *local,
 					hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
 					sizeof(sbuf_rev), 0);
 
-			if(err != 0)
+			if (err != 0)
 				warn("inverse lookup failed for %s: %s",
 					 hbuf_num, gai_strerror(err));
 		} else {
@@ -193,8 +169,9 @@ void do_connect(const address *remote, const address *local,
 		}
 #endif 
 
-		/* setup local source address and/or ports */
-		if (local != NULL && (local->address != NULL || local->port != NULL)) {
+		/* setup local source address and/or service */
+		if (local->address != NULL || local->service != NULL)
+		{
 			struct addrinfo *src_res = NULL, *src_ptr;
 		
 			/* setup hints structure to be passed to getaddrinfo */
@@ -208,7 +185,7 @@ void do_connect(const address *remote, const address *local,
 				hints.ai_flags |= AI_NUMERICHOST;
 		
 			/* get the IP address of the local end of the connection */
-			err = getaddrinfo(local->address, local->port, &hints, &src_res);
+			err = getaddrinfo(local->address, local->service, &hints, &src_res);
 			if (err != 0)
 				fatal("forward host lookup failed for source address %s: %s",
 				     local->address, gai_strerror(err));
@@ -276,35 +253,33 @@ void do_connect(const address *remote, const address *local,
 		warn("%s [%s] %s (%s) open", hbuf_rev, hbuf_num, sbuf_num, sbuf_rev);
 	}
 
-	/* create io_streams for the local and remote streams */
-	stdio_to_io_stream(&local_stream);
-	socket_to_io_stream(&remote_stream, fd, ptr->ai_socktype);
-
-	/* read and write from the streams until they are closed */
-	readwrite(&remote_stream, &local_stream);
+	/* fill out the io_streams for the local and remote */
+	ios_assign_stdio(&(attrs->local_stream));
+	ios_assign_socket(&(attrs->remote_stream), fd, ptr->ai_socktype);
 }
 
 
 
-void do_listen(const address *remote, const address *local,
-	       const connection_attributes *attrs)
+void do_listen(connection_attributes *attrs)
 {
-	io_stream remote_stream, local_stream;
+	address *remote, *local;
 	int nfd, i, fd, err, ns = -1, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	char hbuf_num[NI_MAXHOST + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 	fd_set accept_fdset;
 
-	/* make sure all the preconditions are respected */
 	assert(attrs != NULL);
-	assert(local != NULL);
+
+	remote = &(attrs->remote_address);
+	local = &(attrs->local_address);
+
+	/* make sure all the preconditions are respected */
 	assert(local->address == NULL || strlen(local->address) > 0);
-	assert(local->port != NULL && strlen(local->port) > 0);
-	assert(remote == NULL ||
-	    ((remote->address == NULL || strlen(remote->address) > 0) &&
-	     (remote->port    == NULL || strlen(remote->port)    > 0)));
-	
+	assert(local->service != NULL && strlen(local->service) > 0);
+	assert(remote->address == NULL || strlen(remote->address) > 0);
+	assert(remote->service == NULL || strlen(remote->service) > 0);
+
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
 	
@@ -317,11 +292,11 @@ void do_listen(const address *remote, const address *local,
 		hints.ai_flags |= AI_NUMERICHOST;
 
 	/* get the IP address of the local end of the connection */
-	err = getaddrinfo(local->address, local->port, &hints, &res);
+	err = getaddrinfo(local->address, local->service, &hints, &res);
 	if (err != 0) 
 		fatal("forward host lookup failed for local endpoint %s (%s): %s",
 		      local->address? local->address : "[unspecified]",
-			  local->port, gai_strerror(err));
+			  local->service, gai_strerror(err));
 		
 	/* check the results of getaddrinfo */
 	assert(res != NULL);
@@ -361,7 +336,7 @@ void do_listen(const address *remote, const address *local,
 
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-		if(fd < 0) fatal("cannot create the socket: %s", strerror(errno));
+		if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
 #ifdef IPV6_V6ONLY
 		if (ptr->ai_family == AF_INET6) {
@@ -479,21 +454,21 @@ void do_listen(const address *remote, const address *local,
 			        NI_NUMERICHOST | NI_NUMERICSERV);
 
 			/* this should never happen */
-			if(err != 0)
+			if (err != 0)
 				fatal("getnameinfo failed: %s", gai_strerror(err));
 
 			/* get the numeric name for this client as a string */
 			err = getnameinfo((struct sockaddr *)&dest, destlen,
 			        c_hbuf_num, sizeof(c_hbuf_num), c_sbuf_num, 
 					  sizeof(c_sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
-			if(err != 0)
+			if (err != 0)
 				fatal("getnameinfo failed: %s", gai_strerror(err));
 
 			/* get the real name for this client as a string */
 			if (is_flag_set(NUMERIC_MODE) == FALSE) {
 				err = getnameinfo((struct sockaddr *)&dest, destlen,
 					c_hbuf_rev, sizeof(c_hbuf_rev), NULL, 0, 0);
-				if(err != 0)
+				if (err != 0)
 					warn("inverse lookup failed for %s: %s",
 					      c_hbuf_num, gai_strerror(err));
 			} else {
@@ -507,7 +482,7 @@ void do_listen(const address *remote, const address *local,
 
 		/* check if connections from this client are allowed */
 		if ((remote == NULL) ||
-		    (remote->address == NULL && remote->port == NULL) ||
+		    (remote->address == NULL && remote->service == NULL) ||
 		    (is_allowed((struct sockaddr*)&dest, remote, attrs) == TRUE)) {
 
 			if (attrs->type == UDP_SOCKET) {
@@ -545,10 +520,6 @@ void do_listen(const address *remote, const address *local,
 	}
 
 	/* create io_streams for the local and remote streams */
-	stdio_to_io_stream(&local_stream);
-	socket_to_io_stream(&remote_stream, ns, attrs->type);
-
-	/* read and write from the streams until they are closed */
-	readwrite(&remote_stream, &local_stream);
+	ios_assign_stdio(&(attrs->local_stream));
+	ios_assign_socket(&(attrs->remote_stream), ns, attrs->type);
 }
-

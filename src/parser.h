@@ -21,6 +21,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "connection.h"
 #include "misc.h"
 
 #define NUMERIC_MODE		0x00000001
@@ -30,11 +31,12 @@
 #define FILE_TRANSFER_MODE	0x00000010
 #define TIMEOUT_MODE		0x00000020
 #define LISTEN_MODE		0x00000040
-#define CONTINUOUS_MODE		0x00000080
-#define VERBOSE_MODE		0x00000100
-#define VERY_VERBOSE_MODE	0x00000200
+#define CONNECT_MODE		0x00000080
+#define CONTINUOUS_MODE		0x00000100
+#define VERBOSE_MODE		0x00000200
+#define VERY_VERBOSE_MODE	0x00000400
 
+int parse_arguments(int argc, char **argv, connection_attributes *attrs);
 bool is_flag_set(unsigned long mask);
-void parse_arguments(int argc, char **argv);
 
 #endif /* PARSER_H */

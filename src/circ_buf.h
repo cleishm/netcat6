@@ -22,10 +22,12 @@
 #define CIRC_BUF_H
 
 #include "config.h"
+#include "misc.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#include "misc.h"
 
 typedef struct circ_buf_t {
 	uint8_t *buf;  /* pointer to the buffer */

@@ -39,6 +39,7 @@ const char *get_program_name(void);
 void fatal(const char *template, ...);
 void warn(const char *template, ...);
 uint8_t *xmalloc(size_t size);
+char *xstrdup(const char* str);
 
 #ifdef HAVE_STRTOL
 int safe_atoi(const char *str);

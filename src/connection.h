@@ -1,5 +1,5 @@
 /*
- *  network.h - common networking functions module - header
+ *  connection.h - connection description structures and functions - header
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
@@ -18,13 +18,44 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
-#include "connection.h"
+#include "io_stream.h"
+#include <netdb.h>
 
-/* establish a connection and fill out the local & remote streams in attrs */
-void do_connect(connection_attributes *attrs);
-void do_listen(connection_attributes *attrs);
+typedef enum sock_type_t {
+	TCP_SOCKET,
+	UDP_SOCKET
+} sock_type;
 
-#endif /* NETWORK_H */
+typedef enum sock_protocol_t {
+	PROTO_UNSPECIFIED,
+	PROTO_IPv6,
+	PROTO_IPv4
+} sock_proto;
+
+typedef struct address_t
+{
+	char *address;
+	char *service;
+} address;
+
+typedef struct connection_attributes_t
+{
+	sock_proto proto;
+	sock_type  type;
+	address remote_address;
+	address local_address;
+	io_stream remote_stream;
+	io_stream local_stream;
+} connection_attributes;
+
+
+void connection_attributes_init(connection_attributes *attrs);
+void connection_attributes_destroy(connection_attributes *attrs);
+
+void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
+		const connection_attributes *attrs);
+
+#endif /* CONNECTION_H */

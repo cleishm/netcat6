@@ -18,12 +18,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
+#include "config.h"
+#include "misc.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "config.h"
-#include "misc.h"
+#include <string.h>
 #ifdef HAVE_STRTOL
 #include <errno.h>
 #include <limits.h>
@@ -76,6 +77,15 @@ uint8_t *xmalloc(size_t size)
 	if (value == NULL) fatal("virtual memory exhausted");
 
 	return value;
+}
+
+
+
+char *xstrdup(const char *str)
+{
+	register char *nstr = (char*)xmalloc(strlen(str));
+	strcpy(nstr, str);
+	return nstr;
 }
 
 
