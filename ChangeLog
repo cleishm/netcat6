@@ -1,3 +1,7 @@
+2004-08-02 Chris Leishman <chris@leishman.org>
+	
+	* Added sigchld patch from Natsakis Konstantinos.
+
 2004-04-19 Mauro Tortonesi <mauro@deepspace6.net>
 
 	* Updated i18n subsystem to gettext 0.14.1

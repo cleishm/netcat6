@@ -26,6 +26,7 @@
 #include "network.h"
 #include "readwrite.h"
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -37,7 +38,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.37 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.38 2004-08-01 23:05:00 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -71,6 +72,8 @@ static int run_transfer(const connection_attributes* attrs,
                         io_stream *remote_stream, io_stream *local_stream);
 static void i18n_init(void);
 
+static void sigchld_handler(int signum);
+
 
 int main(int argc, char **argv)
 {
@@ -93,6 +96,9 @@ int main(int argc, char **argv)
 	/* SIGPIPE and SIGURG must be ignored */
 	signal(SIGURG, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
+
+	/* catch SIGCHLD and cleanup the child processes */
+	signal(SIGCHLD, sigchld_handler);
 
 	/* set flags and fill out the addresses and connection attributes */
 	parse_arguments(argc, argv, &connection_attrs);
@@ -360,4 +366,18 @@ static void i18n_init(void)
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 #endif /* ENABLE_NLS */
+}
+
+/* Cleanup any child processes created via --exec */
+static void sigchld_handler(int signum)
+{
+	/* suppress unused attrs warning */
+	while (0&&signum);
+	assert(signum == SIGCHLD);
+	int pid;
+
+	do {
+		int status;
+		pid = waitpid(WAIT_ANY, &status, WNOHANG);
+	} while (pid > 0);
 }
