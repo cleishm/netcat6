@@ -5,8 +5,6 @@ big features to be added in the next releases:
 - UDP path mtu discovery support
 - ssl support
 - simple (maybe even advanced/stealth?) portscanning
-- add support for execution of programs
-- add inetd-like continuos listening mode
 - telnet support?
 - plugin capability
 
