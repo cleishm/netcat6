@@ -215,13 +215,9 @@ void do_connect(const address *remote, const address *local,
 		
 			/* get the IP address of the local end of the connection */
 			err = getaddrinfo(local->address, local->port, &hints, &src_res);
-			if(err != 0) {
-				warn("forward host lookup failed for source address %s: %s",
+			if (err != 0)
+				fatal("forward host lookup failed for source address %s: %s",
 				     local->address, gai_strerror(err));
-				close(fd);
-				fd = -1;
-				continue;
-			}
 
 			/* check the results of getaddrinfo */
 			assert(src_res != NULL);
