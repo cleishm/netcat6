@@ -1,6 +1,7 @@
 dnl Check for paths header
 AC_DEFUN([HEADER_PATHS],[
   AC_CHECK_HEADERS(paths.h,[ds6_have_paths_h=yes],[ds6_have_paths_h=no])
+  AC_DEFINE(HAVE_PATHS_H, 1, [Define if header file <paths.h> is present])
 ])
 
 dnl Check for bourne shell location
