@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.25 2003-01-01 10:05:32 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.26 2003-01-01 15:55:19 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -80,7 +80,9 @@ static const struct option long_options[] = {
 	{"half-close",          FALSE, NULL,  0 },
 #define OPT_DISABLE_NAGLE	14
 	{"disable-nagle",       FALSE, NULL,  0 },
-#define OPT_MAX			15
+#define OPT_NO_REUSEADDR	15
+	{"no-reuseaddr",        FALSE, NULL,  'd' },
+#define OPT_MAX			16
 	{0, 0, 0, 0}
 };
 
@@ -139,6 +141,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			case OPT_DISABLE_NAGLE:
 				set_flag(DISABLE_NAGLE);
 				break;
+			case OPT_NO_REUSEADDR:
+				set_flag(DONT_REUSE_ADDR);
+				break;
 			default:
 				fatal("getopt returned unexpected "
 				      "long offset index %d\n", option_index);
@@ -154,9 +159,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			    fatal("cannot specify the address family twice");
 			attrs->proto = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
-			break;
-		case 'd':	
-			set_flag(DONT_REUSE_ADDR);
 			break;
 		case 'h':	
 			print_usage(stdout);
@@ -290,7 +292,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		return LISTEN_MODE;
 	} else {
 		if (is_flag_set(DONT_REUSE_ADDR)) {
-			warn("-d option can be used only in listen mode");
+			warn("--no-reuseaddr option "
+			     "can be used only in listen mode");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -320,7 +323,6 @@ static void print_usage(FILE *fp)
 	fprintf(fp,	
 "  -4                Use only IPv4\n"
 "  -6                Use only IPv6\n"
-"  -d                Disable SO_REUSEADDR socket option (only in listen mode)\n"
 "  -h, --help        Display help\n"
 "  -l, --listen      Listen mode, for inbound connects\n"
 "  -n                Numeric-only IP addresses, no DNS\n" 
@@ -343,6 +345,8 @@ static void print_usage(FILE *fp)
 "      --half-close  Handle network half-closes correctly\n"
 "      --disable-nagle\n"
 "                    Disable nagle algorithm for TCP connections\n"
+"      --no-reuseaddr\n"
+"                    Disable SO_REUSEADDR socket option (only in listen mode)\n"
 "\n");
 }
 
