@@ -28,57 +28,64 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.8 2002-12-24 19:50:56 mauro Exp $");
-
-
-
-bool is_empty(const circ_buf *cb)
-{
-	assert(cb != NULL);
-	assert(cb->data_size >= 0);
-	assert(cb->data_size <= cb->buf_size);
-
-	return (cb->data_size == 0 ? TRUE : FALSE);
-}
-
-
-
-bool is_full(const circ_buf *cb)
-{
-	assert(cb != NULL);
-	assert(cb->data_size >= 0);
-	assert(cb->data_size <= cb->buf_size);
-
-	return (cb->data_size == cb->buf_size ? TRUE : FALSE);
-}
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.9 2002-12-24 23:47:24 chris Exp $");
 
 
 
 #ifndef NDEBUG
-void check_cb(const circ_buf *cb)
+static void cb_assert(const circ_buf *cb)
 {
 	if (cb == NULL ||
 	    cb->buf == NULL ||
 	    cb->ptr == NULL ||
-	    cb->buf_size  < 0 ||
-	    cb->data_size < 0 ||
 	    cb->buf_size < cb->data_size) 
 		fatal("internal error with circular buffers: please "
 		      "contact the authors of nc6 for bugfixing ;-)");
 }
+#else
+#define cb_assert(CB)	do {} while(0)
 #endif
 
 
 
-int read_to_cb(int fd, circ_buf *cb)
+void cb_init(circ_buf *cb, size_t size)
 {
-	int rr, count;
+	memset(cb, 0, sizeof(circ_buf));
+	
+	/* normalization: size must be a multiple of 16 */
+	if (size & 0xF) size = (size & ~0xF) + 0x10;
+	
+	cb->buf = (uint8_t *)xmalloc(size);
+	cb->ptr = cb->buf;
+	cb->data_size = 0;
+	cb->buf_size  = size;
+
+	cb_assert(cb);
+}
+
+
+
+void cb_destroy(circ_buf *cb)
+{
+	assert(cb != NULL);
+	assert(cb->buf != NULL);
+
+	free(cb->buf);
+	cb->buf = NULL;
+}
+
+
+
+ssize_t cb_read(circ_buf *cb, int fd)
+{
+	ssize_t rr;
+	int count;
 	struct iovec iov[2];
 
-	check_cb(cb);
+	cb_assert(cb);
 	
 	/* buffer is full, return an error condition */
-	if (cb->data_size == cb->buf_size) return -1;
+	if (cb_is_full(cb)) return -1;
 	
 	/* prepare for writing to buffer */
 	if (cb->ptr == cb->buf) {
@@ -114,7 +121,7 @@ int read_to_cb(int fd, circ_buf *cb)
 		cb->data_size += rr;
 		
 		/* sanity check */
-		check_cb(cb);
+		cb_assert(cb);
 	}
 
 	return rr;
@@ -122,19 +129,20 @@ int read_to_cb(int fd, circ_buf *cb)
 
 
 
-int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb)
+ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
 {
-	int i, count, rr;
+	ssize_t rr;
+	int i, count;
 	struct iovec iov[2];
 	const uint8_t *tmp;
 
 	assert(buf != NULL);
-	check_cb(cb);
+	cb_assert(cb);
 	
 	/* buffer is full, return an error condition */
-	if (cb->data_size == cb->buf_size) return -1;
+	if (cb_is_full(cb)) return -1;
 	
-	/* exit if len is zero */
+	/* return if len is zero */
 	if (len == 0) return 0;
 	
 	/* setup initial values for tmp and rr */
@@ -177,7 +185,7 @@ int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb)
 		rr += chunk_size;
 
 		/* sanity check */
-		check_cb(cb);
+		cb_assert(cb);
 		
 		if (len == 0) break;
 	}
@@ -187,15 +195,16 @@ int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb)
 
 
 
-int write_from_cb(int fd, circ_buf *cb)
+ssize_t cb_write(circ_buf *cb, int fd)
 {
-	int rr, count;
+	ssize_t rr;
+	int count;
 	struct iovec iov[2];
 	
-	check_cb(cb);
+	cb_assert(cb);
 	
 	/* buffer is empty, return immediately */
-	if (cb->data_size == 0) return 0;
+	if (cb_is_empty(cb)) return 0;
 	
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {
@@ -220,6 +229,7 @@ int write_from_cb(int fd, circ_buf *cb)
 	 * if rr = 0 nothing needs to be changed.
 	 * update internal stuff only if rr > 0 */
 	if (rr > 0) {
+		assert((size_t)rr <= cb->data_size);
 		cb->data_size -= rr;
 		
 		/* update value of cb->ptr */
@@ -228,7 +238,7 @@ int write_from_cb(int fd, circ_buf *cb)
 			cb->ptr -= cb->buf_size;
 		
 		/* sanity check */
-		check_cb(cb);
+		cb_assert(cb);
 	}
 
 	return rr;
@@ -236,16 +246,17 @@ int write_from_cb(int fd, circ_buf *cb)
 
 
 
-int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen)
+ssize_t cb_send(circ_buf *cb, int fd, struct sockaddr *dest, size_t destlen)
 {
-	int rr, count;
+	ssize_t rr;
+	int count;
 	struct iovec iov[2];
 	struct msghdr msg;
 	
-	check_cb(cb);
+	cb_assert(cb);
 	
 	/* buffer is empty, return immediately */
-	if (cb->data_size == 0) return 0;
+	if (cb_is_empty(cb)) return 0;
 	
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {
@@ -276,6 +287,7 @@ int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen)
 	 * if rr = 0 nothing needs to be changed.
 	 * update internal stuff only if rr > 0 */
 	if (rr > 0) {
+		assert((size_t)rr <= cb->data_size);
 		cb->data_size -= rr;
 		
 		/* update value of cb->ptr */
@@ -284,7 +296,7 @@ int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen)
 			cb->ptr -= cb->buf_size;
 		
 		/* sanity check */
-		check_cb(cb);
+		cb_assert(cb);
 	}
 
 	return rr;
@@ -292,52 +304,9 @@ int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen)
 
 
 
-void clear_cb(circ_buf *cb)
+void cb_clear(circ_buf *cb)
 {
 	assert(cb);
 	cb->ptr = cb->buf;
 	cb->data_size = 0;
 }
-
-
-
-circ_buf *alloc_cb(size_t size)
-{
-	circ_buf *cb;
-
-	cb = (circ_buf *)xmalloc(sizeof(circ_buf));
-	memset(cb, 0, sizeof(circ_buf));
-	
-	/* normalization: size must be a multiple of 16 */
-	if (size & 0xF) size = (size & ~0xF) + 0x10;
-	
-	cb->buf = (uint8_t *)xmalloc(size);
-	cb->ptr = cb->buf;
-	cb->data_size = 0;
-	cb->buf_size  = size;
-
-	check_cb(cb);
-	
-	return cb;
-}
-
-
-
-void free_cb(circ_buf **cb)
-{
-	circ_buf *ptr = *cb;
-		
-	assert(cb != NULL);
-	assert(ptr != NULL);
-	assert(ptr->data_size >= 0);
-	assert(ptr->data_size <= ptr->buf_size);
-	assert(ptr->buf != NULL);
-
-	free(ptr->buf);
-	free(ptr);
-	
-	*cb = NULL;
-}
-
-
-

@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.17 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.18 2002-12-24 23:47:24 chris Exp $");
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = 8192;
@@ -52,10 +52,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 {
 	int rr, max_fd = -1;
 	fd_set read_fdset, tmp_rd_fdset, write_fdset, tmp_wr_fdset;
-	circ_buf *buf1 = NULL;
+	circ_buf buf1;
 	uint8_t *tbuf1 = NULL;
 	int tbuf1_bytes = 0, tbuf1_offset = 0;
-	circ_buf *buf2 = NULL;
+	circ_buf buf2;
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
 	int retval = 0;
@@ -69,13 +69,13 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	 * a temporary buffer to read into, then move the data gradually into
 	 * the circular buffer.  Further reads are suspended until all data
 	 * is moved */
-	buf1 = alloc_cb(BUFFER_SIZE);
+	cb_init(&buf1, BUFFER_SIZE);
 	if (ios1->socktype == SOCK_DGRAM)
 		tbuf1 = (uint8_t *)xmalloc(TEMP_BUFFER_SIZE);
 
 	/* since we know ios2 is local, it will be a stream - hence no need for
 	 * the temporary buffer */
-	buf2 = alloc_cb(BUFFER_SIZE);
+	cb_init(&buf2, BUFFER_SIZE);
 	assert(ios2->socktype != SOCK_DGRAM);
 
 	/* reset status */
@@ -126,25 +126,25 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	 * side as well.
 	 */
 	while (is_read_open(ios1) || is_read_open(ios2) ||
-	       is_empty(buf1) == FALSE || is_empty(buf2) == FALSE)
+	       cb_is_empty(&buf1) == FALSE || cb_is_empty(&buf2) == FALSE)
 	{
 
 		/* sanity checks */
 		/* writefd should be set iff the buffer contains data */
-		assert(XOR(is_empty(buf1) == TRUE,
+		assert(XOR(cb_is_empty(&buf1) == TRUE,
 		       is_write_open(ios2) &&
 		         FD_ISSET(ios_writefd(ios2), &write_fdset)));
-		assert(XOR((is_empty(buf2) == TRUE),
+		assert(XOR((cb_is_empty(&buf2) == TRUE),
 		       is_write_open(ios1) &&
 		         FD_ISSET(ios_writefd(ios1), &write_fdset)));
 		/* readfd should be set (or closed) iff the buffer is not full
 		 * or tbuf1 is in use and it still contains data */
 		assert(XOR(
 		       (tbuf1 && tbuf1_bytes > 0) ||
-		         (!tbuf1 && is_full(buf1) == TRUE),
+		         (!tbuf1 && cb_is_full(&buf1) == TRUE),
 		       !is_read_open(ios1) ||
 		         FD_ISSET(ios_readfd(ios1), &read_fdset)));
-		assert(XOR(is_full(buf2) == TRUE,
+		assert(XOR(cb_is_full(&buf2) == TRUE,
 		       !is_read_open(ios2) ||
 		         FD_ISSET(ios_readfd(ios2), &read_fdset)));
 		/* if tbuf1 is not being used, tbuf1_bytes must be 0 */
@@ -200,7 +200,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		    FD_ISSET(ios_readfd(ios1), &tmp_rd_fdset))
 		{
 			assert((tbuf1 && tbuf1_bytes == 0) ||
-			       (!tbuf1 && is_full(buf1) == FALSE));
+			       (!tbuf1 && cb_is_full(&buf1) == FALSE));
 
 			/* something is ready to read on ios1 (remote) */
 			if (ios1->socktype == SOCK_DGRAM) {
@@ -208,7 +208,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				rr = recv(ios_readfd(ios1),
 				        (void *)tbuf1, TEMP_BUFFER_SIZE, 0);
 			} else {
-				rr = read_to_cb(ios_readfd(ios1), buf1);
+				rr = cb_read(&buf1, ios_readfd(ios1));
 			}
 			
 			if (rr > 0) {
@@ -222,7 +222,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				/* forward any data in tbuf1 to buf1 */
 				if (tbuf1) {
 					int copied =
-					        copy_to_cb(tbuf1, rr, buf1);
+					        cb_append(&buf1, tbuf1, rr);
 					tbuf1_bytes = rr - copied;
 					tbuf1_offset = copied;
 					/* some MUST have gone into buf1 */
@@ -233,7 +233,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				 * data OR if reading straight to buf1 and
 				 * it's full, then suspend further reading */
 				if ((tbuf1 && tbuf1_bytes > 0) ||
-				    (!tbuf1 && is_full(buf1) == TRUE))
+				    (!tbuf1 && cb_is_full(&buf1) == TRUE))
 				{
 					FD_CLR(ios_readfd(ios1), &read_fdset);
 				}
@@ -264,10 +264,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (is_read_open(ios2) &&
 		    FD_ISSET(ios_readfd(ios2), &tmp_rd_fdset))
 		{
-			assert(is_full(buf2) == FALSE);
+			assert(cb_is_full(&buf2) == FALSE);
 
 			/* something is ready to read on ios2 (local) */
-			rr = read_to_cb(ios_readfd(ios2), buf2);
+			rr = cb_read(&buf2, ios_readfd(ios2));
 			
 			if (rr > 0) {
 				local_rcvd += rr;
@@ -278,7 +278,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 #endif
 				/* if the buffer is full,
 				 * suspend further reading */
-				if (is_full(buf2) == TRUE)
+				if (cb_is_full(&buf2) == TRUE)
 					FD_CLR(ios_readfd(ios2), &read_fdset);
 
 				/* start writing the buffer out */
@@ -307,14 +307,13 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (is_write_open(ios1) &&
 		    FD_ISSET(ios_writefd(ios1), &tmp_wr_fdset))
 		{
-			assert(is_empty(buf2) == FALSE);
+			assert(cb_is_empty(&buf2) == FALSE);
 
 			/* ios1 may be written to (remote) */
 			if (tbuf1)
-				rr = send_from_cb(ios_writefd(ios1), buf2,
-				                  NULL, 0);
+				rr = cb_send(&buf2, ios_writefd(ios1), NULL, 0);
 			else
-				rr = write_from_cb(ios_writefd(ios1), buf2);
+				rr = cb_write(&buf2, ios_writefd(ios1));
 
 			if (rr > 0) {
 				net_sent += rr;
@@ -330,7 +329,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					FD_SET(ios_readfd(ios2), &read_fdset);
 				/* if the buffer is emptied,
 				 * stop trying to write */
-				if (is_empty(buf2) == TRUE)
+				if (cb_is_empty(&buf2) == TRUE)
 					FD_CLR(ios_writefd(ios1), &write_fdset);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1:
@@ -348,7 +347,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					        ios_writefd(ios1));
 #endif
 
-				clear_cb(buf2);
+				cb_clear(&buf2);
 				ios_shutdown(ios1, SHUT_RDWR);
 
 				/* exit the main loop */
@@ -361,10 +360,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (is_write_open(ios2) &&
 		    FD_ISSET(ios_writefd(ios2), &tmp_wr_fdset))
 		{
-			assert(is_empty(buf1) == FALSE);
+			assert(cb_is_empty(&buf1) == FALSE);
 
 			/* ios2 may be written to (local) */
-			rr = write_from_cb(ios_writefd(ios2), buf1);
+			rr = cb_write(&buf1, ios_writefd(ios2));
 
 			if (rr > 0) {
 				local_sent += rr;
@@ -375,9 +374,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 #endif
 				/* forward more from tbuf1 to buf1 */
 				if (tbuf1_bytes > 0) {
-					int copied = copy_to_cb(
+					int copied = cb_append(
+					        &buf1,
 					        tbuf1+tbuf1_offset,
-					        tbuf1_bytes, buf1);
+					        tbuf1_bytes);
 					tbuf1_bytes -= copied;
 					tbuf1_offset += copied;
 				}
@@ -389,7 +389,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					FD_SET(ios_readfd(ios1), &read_fdset);
 				/* if the buffer is emptied,
 				 * stop trying to write */
-				if (is_empty(buf1) == TRUE)
+				if (cb_is_empty(&buf1) == TRUE)
 					FD_CLR(ios_writefd(ios2), &write_fdset);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1:
@@ -407,7 +407,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					        ios_writefd(ios2));
 #endif
 
-				clear_cb(buf1);
+				cb_clear(&buf1);
 				ios_shutdown(ios2, SHUT_RDWR);
 
 				/* exit the main loop */
@@ -418,9 +418,9 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	}
 	
 	/* perform the final cleanup */
-	free_cb(&buf1);
+	cb_destroy(&buf1);
 	if (tbuf1) free(tbuf1);
-	free_cb(&buf2);
+	cb_destroy(&buf2);
 	
 	if (is_flag_set(VERBOSE_MODE) == TRUE)
 		warn("connection closed (sent %d, rcvd %d)",

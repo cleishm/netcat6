@@ -30,28 +30,30 @@
 #endif
 
 typedef struct circ_buf_t {
-	uint8_t *buf;  /* pointer to the buffer */
-	uint8_t *ptr;  /* pointer to the beginning of written data */
-	int data_size; /* number of bytes that have been written 
-			* into the buffer */
-	int buf_size;  /* size of the buffer */
+	uint8_t *buf;      /* pointer to the buffer */
+	uint8_t *ptr;      /* pointer to the beginning of written data */
+	size_t data_size;  /* number of bytes that have been written 
+	                    * into the buffer */
+	size_t buf_size;   /* size of the buffer */
 } circ_buf;
 
-bool is_empty(const circ_buf *cb);
-bool is_full(const circ_buf *cb);
-int read_to_cb(int fd, circ_buf *cb);
-int copy_to_cb(const uint8_t *buf, size_t len, circ_buf *cb);
-int write_from_cb(int fd, circ_buf *cb);
-int send_from_cb(int fd, circ_buf *cb, struct sockaddr *dest, size_t destlen);
-void clear_cb(circ_buf *cb);
-circ_buf *alloc_cb(size_t size);
-void free_cb(circ_buf **cb);
 
-#ifdef NDEBUG
-#define check_cb(_x_)	do { } while(0)
-#else
-void check_cb(const circ_buf *cb);
-#endif
+void cb_init(circ_buf *cb, size_t size);
+void cb_destroy(circ_buf *cb);
 
+#define cb_size(CB)	((CB)->data_size)
+#define cb_space(CB)	((CB)->buf_size - (CB)->data_size)
+
+#define cb_is_empty(CB)	(cb_size(CB) == 0)
+#define cb_is_full(CB)	(cb_space(CB) == 0)
+
+ssize_t cb_read(circ_buf *cb, int fd);
+
+ssize_t cb_write(circ_buf *cb, int fd);
+ssize_t cb_send(circ_buf *cb, int fd, struct sockaddr *dest, size_t destlen);
+
+ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len);
+
+void cb_clear(circ_buf *cb);
 
 #endif /* CIRC_BUF_H */

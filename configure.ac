@@ -30,6 +30,7 @@ AC_CHECK_HEADER(stdint.h)
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
+AC_CHECK_TYPE(ssize_t, int)
 TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
