@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.20 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.21 2003-04-14 09:00:50 chris Exp $");
 
 
 
@@ -292,7 +292,7 @@ ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
 	for (i = 0; i < count; ++i) {
 		size_t chunk_size;
 		
-		chunk_size = MIN(iov[i].iov_len, len);
+		chunk_size = MIN((size_t)iov[i].iov_len, len);
 		assert(chunk_size > 0);
 		
 		memcpy((void *)iov[i].iov_base, (const void *)tmp, chunk_size);
@@ -491,7 +491,7 @@ ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len)
 	for (i = 0; i < count; ++i) {
 		size_t chunk_size;
 
-		chunk_size = MIN(iov[i].iov_len, len);
+		chunk_size = MIN((size_t)iov[i].iov_len, len);
 		assert(chunk_size > 0);
 
 		memcpy((void *)buf, (const void *)iov[i].iov_base, chunk_size);

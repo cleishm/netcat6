@@ -32,7 +32,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#ifndef __GNUC__
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #else
@@ -44,9 +43,8 @@ char *alloca();
 #endif
 #endif
 #endif
-#endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.25 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.26 2003-04-14 09:00:50 chris Exp $");
 
 
 
