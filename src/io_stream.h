@@ -50,7 +50,8 @@ typedef struct io_stream_t
 } io_stream;
 
 
-void io_stream_init(io_stream *ios, circ_buf *inbuf, circ_buf *outbuf);
+void io_stream_init(io_stream *ios, const char* name,
+	circ_buf *inbuf, circ_buf *outbuf);
 void io_stream_destroy(io_stream *ios);
 
 void ios_assign_socket(io_stream *ios, int fd, int socktype);
@@ -100,7 +101,6 @@ void ios_shutdown(io_stream *ios, int how);
 
 /* set the name of the io_stream */
 #define ios_name(IOS)		((IOS)->name)
-#define ios_set_name(IOS, S)	((IOS)->name = (S))
 
 
 #endif /* IO_STREAM_H */
