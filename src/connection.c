@@ -28,13 +28,13 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.17 2003-01-03 09:30:20 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.18 2003-01-05 13:40:01 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
 
 
-void connection_attributes_init(connection_attributes *attrs)
+void ca_init(connection_attributes *attrs)
 {
 	assert(attrs != NULL);
 
@@ -71,7 +71,7 @@ void connection_attributes_init(connection_attributes *attrs)
 
 
 
-void connection_attributes_destroy(connection_attributes *attrs)
+void ca_destroy(connection_attributes *attrs)
 {
 	assert(attrs != NULL);
 
@@ -81,8 +81,8 @@ void connection_attributes_destroy(connection_attributes *attrs)
 
 
 
-void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
-                                       const connection_attributes *attrs)
+void ca_to_addrinfo(struct addrinfo *ainfo,
+                    const connection_attributes *attrs)
 {
 	assert(ainfo != NULL);
 	assert(attrs != NULL);
@@ -125,4 +125,31 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 		default:
 			fatal("internal error: unknown socket type");
 	}
+}
+
+
+void ca_warn_details(const connection_attributes *attrs)
+{
+	switch (attrs->remote_stream.socktype) {
+	case SOCK_STREAM:
+		warn("using stream socket");
+		break;
+	case SOCK_DGRAM:
+		warn("using datagram socket");
+		break;
+	default:
+		fatal("internal error: unsupported socktype %d",
+		      attrs->remote_stream.socktype);
+	}
+
+	warn("using remote receive buffer size of %d",
+	     attrs->remote_buffer.buf_size);
+
+	if (attrs->remote_stream.nru)
+		warn("using remote receive nru of %d",
+		     attrs->remote_stream.nru);
+
+	if (attrs->remote_stream.mtu)
+		warn("using remote send mtu of %d",
+		     attrs->remote_stream.mtu);
 }

@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.15 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.16 2003-01-05 13:40:01 chris Exp $");
 
 
 
@@ -185,7 +185,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	ret = FALSE;
 	
 	memset(&hints, 0, sizeof(hints));
-	connection_attributes_to_addrinfo(&hints, attrs);
+	ca_to_addrinfo(&hints, attrs);
 
 	if (is_flag_set(NUMERIC_MODE) == TRUE)
 		hints.ai_flags |= AI_NUMERICHOST;

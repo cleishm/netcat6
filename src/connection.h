@@ -45,6 +45,7 @@ typedef struct address_t
 
 #define address_init(AD)	((AD)->address = (AD)->service = NULL)
 
+
 typedef struct connection_attributes_t
 {
 	sock_family   family;
@@ -58,18 +59,26 @@ typedef struct connection_attributes_t
 	int connect_timeout;
 } connection_attributes;
 
+void ca_init(connection_attributes *attrs);
+void ca_destroy(connection_attributes *attrs);
+
+
 #define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
 #define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
+
+#define ca_remote_address(CA)	((const address*)&((CA)->remote_address))
+#define ca_local_address(CA)	((const address*)&((CA)->local_address))
 #define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
 #define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
 
-#define ca_set_MTU(CA, MTU)	\
-	ios_set_mtu(&((CA)->remote_stream),(MTU))
-#define ca_set_NRU(CA, NRU)	\
-	ios_set_nru(&((CA)->remote_stream),(NRU))
+#define ca_set_MTU(CA, MTU)	 ios_set_mtu(&((CA)->remote_stream),(MTU))
+#define ca_set_NRU(CA, NRU)	 ios_set_nru(&((CA)->remote_stream),(NRU))
 	
-#define ca_set_connection_timeout(CA, CT)	\
-	((CA)->connect_timeout = (CT))
+#define ca_connect_timeout(CA)			((CA)->connect_timeout)
+#define ca_set_connection_timeout(CA, CT)	((CA)->connect_timeout = (CT))
+
+#define ca_remote_stream(CA)	(&((CA)->remote_stream))
+#define ca_local_stream(CA)	(&((CA)->remote_stream))
 	
 #define ca_suppress_half_close_remote(CA)	\
 	ios_suppress_half_close(&((CA)->remote_stream), FALSE)
@@ -84,10 +93,10 @@ typedef struct connection_attributes_t
 #define ca_resize_local_buf(CA, SIZE)	cb_resize(&((CA)->local_buffer),(SIZE))
 #define ca_resize_remote_buf(CA, SIZE)	cb_resize(&((CA)->remote_buffer),(SIZE))
 
-void connection_attributes_init(connection_attributes *attrs);
-void connection_attributes_destroy(connection_attributes *attrs);
+/* fill out an addrinfo structure with parameters from the ca */
+void ca_to_addrinfo(struct addrinfo *ainfo, const connection_attributes *attrs);
 
-void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
-                                       const connection_attributes *attrs);
+/* display the details of the connection attributes to stderr */
+void ca_warn_details(const connection_attributes *attrs);
 
 #endif /* CONNECTION_H */

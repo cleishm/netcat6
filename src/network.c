@@ -34,12 +34,12 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.27 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.28 2003-01-05 13:40:01 chris Exp $");
 
 
 void do_connect(connection_attributes *attrs)
 {
-	address *remote, *local;
+	const address *remote, *local;
 	int err, fd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	bool connect_attempted = FALSE;
@@ -55,8 +55,8 @@ void do_connect(connection_attributes *attrs)
 	assert(attrs != NULL);
 	
 	/* setup the addresses of the two connection endpoints */
-	remote = &(attrs->remote_address);
-	local  = &(attrs->local_address);
+	remote = ca_remote_address(attrs);
+	local  = ca_local_address(attrs);
 
 	/* make sure all the preconditions are respected */
 	assert(remote->address != NULL && strlen(remote->address) > 0);
@@ -71,7 +71,7 @@ void do_connect(connection_attributes *attrs)
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
-	connection_attributes_to_addrinfo(&hints, attrs);
+	ca_to_addrinfo(&hints, attrs);
 
 #ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
 	hints.ai_flags |= AI_ADDRCONFIG;
@@ -233,8 +233,8 @@ void do_connect(connection_attributes *attrs)
 		}
 
 		/* set connect timeout */
-		if (attrs->connect_timeout > 0) {
-			tv.tv_sec = (time_t)attrs->connect_timeout;
+		if (ca_connect_timeout(attrs) > 0) {
+			tv.tv_sec = (time_t)ca_connect_timeout(attrs);
 			tv.tv_usec = 0;
 			tvp = &tv;
 		}
@@ -321,7 +321,7 @@ void do_connect(connection_attributes *attrs)
 	}
 
 	/* fill out the remote io_stream */
-	ios_assign_socket(&(attrs->remote_stream), fd, ptr->ai_socktype);
+	ios_assign_socket(ca_remote_stream(attrs), fd, ptr->ai_socktype);
 
 	/* cleanup addrinfo structure */
 	freeaddrinfo(res);
@@ -331,7 +331,7 @@ void do_connect(connection_attributes *attrs)
 
 void do_listen(connection_attributes *attrs)
 {
-	address *remote, *local;
+	const address *remote, *local;
 	int nfd, i, fd, err, ns = -1, socktype = -1, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	char hbuf_num[NI_MAXHOST + 1];
@@ -354,8 +354,8 @@ void do_listen(connection_attributes *attrs)
 	assert(attrs != NULL);
 	
 	/* setup the addresses of the two connection endpoints */
-	remote = &(attrs->remote_address);
-	local  = &(attrs->local_address);
+	remote = ca_remote_address(attrs);
+	local  = ca_local_address(attrs);
 
 	/* make sure all the preconditions are respected */
 	assert(local->address == NULL || strlen(local->address) > 0);
@@ -374,7 +374,7 @@ void do_listen(connection_attributes *attrs)
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
-	connection_attributes_to_addrinfo(&hints, attrs);
+	ca_to_addrinfo(&hints, attrs);
 
 	hints.ai_flags = AI_PASSIVE;
 	if (numeric_mode == TRUE)
@@ -566,8 +566,8 @@ void do_listen(connection_attributes *attrs)
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
 
 		/* setup timeout */
-		if (attrs->connect_timeout > 0) {
-			tv.tv_sec = (time_t)attrs->connect_timeout;
+		if (ca_connect_timeout(attrs) > 0) {
+			tv.tv_sec = (time_t)ca_connect_timeout(attrs);
 			tv.tv_usec = 0;
 			tvp = &tv;
 		}
@@ -720,5 +720,5 @@ void do_listen(connection_attributes *attrs)
 	destroy_bound_sockets(bound_sockets);
 
 	/* fill out the remote io_stream */
-	ios_assign_socket(&(attrs->remote_stream), ns, socktype);
+	ios_assign_socket(ca_remote_stream(attrs), ns, socktype);
 }
