@@ -44,17 +44,3 @@ nc6: listening on 0.0.0.0 8765 ...
 nc6: connect to ::ffff:127.0.0.1 8765 from localhost (::ffff:127.0.0.1) 37654
 [37654]
 -----------------------------------------------------------------------------
-
-In default mode, if an EOF is received from the remote server (resulting in an
-'instant' hold timeout) and there is still data waiting to be sent, then a
-write will be attempted - potentially resulting in a EPIPE result (because the
-server has really gone away).  This will in turn cause nc6 to exit with a
-failed status code, contrary to the specified behavior.
-
-To resolve this, after a hold timeout occurs on an endpoint, all errors from
-attempting to write to the endpoint should be ignored (but NOT errors from
-trying to write to the other one), or perhaps we should simply stop trying to
-send any data to the endpoint that timed out (since the delivery of this data
-isn't guaranteed anyway - but note that the delivery of the data FROM the
-endpoint that timed out still has to occur since it is guaranteed).
------------------------------------------------------------------------------
