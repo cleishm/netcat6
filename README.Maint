@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.6 2003-01-03 08:40:24 chris Exp $
+$Id: README.Maint,v 1.7 2003-01-03 14:41:49 chris Exp $
 
 
 Source layout
@@ -79,6 +79,14 @@ The most important coding style rules for nc6 are:
   for (i = 0; i < len; ++i) 
   {
           ...
+  }
+
+  A valid reason is if the line after the keyword must be split. e.g.:
+  
+  if (some_really_really_long_set_of_checks_and_operations_that_will = 0 &&
+      eventually_take_up_more_than_one_line != NULL)
+  {
+  	...
   }
 
 * No space before the semicolon.
