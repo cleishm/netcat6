@@ -32,91 +32,10 @@
 #include <netinet/in.h>
 
 
-/* compare two sockaddr structs to see if they represent the same address */
-static bool are_address_equal(const struct sockaddr *a, 
-			      const struct sockaddr *b)
-{
-	const struct sockaddr *aa, *bb;
-    
-	assert(a != NULL);
-	assert(b != NULL);
-	assert(a->sa_family == AF_INET || a->sa_family == AF_INET6);
-	assert(b->sa_family == AF_INET || b->sa_family == AF_INET6);
-	
-	aa = (const struct sockaddr *)a;
-	bb = (const struct sockaddr *)b;
-	
-	/* we have to handle those --damned-- IPV4MAPPED addresses */
-	if (aa->sa_family != bb->sa_family) {
-		if (a->sa_family == AF_INET6 && 
-		    IN6_IS_ADDR_V4MAPPED(&((const struct sockaddr_in6 *)a)->sin6_addr)) {
-			struct sockaddr *ap;
-			ap = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-			memset(ap, 0, sizeof(struct sockaddr_in));
-			memcpy(&(((struct sockaddr_in *)ap)->sin_addr.s_addr),
-	    	               &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
-		               sizeof(struct in_addr));
-			((struct sockaddr_in *)ap)->sin_port = 
-				((const struct sockaddr_in6 *)a)->sin6_port;
-			aa = ap;
-		} else if (b->sa_family == AF_INET6 && 
-                           IN6_IS_ADDR_V4MAPPED(&((const struct sockaddr_in6 *)b)->sin6_addr)) {
-			struct sockaddr *bp;
-			bp = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
-			memset(bp, 0, sizeof(struct sockaddr_in));
-			memcpy(&(((struct sockaddr_in *)bp)->sin_addr.s_addr),
-	    	               &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
-		               sizeof(struct in_addr));
-			((struct sockaddr_in *)bp)->sin_port = 
-				((const struct sockaddr_in6 *)b)->sin6_port;
-			bb = bp;
-		} else {
-			return FALSE;
-		}
-	}
 
-	/* now we can perform the comparison */
-	if (aa->sa_family == AF_INET6) {
-		if (memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr, 
-		           &((const struct sockaddr_in6 *)bb)->sin6_addr, 
-		           sizeof(struct sockaddr_in6)) != 0) return FALSE;
-	} else { 
-		if (((const struct sockaddr_in *)aa)->sin_addr.s_addr != 
-	            ((const struct sockaddr_in *)bb)->sin_addr.s_addr) return FALSE;
-	}
-	
-	return TRUE;
-}
-
-
-
-/* returns port number in network byte horder */
-static unsigned short get_port(const struct sockaddr *sa)
-{
-	unsigned short ret;
-	
-	assert(sa != NULL);
-	assert(sa->sa_family == AF_INET || sa->sa_family == AF_INET6);
-	
-	switch (sa->sa_family) {
-		case AF_INET:
-			ret = ((const struct sockaddr_in *)sa)->sin_port;
-			break;
-		case AF_INET6:
-			ret = ((const struct sockaddr_in6 *)sa)->sin6_port;
-			break;
-		default:
-			fatal("address family not supported", sa->sa_family);
-			/* stop a compiler warning about unassigned ret */
-			ret = -1;
-	}
-	
-	return ret;
-}
-
-
-
+#ifdef ENABLE_IPV6
 /* returns TRUE if a represents an ipv4-mapped address */
+inline
 static bool is_address_ipv4_mapped(const struct sockaddr *a)
 {
 	bool ret = FALSE;
@@ -129,10 +48,107 @@ static bool is_address_ipv4_mapped(const struct sockaddr *a)
 			
 	return ret;
 }
+#endif
 
 
 
-/* returns TRUE if sa corresponds to the address/port couple specified in addr */
+/* compare two sockaddr structs to see if they represent the same address */
+static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
+{
+	const struct sockaddr *aa, *bb;
+    
+	assert(a != NULL);
+	assert(b != NULL);
+	
+	aa = (const struct sockaddr *)a;
+	bb = (const struct sockaddr *)b;
+
+#ifdef ENABLE_IPV6
+	/* we have to handle IPv6 IPV4MAPPED addresses - convert them to IPv4 */
+	if (is_address_ipv4_mapped(a)) {
+		struct sockaddr *ap;
+		ap = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+		memset(ap, 0, sizeof(struct sockaddr_in));
+		memcpy(&(((struct sockaddr_in *)ap)->sin_addr.s_addr),
+			   &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
+			   sizeof(struct in_addr));
+		((struct sockaddr_in *)ap)->sin_port =
+				((const struct sockaddr_in6 *)a)->sin6_port;
+		aa = ap;
+	}
+
+	if (is_address_ipv4_mapped(b)) {
+		struct sockaddr *bp;
+		bp = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
+		memset(bp, 0, sizeof(struct sockaddr_in));
+		memcpy(&(((struct sockaddr_in *)bp)->sin_addr.s_addr),
+			   &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
+			   sizeof(struct in_addr));
+		((struct sockaddr_in *)bp)->sin_port =
+				((const struct sockaddr_in6 *)b)->sin6_port;
+		bb = bp;
+	}
+#endif
+
+	/* now we can perform the comparison */
+
+	/* check family is the same */
+	if (aa->sa_family != bb->sa_family)
+			return FALSE;
+
+	/* the comparison is unique for each real sockaddr family */
+
+#ifdef ENABLE_IPV6
+	if (aa->sa_family == AF_INET6) {
+		/* compare address part */
+		/* either address may be IN6ADDR_ANY, resulting in a good match */
+		if (memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr,
+		           &in6addr_any, sizeof(struct in6_addr)) != 0 &&
+		    memcmp(&((const struct sockaddr_in6 *)bb)->sin6_addr,
+		           &in6addr_any, sizeof(struct in6_addr)) != 0 &&
+			memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr, 
+			       &((const struct sockaddr_in6 *)bb)->sin6_addr, 
+			       sizeof(struct in6_addr)) != 0)
+		{
+			return FALSE;
+		}
+
+		/* compare port part */
+		/* either port may be 0(any), resulting in a good match */
+		return ((((const struct sockaddr_in6 *)aa)->sin6_port == 0) ||
+		        (((const struct sockaddr_in6 *)bb)->sin6_port == 0) ||
+				(((const struct sockaddr_in6 *)aa)->sin6_port ==
+		         ((const struct sockaddr_in6 *)bb)->sin6_port))? TRUE : FALSE;
+	}
+#endif
+
+	if (aa->sa_family == AF_INET) { 
+		/* compare address part */
+		/* either address may be INADDR_ANY, resulting in a good match */
+		if (
+		  (((const struct sockaddr_in *)aa)->sin_addr.s_addr != INADDR_ANY) &&
+		  (((const struct sockaddr_in *)bb)->sin_addr.s_addr != INADDR_ANY) &&
+		  (((const struct sockaddr_in *)aa)->sin_addr.s_addr != 
+		   ((const struct sockaddr_in *)bb)->sin_addr.s_addr))
+		{
+			return FALSE;
+		}
+
+		/* compare port part */
+		/* either port may be 0(any), resulting in a good match */
+		return ((((const struct sockaddr_in *)aa)->sin_port == 0) ||
+		        (((const struct sockaddr_in *)bb)->sin_port == 0) ||
+				(((const struct sockaddr_in *)aa)->sin_port == 
+		         ((const struct sockaddr_in *)bb)->sin_port))? TRUE : FALSE;
+	}
+	
+	/* for all other socket types, return false */
+	return FALSE;
+}
+
+
+
+/* returns TRUE if sa corresponds to the address/port specified in addr */
 bool is_allowed(const struct sockaddr *sa, const address *addr,
 		const connection_attributes *attrs)
 {
@@ -144,15 +160,10 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	assert(addr != NULL);	
 	assert(addr->address == NULL || strlen(addr->address) > 0);
 	assert(addr->service == NULL || strlen(addr->service) > 0);
-		
+
+	/* if no address or port is supplied, match everything */
 	if (addr->address == NULL && addr->service == NULL) return TRUE;
 		
-	/* if the address is unspecified and the service is allowed, 
-	 * then return TRUE */
-	if ((addr->address == NULL) && 
-	    ((safe_atoi(addr->service) == ntohs(get_port(sa))))) 
-		return TRUE;
-	
 	ret = FALSE;
 	
 	memset(&hints, 0, sizeof(hints));
@@ -160,19 +171,23 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 
 	if (is_flag_set(NUMERIC_MODE) == TRUE)
 		hints.ai_flags |= AI_NUMERICHOST;
+	hints.ai_flags |= AI_PASSIVE;
 	
 	err = getaddrinfo(addr->address, addr->service, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
+
+#ifdef ENABLE_IPV6
 		if ((is_flag_set(STRICT_IPV6) == TRUE) &&
-		    is_address_ipv4_mapped(ptr->ai_addr)) {
+		    is_address_ipv4_mapped(ptr->ai_addr))
+		{
 			/* cannot accept address */
 			continue;
 		}
-		if ((are_address_equal(sa, ptr->ai_addr) == TRUE) &&
-		    (addr->service == NULL || 
-		     (safe_atoi(addr->service) == ntohs(get_port(sa))))) {
+#endif
+
+		if (sockaddr_compare(sa, ptr->ai_addr) == TRUE) {
 			ret = TRUE;
 			break;
 		}
@@ -182,6 +197,3 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 
 	return ret;
 }
-
-
-
