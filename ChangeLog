@@ -1,3 +1,7 @@
+2003-05-11 Mauro Tortonesi <mauro _at_ deepspace6.net>
+
+ * Released nc6 0.5
+
 2003-03-26 Chris Leishman <chris _at_ leishman.org>
 
  * Added --exec option for setting a command to be executed after connect.
