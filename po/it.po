@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2003-01-18 21:34+0200\n"
+"POT-Creation-Date: 2003-01-19 01:24+0200\n"
 "PO-Revision-Date: 2003-01-14 22:27GMT\n"
 "Last-Translator: Simone Piunno <pioppo@ferrara.linux.it>\n"
 "MIME-Version: 1.0\n"
@@ -171,141 +171,141 @@ msgstr ""
 msgid "forward host lookup failed for remote endpoint %s: %s"
 msgstr ""
 
-#: src/network.c:122 src/network.c:453
+#: src/network.c:122 src/network.c:448
 #, c-format
 msgid "cannot create the socket: %s"
 msgstr ""
 
-#: src/network.c:133 src/network.c:464
+#: src/network.c:133 src/network.c:459
 msgid "error with sockopt IPV6_V6ONLY"
 msgstr ""
 
-#: src/network.c:144 src/network.c:486
+#: src/network.c:144 src/network.c:481
 msgid "error with sockopt TCP_NODELAY"
 msgstr ""
 
-#: src/network.c:171 src/network.c:196
+#: src/network.c:172 src/network.c:198
 #, c-format
 msgid "bind to source addr/port failed when connecting to %s: %s"
 msgstr ""
 
-#: src/network.c:219
+#: src/network.c:222
 #, c-format
 msgid "cannot connect to %s: %s"
 msgstr ""
 
-#: src/network.c:227
+#: src/network.c:230
 #, c-format
 msgid "timeout while connecting to %s"
 msgstr ""
 
-#: src/network.c:232
+#: src/network.c:236
 msgid "internal error"
 msgstr ""
 
-#: src/network.c:247
+#: src/network.c:251
 msgid "forward lookup returned no usable socket types"
 msgstr ""
 
-#: src/network.c:250
+#: src/network.c:254
 #, c-format
 msgid "unable to connect to address %s, service %s"
 msgstr ""
 
-#: src/network.c:257
+#: src/network.c:261
 #, c-format
 msgid "%s open"
 msgstr ""
 
-#: src/network.c:308 src/network.c:574 src/readwrite.c:131
+#: src/network.c:311 src/network.c:576 src/readwrite.c:131
 #, c-format
 msgid "select error: %s"
 msgstr ""
 
-#: src/network.c:318
+#: src/network.c:321
 #, c-format
 msgid "getsockopt error: %s"
 msgstr ""
 
-#: src/network.c:393
+#: src/network.c:391
 #, c-format
 msgid "forward host lookup failed for local endpoint %s (%s): %s"
 msgstr ""
 
-#: src/network.c:395
+#: src/network.c:393
 msgid "[unspecified]"
 msgstr ""
 
-#: src/network.c:476
+#: src/network.c:471
 msgid "error with sockopt SO_REUSEADDR"
 msgstr ""
 
-#: src/network.c:499 src/network.c:522
+#: src/network.c:500 src/network.c:523
 #, c-format
 msgid "listening on %s ..."
 msgstr ""
 
-#: src/network.c:504
+#: src/network.c:505
 #, c-format
 msgid "bind to source %s failed: %s"
 msgstr ""
 
-#: src/network.c:517
+#: src/network.c:518
 #, c-format
 msgid "cannot listen on %s: %s"
 msgstr ""
 
-#: src/network.c:546
+#: src/network.c:547
 msgid "failed to bind to any local addr/port"
 msgstr ""
 
-#: src/network.c:570
+#: src/network.c:572
 msgid "connection timed out"
 msgstr ""
 
-#: src/network.c:595
+#: src/network.c:597
 #, c-format
 msgid "cannot accept connection: %s"
 msgstr ""
 
-#: src/network.c:604
+#: src/network.c:606
 #, c-format
 msgid "cannot recv from socket: %s"
 msgstr ""
 
-#: src/network.c:609
+#: src/network.c:611
 #, c-format
 msgid "cannot duplicate file descriptor %d: %s"
 msgstr ""
 
-#: src/network.c:622
+#: src/network.c:624
 #, c-format
 msgid "getsockname failed: %s"
 msgstr ""
 
-#: src/network.c:632 src/network.c:641 src/network.c:805
-#, c-format
-msgid "getnameinfo failed: %s"
-msgstr ""
-
-#: src/network.c:651 src/network.c:816
-#, c-format
-msgid "inverse lookup failed for %s: %s"
-msgstr ""
-
-#: src/network.c:673
+#: src/network.c:648
 #, c-format
 msgid "cannot connect datagram socket: %s"
 msgstr ""
 
-#: src/network.c:679
+#: src/network.c:654
 #, c-format
-msgid "connect to %s (%s) from %s [%s] %s"
+msgid "connect to %s from %s"
 msgstr ""
 
-#: src/network.c:697
+#: src/network.c:671
 #, c-format
-msgid "refused connect to %s (%s) from %s [%s] %s"
+msgid "refused connect to %s from %s"
+msgstr ""
+
+#: src/network.c:777
+#, c-format
+msgid "getnameinfo failed: %s"
+msgstr ""
+
+#: src/network.c:787
+#, c-format
+msgid "inverse lookup failed for %s: %s"
 msgstr ""
 
 #: src/parser.c:162
