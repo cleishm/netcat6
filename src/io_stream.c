@@ -2,8 +2,8 @@
  *  io_stream.c - stream i/o wrapper - implementation 
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2003 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2003 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.28 2003-10-07 15:27:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.29 2004-01-20 10:35:12 mauro Exp $");
 
 
 #ifndef NDEBUG
