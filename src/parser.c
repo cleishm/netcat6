@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.32 2003-01-06 14:00:05 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.33 2003-01-06 15:04:21 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -277,11 +277,17 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		exit(EXIT_FAILURE);
 	}
 
-	/* sanity checks - should be absolutely useless */
-	assert(remote_address.address == NULL ||
-	       strlen(remote_address.address) > 0);
-	assert(remote_address.service == NULL ||
-	       strlen(remote_address.service) > 0);
+	/* sanity checks */
+	if (remote_address.address != NULL && 
+	    strlen(remote_address.address) == 0)
+	{
+		remote_address.address = NULL;
+	}
+	if (remote_address.service != NULL &&
+	    strlen(remote_address.service) == 0)
+	{
+		remote_address.service = NULL;
+	}
 
 	if (listen_mode == TRUE) {
 		if (local_address.service == NULL) {
