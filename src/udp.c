@@ -298,6 +298,8 @@ static int udp_bind_to(sa_family_t family, address *local)
 static void udp_readwrite(int udp_sock, io_stream *ios)
 {
 	int rr, max_fd_in;
+	bool file_transfer_mode;
+	time_t timestamp; 
 	fd_set read_fdset, tmp_fdset;
 	static uint8_t *buf1 = NULL;
 	static uint8_t *buf2 = NULL;
@@ -317,10 +319,34 @@ static void udp_readwrite(int udp_sock, io_stream *ios)
 	FD_ZERO(&read_fdset);
 	FD_SET(udp_sock, &read_fdset);
 	FD_SET(ios->fd_in, &read_fdset);
+
+	timestamp = (time_t)0;
+	file_transfer_mode = is_flag_set(FILE_TRANSFER_MODE);
 	
+	/* here's the select loop. 
+	 *
+	 * if the user has chosen normal mode, the loop keeps going 
+	 * until one of the following condition becomes true:
+	 * 
+	 * 1) the remote input stream has been closed
+	 * 
+	 * if the user has chosen file transfer mode, the loop keeps going 
+	 * until one of these condition becomes true:
+	 * 
+	 * 1) the local or the remote input streams has been closed
+	 * 2) the timer set by the user is expired 
+	 */
+	while(((file_transfer_mode == FALSE) && 
+	       FD_ISSET(udp_sock, &read_fdset)) ||
+	      ((file_transfer_mode == TRUE) && 
+	       ((FD_ISSET(ios->fd_in, &read_fdset) && 
+		 FD_ISSET(udp_sock, &read_fdset)) ||
+		!is_timer_expired(timestamp1, timestamp2)))) {  
+#if 0
 	/* here's the select loop */
 	while(FD_ISSET(udp_sock, &read_fdset) &&
 	      FD_ISSET(ios->fd_in, &read_fdset)) {
+#endif
 		int io_rcvd, net_rcvd; /* bytes received, respectively, 
 					  from io and from the net */
 		
@@ -352,6 +378,13 @@ static void udp_readwrite(int udp_sock, io_stream *ios)
 			rr = recvfrom(udp_sock, (void *)buf1, BUFFER_SIZE, 0, 
 				      (struct sockaddr *)&from, &fromlen);
 			
+			if (rr < 0 && errno != EAGAIN && errno != EINTR) {
+				/* error while reading udp_sock: 
+				 * print an error message and exit. */
+				fatal("error reading from fd %d: %s", 
+				      udp_sock, strerror(errno));
+			}
+			
 			if (have_dest == FALSE) {
 				destlen = sockaddr_len((struct sockaddr *)&from);
 				assert(destlen <= sizeof(struct sockaddr_storage));
@@ -365,15 +398,9 @@ static void udp_readwrite(int udp_sock, io_stream *ios)
 			    (have_dest_addr == TRUE && 
 			     is_allowed((struct sockaddr *)&from, &dest_addr) == TRUE)) {
 				
-				if (rr < 0) {
-					/* error while reading udp_sock: 
-					 * print an error message and exit. */
-					fatal("error reading from fd %d: %s", 
-					      udp_sock, strerror(errno));
-				}
+				/* we have received a valid packet */
+				net_rcvd = rr;
 			}
-			
-			net_rcvd = rr;
 		}
 		
 		
@@ -387,6 +414,8 @@ static void udp_readwrite(int udp_sock, io_stream *ios)
 				 * print an error message and exit. */
 				fatal("error reading from fd: %d; %s", 
 				      ios->fd_in, strerror(errno));
+			} else if (rr == 0) {
+				time(&timestamp);
 			}
 			
 			io_rcvd = rr;

@@ -44,8 +44,6 @@ static const size_t BUFFER_SIZE = 8192;
 static const time_t SELECT_TIMEOUT_SECS  = 1;
 static const time_t SELECT_TIMEOUT_USECS = 0;
 
-static time_t timestamp1; 
-static time_t timestamp2; 
 
 static int is_timer_expired(time_t t1, time_t t2)
 {
@@ -76,6 +74,8 @@ void readwrite(io_stream *ios1, io_stream *ios2)
 	bool file_transfer_mode;
 	fd_set read_fdset, tmp_rd_fdset, write_fdset, tmp_wr_fdset;
 	struct timeval timeout; 
+	time_t timestamp1; 
+	time_t timestamp2; 
 	static circ_buf *buf1 = NULL;
 	static circ_buf *buf2 = NULL;
 
@@ -112,9 +112,9 @@ void readwrite(io_stream *ios1, io_stream *ios2)
 	/* here's the select loop. 
 	 *
 	 * if the user has chosen normal mode, the loop keeps going 
-	 * until one of the following condition becomes true:
+	 * until the following condition becomes true:
 	 * 
-	 * 1) the remote input streams has been closed
+	 * 1) the remote input stream has been closed
 	 * 
 	 * if the user has chosen file transfer mode, the loop keeps going 
 	 * until one of these condition becomes true:

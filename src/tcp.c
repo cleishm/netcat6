@@ -103,6 +103,9 @@ static int tcp_connect_to(sa_family_t family, address *remote, address *local)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = family;
 	hints.ai_socktype = SOCK_STREAM;
+#ifdef AI_ADDRCONFIG
+	hints.ai_flags = AI_ADDRCONFIG;
+#endif
 	
 	if (is_flag_set(NUMERIC_MODE) == TRUE) 
 		hints.ai_flags |= AI_NUMERICHOST;
