@@ -65,7 +65,10 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	assert(ios2 != NULL);
 
 	/* set up the buffers for each ios */
-	/* dgram protocols need to read into a temporary buffer first */
+	/* dgram protocols need to read all of each message at once, so we use
+	 * a temporary buffer to read into, then move the data gradually into
+	 * the circular buffer.  Further reads are suspended until all data
+	 * is moved */
 	buf1 = alloc_cb(BUFFER_SIZE);
 	if (ios1->socktype == SOCK_DGRAM)
 		tbuf1 = (uint8_t *)xmalloc(TEMP_BUFFER_SIZE);
@@ -173,11 +176,15 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		    is_write_open(ios2) && FD_ISSET(ios_writefd(ios2), &write_fdset)));
 		assert(XOR((is_empty(buf2) == TRUE),
 		    is_write_open(ios1) && FD_ISSET(ios_writefd(ios1), &write_fdset)));
-		/* readfd should be set (or closed) iff the buffer is not full */
-		assert(XOR(is_full(buf1) == TRUE,
+		/* readfd should be set (or closed) iff the buffer is not full
+		 * or tbuf1 is in use and it still contains data */
+		assert(XOR(
+		    (tbuf1 && tbuf1_bytes > 0) || (!tbuf1 && is_full(buf1) == TRUE),
 		    !is_read_open(ios1) || FD_ISSET(ios_readfd(ios1), &read_fdset)));
 		assert(XOR(is_full(buf2) == TRUE,
 		    !is_read_open(ios2) || FD_ISSET(ios_readfd(ios2), &read_fdset)));
+		/* if tbuf1 is not being used, tbuf1_bytes must be 0 */
+		assert(tbuf1 || tbuf1_bytes == 0);
 
 		/* check timeouts */
 		tvp1 = ios_next_timeout(ios1, &tv1);
@@ -222,7 +229,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		}
 		
 		if (is_read_open(ios1) && FD_ISSET(ios_readfd(ios1), &tmp_rd_fdset)) {
-			assert(is_full(buf1) == FALSE);
+			assert((tbuf1 && tbuf1_bytes == 0) ||
+			       (!tbuf1 && is_full(buf1) == FALSE));
 
 			/* something is ready to read on ios1 (remote) */
 			if (ios1->socktype == SOCK_DGRAM) {
@@ -248,10 +256,15 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					assert(copied);
 				}
 
-				/* if the buffer is full, stop reading */
-				if (tbuf1_bytes > 0 || is_full(buf1) == TRUE)
+				/* if reading into tbuf1 and it still contains data
+				 * OR if reading straight to buf1 and it's full,
+				 * then suspend further reading */
+				if ((tbuf1 && tbuf1_bytes > 0) ||
+				    (!tbuf1 && is_full(buf1) == TRUE))
+				{
 					FD_CLR(ios_readfd(ios1), &read_fdset);
-
+				}
+				    
 				/* start writing the buffer out */
 				assert(is_write_open(ios2));
 				FD_SET(ios_writefd(ios2), &write_fdset);
@@ -286,7 +299,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
 					warn("read %d bytes from ios2 (%d)", rr, ios_readfd(ios2));
 #endif
-				/* if the buffer is full, stop reading */
+				/* if the buffer is full, suspend further reading */
 				if (is_full(buf2) == TRUE)
 					FD_CLR(ios_readfd(ios2), &read_fdset);
 
@@ -328,7 +341,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					warn("%s %d bytes to ios1 (%d)",
 						tbuf1? "wrote":"sent", rr, ios_writefd(ios1));
 #endif
-				/* if anything was written, ios2 can read again */
+				/* if anything was written, ios2 can resume reading again */
 				if (is_read_open(ios2))
 					FD_SET(ios_readfd(ios2), &read_fdset);
 				/* if the buffer is emptied, stop trying to write */
@@ -376,7 +389,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 					tbuf1_bytes -= copied;
 					tbuf1_offset += copied;
 				}
-				/* if the temp buffer was emptied, ios1 can read again */
+				/* if the tbuf1 was emptied, ios1 can resume reading again
+				 * if tbuf1 is not in use, tbuf1_bytes will always be 0 */
 				if (is_read_open(ios1) && tbuf1_bytes == 0)
 					FD_SET(ios_readfd(ios1), &read_fdset);
 				/* if the buffer is emptied, stop trying to write */
