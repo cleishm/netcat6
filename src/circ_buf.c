@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.15 2003-01-03 00:14:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.16 2003-01-05 23:50:46 chris Exp $");
 
 
 
@@ -394,8 +394,6 @@ ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
 	
 	cb_assert(cb);
 	assert(fd >= 0);
-	assert(dest != NULL);
-	assert(destlen > 0);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
