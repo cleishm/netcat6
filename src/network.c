@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.19 2002-12-28 19:01:41 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.20 2002-12-28 20:54:22 chris Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
@@ -142,6 +142,9 @@ void do_connect(connection_attributes *attrs)
 
 	/* try connecting to any of the addresses returned by getaddrinfo */
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
+		struct timeval tv, *tvp = NULL;
+		fd_set connect_fdset;
+		socklen_t len;
 
 		/* only accept socktypes we can handle */
 		if (ptr->ai_socktype != SOCK_STREAM &&
@@ -228,7 +231,8 @@ void do_connect(connection_attributes *attrs)
 			err = getaddrinfo(local->address, local->service,
 			                  &hints, &src_res);
 			if (err != 0)
-				fatal("forward host lookup failed for source address %s: %s",
+				fatal("forward host lookup failed "
+				      "for source address %s: %s",
 				      local->address, gai_strerror(err));
 
 			/* check the results of getaddrinfo */
@@ -252,7 +256,8 @@ void do_connect(connection_attributes *attrs)
 				
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
 					warn("bind to source addr/port failed "
-					     "when connecting %s [%s] %s (%s): %s",
+					     "when connecting "
+					     "%s [%s] %s (%s): %s",
 					      hbuf_rev, hbuf_num,
 					      sbuf_num, sbuf_rev,
 					      strerror(errno));
@@ -265,14 +270,62 @@ void do_connect(connection_attributes *attrs)
 
 			freeaddrinfo(src_res);
 		}
+
+		/* set connect timeout */
+		if (attrs->connect_timeout > 0) {
+			tv.tv_sec = attrs->connect_timeout;
+			tv.tv_usec = 0;
+			tvp = &tv;
+		}
+
+		/* set fd to nonblocking */
+		nonblock(fd);
 		
-		/* perform the connection */
+		/* attempt the connection */
 		err = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
+		if (err != 0 && errno == EINPROGRESS) {
+			/* connection is proceeding
+			 * it is complete (or failed) when select returns */
+
+			/* initialize connect_fdset */
+			FD_ZERO(&connect_fdset);
+			FD_SET(fd, &connect_fdset);
+
+			/* call select */
+			do {
+				err = select(
+					fd+1, NULL, &connect_fdset, NULL, tvp);
+			} while (err < 0 && errno == EINTR);
+
+			if (err < 0)
+				fatal("select error: %s", strerror(errno));
+			if (err == 0) {
+				/* connection timed out */
+				if (is_flag_set(VERBOSE_MODE) == TRUE) {
+					warn("%s [%s] %s (%s): "
+					     "connect timed out",
+					     hbuf_rev, hbuf_num,
+					     sbuf_num, sbuf_rev);
+				}
+				close(fd);
+				fd = -1;
+				continue;
+			}
+			
+			/* select returned - test socket error for result */
+			len = sizeof(err);
+			if (getsockopt(fd, SOL_SOCKET,SO_ERROR, &err, &len) < 0)
+				fatal("getsockopt error: %s", strerror(errno));
+			if (err != 0)
+				errno = err;
+		}
 		if (err != 0) {
+			/* connection failed */
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("%s [%s] %s (%s): %s",
 				     hbuf_rev, hbuf_num,
-				     sbuf_num, sbuf_rev, strerror(errno));
+				     sbuf_num, sbuf_rev,
+				     strerror(errno));
 			}
 			close(fd);
 			fd = -1;
@@ -512,14 +565,25 @@ void do_listen(connection_attributes *attrs)
 	/* enter into the accept loop */
  	for (;;) {
 		fd_set tmp_ap_fdset;
+		struct timeval tv, *tvp = NULL;
 		struct sockaddr_storage dest;
 		socklen_t destlen;
 
 		/* make a copy of accept_fdset before passing to select */
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
 
+		/* setup timeout */
+		if (attrs->connect_timeout > 0) {
+			tv.tv_sec = attrs->connect_timeout;
+			tv.tv_usec = 0;
+			tvp = &tv;
+		}
+
 		/* wait for an incoming connection */
-		err = select(maxfd + 1, &tmp_ap_fdset, NULL, NULL, NULL);
+		err = select(maxfd + 1, &tmp_ap_fdset, NULL, NULL, tvp);
+
+		if (err == 0)
+			fatal("connection timed out");
 		
 		if (err < 0) {
 			if (errno == EINTR) continue;

@@ -23,6 +23,7 @@
 
 #include "io_stream.h"
 #include <netdb.h>
+#include <sys/time.h>
 
 typedef enum sock_type_t {
 	TCP_SOCKET,
@@ -49,6 +50,7 @@ typedef struct connection_attributes_t
 	address local_address;
 	io_stream remote_stream;
 	io_stream local_stream;
+	time_t connect_timeout;
 } connection_attributes;
 
 

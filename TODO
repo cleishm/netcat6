@@ -3,14 +3,12 @@ i'd like to improve netcat6 in many ways:
 
 small hacks/bugfixes that _MUST_ be done before final release 0.2.0:
 
-- add timeouts for accept and connect
 - update the man page:
 	describe udp listen mode
 	describe optimizations for file transfers
 - review parser.c:
 	check flag query function				
 	add long options support
-- review the _WHOLE_ source code
 
 
 big features to be added in the next releases:

@@ -25,12 +25,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <fcntl.h>
 #ifdef HAVE_STRTOL
 #include <errno.h>
 #include <limits.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.9 2002-12-24 20:20:31 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.10 2002-12-28 20:54:22 chris Exp $");
 
 
 
@@ -89,6 +90,22 @@ char *xstrdup(const char *str)
 	/* we should use srtlcpy here instead of strcpy */
 	strcpy(nstr, str);
 	return nstr;
+}
+
+
+
+void nonblock(int fd)
+{
+	int arg;
+	if ((arg = fcntl(fd, F_GETFL, 0)) < 0)
+		fatal("error reading file descriptor flags: %s",
+		      strerror(errno));
+
+	arg |= O_NONBLOCK;
+
+	if (fcntl(fd, F_SETFL, arg) < 0)
+		fatal("error setting flag O_NONBLOCK on file descriptor",
+		      strerror(errno));
 }
 
 

@@ -41,6 +41,8 @@ void warn(const char *template, ...);
 void *xmalloc(size_t size);
 char *xstrdup(const char* str);
 
+void nonblock(int fd);
+
 #ifdef HAVE_STRTOL
 int safe_atoi(const char *str);
 #else

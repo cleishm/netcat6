@@ -28,12 +28,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.6 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.7 2002-12-28 20:54:22 chris Exp $");
 
-
-/* static void nonblock(int fd); */
 
 
 void io_stream_init(io_stream *ios)
@@ -163,21 +160,3 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 	return tv;
 }
-
-
-
-/*
-static void nonblock(int fd)
-{
-	int arg;
-	if ((arg = fcntl(fd, F_GETFL, 0)) < 0)
-		fatal("error reading file descriptor flags: %s",
-		      strerror(errno));
-
-	arg |= O_NONBLOCK;
-
-	if (fcntl(fd, F_SETFL, arg) < 0)
-		fatal("error setting flag O_NONBLOCK on file descriptor",
-		      strerror(errno));
-}
-*/

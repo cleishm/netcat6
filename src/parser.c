@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.14 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.15 2002-12-28 20:54:22 chris Exp $");
 
 
 static unsigned long flags_mask;
@@ -56,7 +56,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	opterr = 0;
 
 	/* option recognition loop */
-	while ((c = getopt(argc, argv, "46hlnp:q:s:uvx")) >= 0) {
+	while ((c = getopt(argc, argv, "46hlnp:q:s:t:uvx")) >= 0) {
  		switch(c) {
 		case '4':
 			if (attrs->proto != PROTO_UNSPECIFIED) 
@@ -95,6 +95,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		case 's':	
 			attrs->local_address.address = xstrdup(optarg);
 			break;	
+		case 't':
+			attrs->connect_timeout = safe_atoi(optarg);
+			break;
 		case 'u':	
 			attrs->type = UDP_SOCKET;
 			break;
@@ -198,6 +201,7 @@ static void print_usage(FILE *fp)
 "    -p port    Local source port\n"
 "    -q n1[:n2] Hold timeouts\n"
 "    -s addr    Local source address\n"
+"    -t sec     Timeout for connects/accepts\n"
 "    -u         Require use of UDP\n"
 "    -v         Increase program verbosity (call twice for max verbosity)\n"
 "    -x         File transfer mode\n\n");

@@ -107,7 +107,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 
 AC_CHECK_FUNCS(
-  [gettimeofday memset select socket strerror strrchr strtol signal fcntl getaddrinfo freeaddrinfo gai_strerror getnameinfo],,
+  [gettimeofday memset select socket getsockopt strerror strrchr strtol signal fcntl getaddrinfo freeaddrinfo gai_strerror getnameinfo],,
   [AC_MSG_ERROR([Missing functions required to compile nc6])]
 )
 

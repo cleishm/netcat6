@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.7 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.8 2002-12-28 20:54:22 chris Exp $");
 
 
 void connection_attributes_init(connection_attributes *attrs)
@@ -47,6 +47,9 @@ void connection_attributes_init(connection_attributes *attrs)
 
 	/* the local stream has an infinite hold timeout by default */
 	ios_set_hold_timeout(&(attrs->local_stream), -1);
+
+	/* no connect timeout */
+	attrs->connect_timeout = -1;
 }
 
 
