@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.40 2003-01-15 00:08:53 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.41 2003-01-15 00:15:45 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -408,18 +408,22 @@ static void print_usage(FILE *fp)
 static void print_version(FILE *fp)
 {
 	fprintf(fp,
-"%s version %s\n", PACKAGE, VERSION);
-	fprintf(fp,
-"Copyright (C) 2001-2003\n"
+"%s version %s\n"
+"Copyright (C) 2001-2003\n", PACKAGE, VERSION);
+
+	fprintf(fp, 
 	"\tMauro Tortonesi\n"
 	"\tChris Leishman\n"
 	"\tSimone Piunno\n"
-"<http://www.deepspace6.net>\n"
-"Configured with "
-#ifndef ENABLE_IPV6
-	"no "
+"<http://www.deepspace6.net>\n");
+
+#ifdef ENABLE_IPV6
+	fprintf(fp,
+"Configured with IPv6 support\n");
+#else
+	fprintf(fp,
+"Configured with no IPv6 support\n");
 #endif
-	"IPv6 support\n");
 }
 
 
