@@ -98,7 +98,7 @@ AC_ARG_ENABLE(stack-guess,
 )
 
 if test "X$stack_guess" != "Xno"; then
-  IN6_GUESS_STACK(ipv6, ipv6libdir, ipv6lib)
+  IN6_GUESS_STACK
   NC6_CFLAGS="${NC6_CFLAGS} ${INET6_CFLAGS}"
   LIBS="${INET6_LIBS} ${LIBS}"
 fi
@@ -121,24 +121,21 @@ GETADDRINFO_AI_ADDRCONFIG(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_ADDRCONFIG], 1, 
     [Define if the system headers support the AI_ADDRCONFIG flag.]
-  ),
-  AC_MSG_NOTICE([getaddrinfo does not support the AI_ADDRCONFIG flag.])
+  )
 )
 
 GETADDRINFO_AI_V4MAPPED(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_V4MAPPED], 1, 
     [Define if the system headers support the AI_V4MAPPED flag.]
-  ),
-  AC_MSG_NOTICE([getaddrinfo does not support the AI_V4MAPPED flag.])
+  )
 )
 
 GETADDRINFO_AI_ALL(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_ALL], 1, 
     [Define if the system headers support the AI_ALL flag.]
-  ),
-  AC_MSG_NOTICE([getaddrinfo does not support the AI_ALL flag.])
+  )
 )
 
 
