@@ -144,6 +144,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	}
 	
 	if (max_fd > FD_SETSIZE) {
+		/* with 4 fd's this shouldn't happen */
 		fatal("max_fd > FD_SETSIZE");
 	}
 
@@ -152,16 +153,31 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	 *
 	 * the loop continues until one of the following occurs:
 	 *
-	 * neither side can be read from (successful)
-	 * or
-	 * either side times out (error)
-	 * or
-	 * a write fails (error)
+	 * neither side can be read from AND all write buffers have been written
+	 * OR
+	 * either side times out
+	 * OR
+	 * a write error occurs
 	 *
-	 * note: by default, the remote stream (ios1) times out immediately
-	 * when the read side is closed.
+	 * note: by default, when the remote read side (ios1) is closed, it
+	 * triggers a hold timeout immediately - which closes the local read side
+	 * as well.
 	 */
-	while (is_read_open(ios1) || is_read_open(ios2)) {
+	while (is_read_open(ios1) || is_read_open(ios2) ||
+	       is_empty(buf1) == FALSE || is_empty(buf2) == FALSE)
+	{
+
+		/* sanity checks */
+		/* writefd should be set iff the buffer contains data */
+		assert(XOR(is_empty(buf1) == TRUE,
+		    is_write_open(ios2) && FD_ISSET(ios_writefd(ios2), &write_fdset)));
+		assert(XOR((is_empty(buf2) == TRUE),
+		    is_write_open(ios1) && FD_ISSET(ios_writefd(ios1), &write_fdset)));
+		/* readfd should be set (or closed) iff the buffer is not full */
+		assert(XOR(is_full(buf1) == TRUE,
+		    !is_read_open(ios1) || FD_ISSET(ios_readfd(ios1), &read_fdset)));
+		assert(XOR(is_full(buf2) == TRUE,
+		    !is_read_open(ios2) || FD_ISSET(ios_readfd(ios2), &read_fdset)));
 
 		/* check timeouts */
 		tvp1 = ios_next_timeout(ios1, &tv1);
@@ -178,6 +194,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 
 		/* stop if either ios has timed out */
 		if ((tvp1 && !timerisset(tvp1)) || (tvp2 && !timerisset(tvp2))) {
+			retval = -1;
 			break;
 		}
 
@@ -186,10 +203,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			tvp = timercmp(tvp1, tvp2, <)? tvp1 : tvp2;
 		else if (tvp1)
 			tvp = tvp1;
-		else if (tvp2)
-			tvp = tvp2;
 		else
-			tvp = NULL;
+			tvp = tvp2;  /* tvp2 may be NULL */
 
 		/* make a copy of read_fdset and write_fdset before passing 
 		 * them to select */
@@ -390,48 +405,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		}
 	}
 	
-	/* flush the buffers as much as possible */
-	while (is_empty(buf2) == FALSE) {
-		if (tbuf1)
-			rr = send_from_cb(ios_writefd(ios1), buf2, NULL, 0);
-		else
-			rr = write_from_cb(ios_writefd(ios1), buf2);
-		if (rr > 0) {
-			net_sent += rr;
-#ifndef NDEBUG				
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("wrote %d bytes to ios1 (%d)", rr, ios_writefd(ios1));
-#endif
-		}
-		if (rr < 0) {
-			if (errno != EAGAIN && errno != EPIPE)
-				fatal("error writing to fd %d: %s",
-					ios_writefd(ios1), strerror(errno));
-			/* failed to write all data */
-			retval = -1;
-			break;
-		}
-	}
-	
-	while (is_empty(buf1) == FALSE) {
-		rr = write_from_cb(ios_writefd(ios2), buf1);
-		if (rr > 0) {
-			net_sent += rr;
-#ifndef NDEBUG				
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("wrote %d bytes to ios2 (%d)", rr, ios_writefd(ios2));
-#endif
-		}
-		if (rr < 0) {
-			if (errno != EAGAIN && errno != EPIPE)
-				fatal("error writing to fd %d: %s",
-					ios_writefd(ios2), strerror(errno));
-			/* failed to write all data */
-			retval = -1;
-			break;
-		}
-	}
-
 	/* perform the final cleanup */
 	free_cb(&buf1);
 	if (tbuf1) free(tbuf1);
