@@ -61,13 +61,18 @@ AC_ARG_ENABLE(ipv6,
   [ipv6=yes]
 )
 
+dnl Check for sockaddr_in6
 if test "X$ipv6" = "Xyes"; then
   TYPE_STRUCT_SOCKADDR_IN6(,[
     AC_MSG_NOTICE([Disabling IPv6 support: 'struct sockaddr_in6' support is required])
     ipv6=no
   ])
+
+  dnl Check for scope id
+  MEMBER_SIN6_SCOPE_ID
 fi
 
+dnl Check for in6 protocol flags (AF_INET6, etc)
 if test "X$ipv6" = "Xyes"; then
   PROTO_INET6(,[
     AC_MSG_NOTICE([Disabling IPv6 support: INET6 protocol support is required])

@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.20 2003-01-13 20:30:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.21 2003-01-14 20:21:19 chris Exp $");
 
 
 
@@ -60,7 +60,8 @@ bool is_address_ipv4_mapped(const struct sockaddr *a)
 	assert(a != NULL);
 	
 	if ((a->sa_family == AF_INET6) && 
-	    IN6_IS_ADDR_V4MAPPED(&(tmp->sin6_addr))) {
+	    IN6_IS_ADDR_V4MAPPED(&(tmp->sin6_addr)))
+	{
 		ret = TRUE;
 	}
 			
@@ -118,6 +119,16 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 
 #ifdef ENABLE_IPV6
 	if (aa->sa_family == AF_INET6) {
+#ifdef HAVE_SOCKADDR_IN6_SCOPE_ID
+		/* compare scope */
+		if (((const struct sockaddr_in6 *)aa)->sin6_scope_id &&
+		    ((const struct sockaddr_in6 *)bb)->sin6_scope_id &&
+		    (((const struct sockaddr_in6 *)aa)->sin6_scope_id !=
+		     ((const struct sockaddr_in6 *)bb)->sin6_scope_id))
+		{
+			return FALSE;
+		}
+#endif
 		/* compare address part 
 		 * either may be IN6ADDR_ANY, resulting in a good match */
 		if ((memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr,
@@ -126,7 +137,8 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		            &in6addr_any, sizeof(struct in6_addr)) != 0) &&
 		    (memcmp(&((const struct sockaddr_in6 *)aa)->sin6_addr, 
 		            &((const struct sockaddr_in6 *)bb)->sin6_addr, 
-			    sizeof(struct in6_addr)) != 0)) {
+			    sizeof(struct in6_addr)) != 0))
+		{
 			return FALSE;
 		}
 
@@ -146,7 +158,8 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		if ((((const struct sockaddr_in *)aa)->sin_addr.s_addr != INADDR_ANY) &&
 		    (((const struct sockaddr_in *)bb)->sin_addr.s_addr != INADDR_ANY) &&
 		    (((const struct sockaddr_in *)aa)->sin_addr.s_addr != 
-		     ((const struct sockaddr_in *)bb)->sin_addr.s_addr)) {
+		     ((const struct sockaddr_in *)bb)->sin_addr.s_addr))
+		{
 			return FALSE;
 		}
 
@@ -200,7 +213,8 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 
 #ifdef ENABLE_IPV6
 		if ((is_flag_set(STRICT_IPV6) == TRUE) &&
-		    (is_address_ipv4_mapped(ptr->ai_addr))) {
+		    (is_address_ipv4_mapped(ptr->ai_addr)))
+		{
 			/* we cannot accept IPv4-mapped addresses */
 			continue;
 		}
