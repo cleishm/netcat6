@@ -36,7 +36,6 @@
 #include "parser.h"
 #include "readwrite.h"
 #include "timeout.h"
-#include "udp.h"
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = 8192;

@@ -23,7 +23,6 @@
 #define READWRITE_H
 
 #include "misc.h"
-#include "udp.h"
 
 typedef struct io_stream_t
 {
