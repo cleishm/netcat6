@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.1 2002-12-24 09:18:52 chris Exp $
+$Id: README.Maint,v 1.2 2002-12-24 20:07:09 chris Exp $
 
 
 Source layout
@@ -27,7 +27,9 @@ script.
 Style guide
 -----------
 
-* 4-column indent.
+Read the CodingStyle doc from the linux kernel.  The very basics are:
+
+* 8-column indent.
 * Opening curly on same line as keyword, if possible, otherwise line up.
 * No space before the semicolon.
 * Space around most operators.
