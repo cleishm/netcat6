@@ -1,5 +1,4 @@
-/* vi:ts=4 sw=4
- *
+/*
  *  misc.c - miscellaneous funcions module - implementation 
  * 
  *  nc6 - an advanced netcat clone
@@ -31,7 +30,7 @@
 #include <limits.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.7 2002-12-24 14:54:00 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.8 2002-12-24 20:08:43 chris Exp $");
 
 
 

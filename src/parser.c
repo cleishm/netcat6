@@ -1,5 +1,4 @@
-/* vi:ts=4 sw=4
- *
+/*
  *  parser.c - argument parser & dispatcher module - implementation 
  * 
  *  nc6 - an advanced netcat clone
@@ -32,7 +31,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.11 2002-12-24 14:54:00 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.12 2002-12-24 20:08:43 chris Exp $");
 
 
 static unsigned long flags_mask;
