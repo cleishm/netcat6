@@ -198,7 +198,7 @@ void do_connect(connection_attributes *attrs)
 			if (err != 0) {
 				/* make sure we have tried all the addresses returned by 
 				 * getaddrinfo */
-				assert(src_ptr->ai_next == NULL);
+				assert(src_ptr == NULL);
 				
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
 					warn("bind to source addr/port failed "
@@ -471,7 +471,7 @@ void do_listen(connection_attributes *attrs)
 		if (fd > maxfd)
 			continue;
 
-		/* find socket type in listen_fds */
+		/* find socket type in fd_socktypes */
 		socktype = find_fd_socktype(fd_socktypes, fd);
 
 		destlen = sizeof(dest);	
