@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.23 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.24 2003-01-20 21:56:09 chris Exp $");
 
 
 
@@ -222,12 +222,9 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
 #ifdef ENABLE_IPV6
-		if ((is_flag_set(STRICT_IPV6) == TRUE) &&
-		    (is_address_ipv4_mapped(ptr->ai_addr)))
-		{
-			/* we cannot accept IPv4-mapped addresses */
+		/* skip IPv4 mapped addresses returned from getaddrinfo */
+		if (is_address_ipv4_mapped(ptr->ai_addr))
 			continue;
-		}
 #endif
 
 		if (sockaddr_compare(sa, ptr->ai_addr) == TRUE) {

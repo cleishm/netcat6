@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.40 2003-01-20 20:47:24 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.41 2003-01-20 21:56:09 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -107,7 +107,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	/* try connecting to any of the addresses returned by getaddrinfo */
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
-		/* only accept socktypes we can handle */
+		/* only accept results we can handle */
 		if (skip_address(ptr) == TRUE) continue;
 
 		/* we are going to try to connect to this address */
@@ -119,7 +119,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			/* ignore this address if it is not supported */
 			if (unsupported_sock_error(errno))
 				continue;
-			fatal(_("cannot create the socket: %s"),
+			fatal(_("socket creation failed: %s"),
 			      strerror(errno));
 		}
 		
@@ -234,7 +234,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			fd = -1;
 			continue;
 		default: 
-			fatal(_("internal error"));
+			assert(0&&"Invalid result from connect_with_timeout");
 		}
 
 		/* exit from the loop if we have a valid connection */
@@ -438,6 +438,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 	nfd = 0;
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
+		/* only accept results we can handle */
 		if (skip_address(ptr) == TRUE) continue;
 		
 		/* create the socket */
@@ -596,7 +597,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		if (socktype == SOCK_STREAM) {
 			ns = accept(fd, (struct sockaddr *)&dest, &destlen);
 			if (ns < 0)
-				fatal(_("cannot accept connection: %s"),
+				fatal(_("accept failed: %s"),
 				      strerror(errno));
 		} else {
 			/* this is checked when binding listen sockets */
@@ -605,14 +606,12 @@ void do_listen_continuous(const connection_attributes* attrs,
 			err = recvfrom(fd, NULL, 0, MSG_PEEK,
 			               (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
-				fatal(_("cannot recv from socket: %s"),
+				fatal(_("recvfrom failed: %s"),
 				      strerror(errno));
 
 			ns = dup(fd);
 			if (ns < 0)
-				fatal(_("cannot duplicate "
-				      "file descriptor %d: %s"),
-				      fd, strerror(errno));
+				fatal(_("dup failed: %s", strerror(errno)));
 		}
 
 		/* get names for each end of the connection */
@@ -648,7 +647,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 				err = connect(ns, (struct sockaddr*)&dest, 
 				              destlen);
 				if (err != 0)
-					fatal(_("cannot connect "
+					fatal(_("cannot failed on "
 					      "datagram socket: %s"),
 					      strerror(errno));
 			}
