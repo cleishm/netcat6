@@ -531,7 +531,7 @@ void do_listen(const address *remote, const address *local,
 
 			break;
 		} else {
-			if (attrs->type == SOCK_DGRAM) {
+			if (attrs->type == UDP_SOCKET) {
 				/* the connection wasn't accepted - remove the queued packet */
 				recvfrom(ns, NULL, 0, 0, NULL, 0);
 			}
