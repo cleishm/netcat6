@@ -233,7 +233,7 @@ Stream based data transfers, such as TCP, have 2 separate streams - the
 receive and the transmit stream.  Contrary to common belief, the streams can
 be closed independently of each other - in TCP this is called a half-close.
 .P
-In standard mode, netcat6 closes the everything connection when it detects
+In standard mode, netcat6 closes the entire remote connection when it detects
 that the remote receive stream has been closed.  This is a common operation
 for most TCP applications, because it is unusual that a server will keep
 accepting data after it has indicated that it will no longer send any.
