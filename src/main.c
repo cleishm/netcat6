@@ -37,7 +37,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.31 2003-03-26 20:18:38 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.32 2003-03-26 20:22:13 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -170,6 +170,7 @@ static void accept_callback(int fd, int socktype, void *cdata)
 	
 	/* issue callback */
 	adata->callback(adata->attrs, fd, socktype);
+	exit((retval)? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 
