@@ -2,26 +2,18 @@
 ##                his autotools book (http://sources.redhat.com/autotools)
 
 auxdir			= @ac_aux_dir@
-AUX_DIST		= $(auxdir)/install-sh \
-			  $(auxdir)/missing \
-			  $(auxdir)/mkinstalldirs \
-			  $(auxdir)/depcomp			  
-AUX_DIST_EXTRA		= $(auxdir)/ai_constants.m4 \
-		          $(auxdir)/in6_guess_stack.m4 \
+EXTRA_DIST		= bootstrap BUGS CREDITS \
+			  $(auxdir)/ai_constants.m4 \
+			  $(auxdir)/in6_guess_stack.m4 \
 			  $(auxdir)/proto_inet6.m4 \
-		          $(auxdir)/type_struct_sockaddr_storage.m4 \
-		          $(auxdir)/type_struct_sockaddr_in6.m4 \
-		          $(auxdir)/type_socklen_t.m4 
-EXTRA_DIST		= bootstrap BUGS CREDITS
+			  $(auxdir)/type_struct_sockaddr_storage.m4 \
+			  $(auxdir)/type_struct_sockaddr_in6.m4 \
+			  $(auxdir)/type_socklen_t.m4 
 
 AUTOMAKE_OPTIONS 	= dist-bzip2
 ACLOCAL_AMFLAGS		= -I $(auxdir)
-SUBDIRS 		= docs contrib src #config 
+SUBDIRS 		= docs contrib src
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
-			  config.h.in config.status config.log $(AUX_DIST)
-
-dist-hook:
-	cd $(distdir)
-	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
-	  cp $$file $(distdir)/$$file; \
-	done
+			  config.h.in config.status config.log \
+			  $(auxdir)/depcomp $(auxdir)/install-sh \
+			  $(auxdir)/missing $(auxdir)/mkinstalldirs
