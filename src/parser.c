@@ -33,15 +33,15 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.37 2003-01-13 19:48:44 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.38 2003-01-13 20:07:05 mauro Exp $");
 
 
 /* default UDP MTU is 8kb */
 static const size_t DEFAULT_UDP_MTU = 8192;
 /* default UDP NRU is the maximum allowed MTU of 64k */
 static const size_t DEFAULT_UDP_NRU = 65536;
-/* default UDP buffer size is 128k */
-static const size_t DEFAULT_UDP_BUFFER_SIZE = 131072;
+/* default UDP buffer size is 64k */
+static const size_t DEFAULT_UDP_BUFFER_SIZE = 65536;
 /* default buffer size for file transfers is 64k */
 static const size_t DEFAULT_FILE_TRANSFER_BUFFER_SIZE = 65536;
 
