@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.8 2003-01-18 15:40:58 chris Exp $
+$Id: README.Maint,v 1.9 2003-01-22 09:25:01 chris Exp $
 
 
 Source layout
@@ -204,22 +204,24 @@ Making a Release
 
 To make a new release, the following process should be followed:
 
-1) Clean the source tree (make maintainer-clean)
-2) Edit the ChangeLog
-3) Edit the version number in configure.ac (and be sure to remove the '-cvs')
-4) Commit changes
-5) Tag the repository with the release tag
-6) ./bootstrap
-7) ./configure
-8) make dist
-9) make distcheck
+1) Ensure the nc6.pot and associated .po files are up to date with the source
+2) Clean the source tree (make maintainer-clean)
+3) Edit the ChangeLog
+4) Edit the version number in configure.ac (and be sure to remove the '-cvs')
+5) Commit changes
+6) Tag the repository with the release tag
+7) ./bootstrap
+8) ./configure
+9) make dist
+10) make distcheck
 
 This will build a tar.gz and tar.bz2 in the root of the source tree.  These
 should be made available for download from the deepspace6 website.
 
-10) Clean the source tree again (make maintainer-clean)
-11) Edit configure.ac to add '-cvs' onto the end of the version number
-12) Commit changes
+11) Clean the source tree again (make maintainer-clean)
+12) Edit configure.ac to add '-cvs' onto the end of the version number
+13) Commit changes
+
 
 
 Release Announcements

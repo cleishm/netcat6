@@ -12,7 +12,6 @@ ALL_LINGUAS="it"
 
 
 dnl Checks for programs.
-AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_RANLIB
@@ -20,12 +19,12 @@ AC_ISC_POSIX
 AC_PROG_INSTALL
 
 
-dnl Check paths
-PATH_BSHELL
-PATH_DEVNULL
-
 dnl default CFLAGS to use for nc6 source
 NC6_CFLAGS=""
+
+
+dnl internationalization macros
+AM_GNU_GETTEXT
 
 
 dnl Checks for header files.
@@ -37,18 +36,20 @@ AC_CHECK_HEADERS(
 AC_CHECK_HEADER(stdint.h)
 
 
+dnl Check paths
+PATH_BSHELL
+PATH_DEVNULL
+
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
+AC_HEADER_TIME
 AC_CHECK_TYPE(ssize_t, int)
 TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
-
-
-dnl internationalization macros
-AM_GNU_GETTEXT
 
 
 dnl Configure IPv6 support
@@ -120,6 +121,8 @@ fi
 
 dnl Checks for library functions.
 AC_FUNC_ALLOCA
+AC_FUNC_FORK
+AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
