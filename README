@@ -19,7 +19,9 @@ netcat6 is a total rewrite of netcat, with several advantages:
    data copying or analysis.
 3. The source is well structured, documented and very easy to follow.
    One of the main objectives of netcat6 is to produce an excellent example of
-   AF independant networking and efficient data transfer.
+   AF independant networking and efficient data transfer.  The code has
+   minimal dependancy on the address family or protocol type and can be
+   trivially extended to talk many layer 3 protocols.
 4. Greatly improved configuration and platform indipendence.
 5. Can support servers or clients that use TCP half-close.
 
@@ -103,6 +105,20 @@ Please send bug reports to:
 CVS TREE
 --------
 
+If you want to get the very latest version of netcat6 direct from the source
+code repository then you can use anonymous cvs.  You will need a recent
+version of cvs and use the following commands:
+
+$ cvs -d :pserver:anonymous@cvs.deepspace6.net:/ds6/cvs login
+
+(just press enter at the password prompt)
+
+$ cvs -d :pserver:anonymous@cvs.deepspace6.net:/ds6/cvs co nc6
+
+
+AVAILABILITY
+------------
+
 TODO
 
 
@@ -113,9 +129,3 @@ netcat6 is licensed under the GNU General Public License,
 found in the file COPYING in this distribution, or at:
 
   http://www.fsf.org/licenses/gpl.html
-
-
-AVAILABILITY
-------------
-
-TODO
