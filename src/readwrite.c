@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.22 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.23 2003-01-01 10:05:32 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -48,11 +48,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
 	int retval = 0;
-	size_t local_rcvd = 0;
-	size_t net_rcvd   = 0;		
-	size_t local_sent = 0;
-	size_t net_sent   = 0;		
-	bool half_close_mode = is_flag_set(HALF_CLOSE_MODE);
 #ifndef NDEBUG
 	bool very_verbose_mode = is_flag_set(VERY_VERBOSE_MODE);
 #endif
@@ -154,7 +149,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_read(ios1);
 
 			if (rr > 0) {
-				net_rcvd += rr;
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
 					warn("read %d bytes from ios1", rr);
@@ -163,14 +157,11 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE) {
 					warn("closing read of ios1");
-					if (half_close_mode == TRUE)
-						warn("closing write of ios2");
+					warn("closing write of ios2");
 				}
 #endif
 				ios_shutdown(ios1, SHUT_RD);
-				/* send a half close to ios2 */
-				if (half_close_mode == TRUE)
-					ios_shutdown(ios2, SHUT_WR);
+				ios_shutdown(ios2, SHUT_WR);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios1:
 				 * print an error message and exit. */
@@ -184,7 +175,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_read(ios2);
 
 			if (rr > 0) {
-				local_rcvd += rr;
 #ifndef NDEBUG
 				if (very_verbose_mode == TRUE)
 					warn("read %d bytes from ios2", rr);
@@ -193,14 +183,11 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE) {
 					warn("closing read of ios2");
-					if (half_close_mode == TRUE)
-						warn("closing write of ios2");
+					warn("closing write of ios2");
 				}
 #endif
 				ios_shutdown(ios2, SHUT_RD);
-				/* send a half close to ios1 */
-				if (half_close_mode == TRUE)
-					ios_shutdown(ios1, SHUT_WR);
+				ios_shutdown(ios1, SHUT_WR);
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while reading ios2:
 				 * print an error message and exit. */
@@ -215,7 +202,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_write(ios1);
 
 			if (rr > 0) {
-				net_sent += rr;
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
 					warn("wrote %d bytes to ios1", rr);
@@ -250,7 +236,6 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 			rr = ios_write(ios2);
 
 			if (rr > 0) {
-				local_sent += rr;
 #ifndef NDEBUG				
 				if (very_verbose_mode == TRUE)
 					warn("wrote %d bytes to ios2", rr);
@@ -280,9 +265,5 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		}
 	}
 	
-	if (is_flag_set(VERBOSE_MODE) == TRUE)
-		warn("connection closed (sent %d, rcvd %d)",
-		     net_sent, net_rcvd);
-
 	return retval;
 }

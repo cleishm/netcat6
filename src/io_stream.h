@@ -38,9 +38,14 @@ typedef struct io_stream_t
 	size_t mtu;        /* Maximum Transmition Unit */
 	size_t nru;        /* miNimum Receive Unit */
 
+	bool half_close_suppress; /* true if half-closes should be suppressed */
+
 	int hold_time;     /* time to hold the stream open after read closes,
 	                      -1 means hold indefinately */
 	struct timeval read_closed; /* the time that the read was closed */
+
+	size_t rcvd;       /* bytes received */
+	size_t sent;       /* bytes sent */
 } io_stream;
 
 
@@ -56,6 +61,9 @@ void ios_assign_stdio(io_stream *ios);
 /* sets the miNimum Receive Unit
  * this is the minimum amount of data that can be handled in any read */
 #define ios_set_nru(IOS, U)	((IOS)->nru = (U))
+
+/* sets half closes suppression */
+#define ios_suppress_half_close(IOS, B)	((IOS)->half_close_suppress = (B))
 
 /* sets the time (in sec) after read is shutdown that timeout occurs */
 #define ios_set_hold_timeout(IOS, T)  ((IOS)->hold_time = (T))
@@ -85,5 +93,8 @@ ssize_t ios_write(io_stream *ios);
 /* shutdown the stream as per shutdown(2) */
 void ios_shutdown(io_stream *ios, int how);
 
+
+#define ios_bytes_received(IOS)	((IOS)->rcvd)
+#define ios_bytes_sent(IOS)	((IOS)->sent)
 
 #endif /* IO_STREAM_H */

@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.10 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.11 2003-01-01 10:05:32 chris Exp $");
 
 
 
@@ -50,8 +50,13 @@ void io_stream_init(io_stream *ios, circ_buf *inbuf, circ_buf *outbuf)
 	ios->mtu = 0; /* unlimited */
 	ios->nru = 0; /* unlimited */
 
+	ios->half_close_suppress = FALSE;
+
 	ios->hold_time = -1; /* infinite */
 	timerclear(&(ios->read_closed));
+
+	ios->rcvd = 0;
+	ios->sent = 0;
 }
 
 
@@ -157,31 +162,44 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 ssize_t ios_read(io_stream *ios)
 {
+	ssize_t rr;
+
 	/* should only be called if ios_schedule_read returned a true result */
 	assert(ios->fd_in >= 0);
 	assert(cb_space(ios->buf_in) >= ios->nru);
 
 	/* read as much as possible */
 	if (ios->socktype == SOCK_DGRAM)
-		return cb_recv(ios->buf_in, ios->fd_in, 0, NULL, 0);
+		rr = cb_recv(ios->buf_in, ios->fd_in, 0, NULL, 0);
 	else
-		return cb_read(ios->buf_in, ios->fd_in, 0);
+		rr = cb_read(ios->buf_in, ios->fd_in, 0);
 
+	if (rr > 0)
+		ios->rcvd += rr;
+
+	return rr;
 }
 
 
 
 ssize_t ios_write(io_stream *ios)
 {
+	ssize_t rr;
+
 	/* should only be called if ios_schedule_write returned a true result */
 	assert(ios->fd_out >= 0);
 	assert(!cb_is_empty(ios->buf_out));
 
 	/* write as much as the mtu allows */
 	if (ios->socktype == SOCK_DGRAM)
-		return cb_send(ios->buf_out, ios->fd_out, ios->mtu, NULL, 0);
+		rr = cb_send(ios->buf_out, ios->fd_out, ios->mtu, NULL, 0);
 	else
-		return cb_write(ios->buf_out, ios->fd_out, ios->mtu);
+		rr = cb_write(ios->buf_out, ios->fd_out, ios->mtu);
+
+	if (rr > 0)
+		ios->sent += rr;
+
+	return rr;
 }
 
 
@@ -205,10 +223,12 @@ void ios_shutdown(io_stream* ios, int how)
 		/* close the input */
 		if (ios->fd_in >= 0) {
 			/* if the fd is duplex, use shutdown */
-			if (ios->fd_in == ios->fd_out)
-				shutdown(ios->fd_in, SHUT_RD);
-			else
+			if (ios->fd_in == ios->fd_out) {
+				if (!ios->half_close_suppress)
+					shutdown(ios->fd_in, SHUT_RD);
+			} else {
 				close(ios->fd_in);
+			}
 			ios->fd_in = -1;
 			/* record the read shutdown time */
 			gettimeofday(&(ios->read_closed), NULL);
@@ -218,10 +238,12 @@ void ios_shutdown(io_stream* ios, int how)
 		/* close the output */
 		if (ios->fd_out >= 0) {
 			/* if the fd is duplex, use shutdown */
-			if (ios->fd_in == ios->fd_out)
-				shutdown(ios->fd_out, SHUT_WR);
-			else
+			if (ios->fd_in == ios->fd_out) {
+				if (!ios->half_close_suppress)
+					shutdown(ios->fd_out, SHUT_WR);
+			} else {
 				close(ios->fd_out);
+			}
 			ios->fd_out = -1;
 		}
 	}

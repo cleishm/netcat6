@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.24 2002-12-30 23:14:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.25 2003-01-01 10:05:32 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -51,35 +51,35 @@ static unsigned long flags_mask;
 /* long options */
 static const struct option long_options[] = {
 #define OPT_HELP		0
-	{"help",          FALSE, NULL, 'h'},
+	{"help",                FALSE, NULL, 'h'},
 #define OPT_LISTEN		1
-	{"listen",        FALSE, NULL, 'l'},
+	{"listen",              FALSE, NULL, 'l'},
 #define OPT_PORT		2
-	{"port",          TRUE,  NULL, 'p'},
-#define OPT_HOLD_TIMEOUTS	3
-	{"hold-timeouts", TRUE,  NULL, 'q'},
+	{"port",                TRUE,  NULL, 'p'},
+#define OPT_HOLD_TIMEOUT	3
+	{"hold-timeout",        TRUE,  NULL, 'q'},
 #define OPT_ADDRESS		4
-	{"address",       TRUE,  NULL, 's'},
+	{"address",             TRUE,  NULL, 's'},
 #define OPT_UDP			5
-	{"udp",           FALSE, NULL, 'u'},
+	{"udp",                 FALSE, NULL, 'u'},
 #define OPT_TIMEOUT		6
-	{"timeout",       TRUE,  NULL, 'w'},
+	{"timeout",             TRUE,  NULL, 'w'},
 #define OPT_TRANSFER		7
-	{"transfer",      FALSE, NULL, 'x'},
+	{"transfer",            FALSE, NULL, 'x'},
 #define OPT_RECV_ONLY		8
-	{"recv-only",     FALSE, NULL,  0 },
+	{"recv-only",           FALSE, NULL,  0 },
 #define OPT_SEND_ONLY		9
-	{"send-only",     FALSE, NULL,  0 },
+	{"send-only",           FALSE, NULL,  0 },
 #define OPT_BUFFER_SIZE		10
-	{"buffer-size",   TRUE,  NULL,  0 },
+	{"buffer-size",         TRUE,  NULL,  0 },
 #define OPT_MTU			11
-	{"mtu",           TRUE,  NULL,  0 },
+	{"mtu",                 TRUE,  NULL,  0 },
 #define OPT_NRU			12
-	{"nru",           TRUE,  NULL,  0 },
+	{"nru",                 TRUE,  NULL,  0 },
 #define OPT_HALF_CLOSE		13
-	{"half-close",    FALSE, NULL,  0 },
+	{"half-close",          FALSE, NULL,  0 },
 #define OPT_DISABLE_NAGLE	14
-	{"disable-nagle", FALSE, NULL,  0 },
+	{"disable-nagle",       FALSE, NULL,  0 },
 #define OPT_MAX			15
 	{0, 0, 0, 0}
 };
@@ -130,8 +130,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				remote_nru = safe_atoi(optarg);
 				break;
 			case OPT_HALF_CLOSE:
-				set_flag(HALF_CLOSE_MODE);
 				/* keep remote open after half close */
+				ios_suppress_half_close(
+					&(attrs->remote_stream), FALSE);
 				ios_set_hold_timeout(
 					&(attrs->remote_stream), -1);
 				break;
@@ -324,8 +325,8 @@ static void print_usage(FILE *fp)
 "  -l, --listen      Listen mode, for inbound connects\n"
 "  -n                Numeric-only IP addresses, no DNS\n" 
 "  -p, --port=PORT   Local source port\n"
-"  -q, --hold-timeouts=SEC1[:SEC2]\n"
-"                    Set hold timeouts\n"
+"  -q, --hold-timeout=SEC1[:SEC2]\n"
+"                    Set hold timeout(s)\n"
 "  -s, --address=ADDRESS\n"
 "                    Local source address\n"
 "  -u, --udp         Require use of UDP\n"

@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.11 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.12 2003-01-01 10:05:32 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -62,6 +62,9 @@ void connection_attributes_init(connection_attributes *attrs)
 	 * which means that as soon as the remote read stream closes, the
 	 * entire connection will be torn down */
 	ios_set_hold_timeout(&(attrs->remote_stream), 0);
+
+	/* by default we don't send TCP half closes to the remote system */
+	ios_suppress_half_close(&(attrs->remote_stream), TRUE);
 
 	/* no connect timeout */
 	attrs->connect_timeout = -1;

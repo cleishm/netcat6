@@ -34,8 +34,7 @@
 #define SEND_DATA_ONLY		0x00000040
 #define VERBOSE_MODE		0x00000080
 #define VERY_VERBOSE_MODE	0x00000100
-#define HALF_CLOSE_MODE		0x00000200
-#define DISABLE_NAGLE		0x00000400
+#define DISABLE_NAGLE		0x00000200
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs);
 bool is_flag_set(unsigned long mask);
