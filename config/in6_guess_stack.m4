@@ -3,8 +3,8 @@ dnl IN6_GUESS_STACK(ipv6,ipv6libdir,ipv6lib,CFLAGS,LIBS)
 dnl ====================================================
 AC_DEFUN(IN6_GUESS_STACK,[
 	AC_MSG_CHECKING([IPv6 stack type])
-	AC_CACHE_VAL([usagi_cv_ipv6_stack],[
-	usagi_cv_ipv6_stack=unknown
+	AC_CACHE_VAL([ipv6_stack],[
+	ipv6_stack=unknown
 	for inet6_i in inria kame usagi linux linux_inet6 toshiba v6d zeta solaris7; do
 		case ${inet6_i} in
 		inria)	
@@ -14,8 +14,8 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef IPV6_INRIA_VERSION
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		kame)	
@@ -25,8 +25,8 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef __KAME__
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		usagi)
@@ -36,8 +36,8 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef __USAGI__
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		linux)	
@@ -47,15 +47,15 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		linux_inet6)
 			dnl http://www.v6.linux.or.jp/
 			if test -d /usr/inet6; then
-				if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-					usagi_cv_ipv6_stack=${inet6_i}
+				if test "X$ipv6_stack" = "Xunknown"; then
+					ipv6_stack=${inet6_i}
 				fi
 			fi
 			;;
@@ -65,8 +65,8 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef _TOSHIBA_INET6
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		v6d)
@@ -75,8 +75,8 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef __V6D__
 %%%yes%%%
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		zeta)	
@@ -85,16 +85,16 @@ AC_DEFUN(IN6_GUESS_STACK,[
 #ifdef _ZETA_MINAMI_INET6
 yes
 #endif],
-			[if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-				usagi_cv_ipv6_stack=${inet6_i}
+			[if test "X$ipv6_stack" = "Xunknown"; then
+				ipv6_stack=${inet6_i}
 			fi])
 			;;
 		solaris7)
 			case "$host" in
 			*-*-solaris*)
 				if test -c /devices/pseudo/ip6@0:ip6; then
-					if test "X$usagi_cv_ipv6_stack" = "Xunknown"; then
-						usagi_cv_ipv6_stack=${inet6_i}
+					if test "X$ipv6_stack" = "Xunknown"; then
+						ipv6_stack=${inet6_i}
 					fi
 				fi
 			esac
@@ -108,12 +108,12 @@ yes
 
 	inet6_ipv6type=$1
 	if test "X$inet6_ipv6type" = "X"; then
-		inet6_ipv6type=$usagi_cv_ipv6_stack
+		inet6_ipv6type=$ipv6_stack
 		AC_MSG_RESULT([$inet6_ipv6type (guessed)])
-	elif test "X$usagi_cv_ipv6_stack" = "X$inet6_ipv6type"; then
+	elif test "X$ipv6_stack" = "X$inet6_ipv6type"; then
 		AC_MSG_RESULT([$inet6_ipv6type])
 	else
-		AC_MSG_RESULT([$inet6_ipv6type, while $usagi_cv_ipv6_stack is guessed])
+		AC_MSG_RESULT([$inet6_ipv6type, while $ipv6_stack is guessed])
 	fi
 
 	inet6_ipv6lib=
