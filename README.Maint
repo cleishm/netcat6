@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.10 2003-01-25 14:42:36 mauro Exp $
+$Id: README.Maint,v 1.11 2003-03-16 11:55:36 chris Exp $
 
 
 Source layout
@@ -171,18 +171,19 @@ The most important coding style rules for nc6 are:
 		return ret;
 	}
   
-* Do not to use global (non static) variables. In the 100% of cases there
-  is a smarter way to achieve the same result you would get using global
-  variables.
+* Avoid declaring global variables, especially external (non-static) ones.
+  There is rarely a need for this and it can indicate a badly thought out
+  design.
 
-* Try not to #define preprocessor constants when possible (especially constants
-  that are used only inside a single module). The definition:
+* Try not to #define preprocessor constants when possible (usually this is
+  when the constant is only used in a single module and will be inlined by the
+  compiler).  The definition:
 
-  static const int VERY_VERBOSE_MODE = 0x02;
+  static const int SOME_NUMBER = 0x02;
 
   is much better than:
 
-  #define VERY_VERBOSE_MODE 0x02
+  #define SOME_NUMBER 0x02
 
 
 
