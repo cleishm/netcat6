@@ -1,6 +1,6 @@
 .TH NC6 1 
 .SH NAME
-nc6 \- TCP/IP swiss army knife
+nc6 \- network swiss army knife
 .SH SYNOPSIS
 .B nc6
 .I "[options...] hostname port"
@@ -61,7 +61,7 @@ instead of hostnames.
 Sets the port number for the local endpoint of the connection.
 .TP 13
 .I \-q, --hold-timeout=SEC1[:SEC2]
-Sets the hold timeout(s) (see "timeouts" section).  Specifying just one value
+Sets the hold timeout(s) (see "TIMEOUTS").  Specifying just one value
 will set the hold timeout on the local endpoint, specifying a second value will
 set the hold timeout on the remote endpoint as well.  Either value can be '0'
 (for instant timeout) or '-' (for no hold timeout, eg. infinite hold).
@@ -81,7 +81,7 @@ is doing.  Use it twice for extra verbosity.
 Timeout for network connects and accepts.
 .TP 13
 .I \-x, --transfer
-File transfer mode (see "file transfer" section).  If listen mode is
+File transfer mode (see "FILE TRANSFER").  If listen mode is
 specified, this is equivalent to "--recv-only --buffer-size=65536" otherwise
 it is equivalent to "--send-only --buffer-size=65536".
 .TP 13
@@ -95,8 +95,8 @@ Only send data, don't receive.  This also disables any hold timeouts.
 Set the buffer size for the remote endpoint (network receives).
 netcat6 does all network reads into this buffer, so it should be large enough
 to minimize excessive reads from the socket and in UDP mode it should be large
-enough to receive an entire datagram (also see --nru).  By default, the buffer
-size is 8192 bytes for TCP connections and 65536 bytes for UDP.
+enough to receive an entire datagram (also see '--nru').  By default, the
+buffer size is 8192 bytes for TCP connections and 65536 bytes for UDP.
 .TP 13
 .I \--mtu=BYTES
 Set the Maximum Transmission Unit for the remote endpoint (network transmits).
@@ -119,8 +119,8 @@ Properly handle (and send) TCP half closes for protocols that support them
 (eg. TCP).
 .TP 13
 .I \--disable-nagle
-Disable the use of the nagle algorithm for TCP connections (see "nagle
-algorithm" section).
+Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
+ALGORITHM").
 .TP 13
 .I \--no-reuseaddr
 Disables the SO_REUSEADDR socket option (this is only useful in listen mode).
@@ -160,8 +160,7 @@ after stdin is closed (eg. by using ^D to send EOF).  By default, the hold
 timeout is disabled for the local endpoint (essentially an 'infinite'
 timeout), and the hold timeout is set to 0 for the remote endpoint (an
 \'instant' timeout).  This means that nc6 closes it's connection immediately
-when the read from the remote server is closed (also, see "HALF CLOSE"
-section).
+when the read from the remote server is closed (also see "HALF CLOSE").
 .SH FILE TRANSFER
 netcat6 can be used to transfer files and data streams efficiently, using the
 \'-x' or '--transfer' command line option.
@@ -223,7 +222,28 @@ However, by specifying the "--half-close" option, netcat6 will keep trying to
 send data to the remote server after the receive stream has closed.  It will
 also close the remote transmit stream when there is no more data to send.
 .SH NAGLE ALGORITHM
-TODO
+Named after its creator, John Nagle, the Nagle algorithm is used to combine
+together small writes to a TCP stream and thus decrease the number of packets
+that must be sent out on the network.
+.P
+This was designed as a means for dealing with what Nagle called the small
+packet problem, created when an application generates data one byte at a time,
+causing the network to be overloaded with packets.  A single character
+originating from a keyboard could result in the an entire packet (the single
+byte plus packet headers) being sent onto the network.
+.P
+The algorithm can, under some situations, add a small delay before the data is
+sent out on the wire - so as to allow for this concatination to occur.  This
+is done in such a way that it is generally unnoticeable for normal
+applications, including interactive applications.
+.P
+There are some situations, such as real-time protocols, that can be adversely
+affected by this small delay, which is why it is possible to disable the Nagle
+algorithm on most systems, using the TCP_NODELAY socket option.
+.P
+.B netcat6
+provides the '--disable-nagle' command line option to disable the Nagle
+algorithm for the connection.
 .SH ERRORS
 TODO
 .SH BUGS
