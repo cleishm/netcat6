@@ -12,7 +12,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			dnl http://www.kame.net/
 			eval inet6_ipv6_${inet6_i}=${inet6_i}
 			eval inet6_cflags_${inet6_i}=
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <netinet/in.h>
 #ifdef IPV6_INRIA_VERSION
 %%%yes%%%
@@ -27,7 +27,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			eval inet6_ipv6lib_${inet6_i}=inet6
 			eval inet6_ipv6libdir_${inet6_i}=/usr/local/v6/lib
 			eval inet6_cflags_${inet6_i}=
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <netinet/in.h>
 #ifdef __KAME__
 %%%yes%%%
@@ -40,7 +40,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			dnl http://www.linux-ipv6.org/
 			eval inet6_ipv6_${inet6_i}=${inet6_i}
 			eval inet6_cflags_${inet6_i}=
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <netinet/in.h>
 #ifdef __USAGI__
 %%%yes%%%
@@ -57,7 +57,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			dnl http://www.v6.linux.or.jp/
 			eval inet6_ipv6_${inet6_i}=${inet6_i}
 			eval inet6_cflags_${inet6_i}=
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <features.h>
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 %%%yes%%%
@@ -83,7 +83,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			eval inet6_ipv6lib_${inet6_i}=inet6
 			eval inet6_ipv6libdir_${inet6_i}=/usr/local/v6/lib
 			eval inet6_cflags_${inet6_i}=
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <sys/param.h>
 #ifdef _TOSHIBA_INET6
 %%%yes%%%
@@ -96,7 +96,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			eval inet6_ipv6_${inet6_i}=${inet6_i}
 			eval inet6_ipv6lib_${inet6_i}=v6
 			eval inet6_cflags_${inet6_i}=-I/usr/local/v6/include
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include </usr/local/v6/include/sys/v6config.h>
 #ifdef __V6D__
 %%%yes%%%
@@ -110,7 +110,7 @@ AC_DEFUN(IN6_GUESS_STACK,[
 			eval inet6_ipv6lib_${inet6_i}=${inet6_i}
 			eval inet6_ipv6libdir_${inet6_i}=/usr/local/v6/lib
 			eval inet6_cflags_${inet6_i}=-I/usr/local/v6/include
-			AC_EGREP_CPP(%%%yes%%%, [dnl
+			AC_EGREP_CPP(%%%yes%%%, [
 #include <sys/param.h>
 #ifdef _ZETA_MINAMI_INET6
 yes
