@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.58 2004-01-14 12:42:51 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.59 2004-01-20 09:21:22 mauro Exp $");
 
 
 
@@ -382,13 +382,14 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	}
 	
 	if (listen_mode == TRUE) {
-		if (local_address.service == NULL) {
 #ifdef HAVE_BLUEZ
-			/* it is ok not to specify a port with sco */
-			if (protocol == SCO_PROTOCOL) break;
+		/* it is ok not to specify a port with sco */
+		if (local_address.service == NULL && protocol != SCO_PROTOCOL) {
+#else
+		if (local_address.service == NULL) {
 #endif
 			warning(_("in listen mode you must specify a port "
-			       "with the -p switch"));
+			          "with the -p switch"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -414,14 +415,15 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			exit(EXIT_FAILURE);
 		}
 		
+#ifdef HAVE_BLUEZ
+		/* it is ok not to specify a port with sco */
+		if (remote_address.address == NULL || 
+		    (remote_address.service == NULL && protocol != SCO_PROTOCOL))
+#else
 		if (remote_address.address == NULL || 
 		    remote_address.service == NULL)
-		{
-#ifdef HAVE_BLUEZ
-			/* it is ok not to specify a port with sco */
-			if (remote_address.address != NULL &&
-			    protocol == SCO_PROTOCOL) break;
 #endif
+		{
 			warning(_("you must specify the address/port couple "
 			       "of the remote endpoint"));
 			print_usage(stderr);
