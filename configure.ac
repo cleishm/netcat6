@@ -192,6 +192,29 @@ else
   fi
 fi
 
+dnl Add extra flags if in profiling mode
+AC_ARG_ENABLE(profiling,
+  AC_HELP_STRING(
+    [--enable-profiling],
+    [enable profiling - useful only for developers]
+  ),
+  [case "${enable_profiling}" in
+  yes)
+    profiling=yes
+    ;;
+  no) 
+    profiling=no
+    ;;
+  *)    
+    AC_MSG_ERROR(bad value ${enable_profiling} for --enable-profiling option) 
+    ;;
+  esac],
+)
+
+if test "X$profiling" = "Xyes"; then
+  NC6_CFLAGS="${NC6_CFLAGS} -pg"
+fi
+
 
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
