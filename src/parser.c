@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.56 2003-10-07 15:27:39 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.57 2004-01-08 17:18:54 mauro Exp $");
 
 
 
@@ -57,53 +57,66 @@ static int _verbosity_level = 0;
 /* long options */
 static const struct option long_options[] = {
 #define OPT_HELP		0
-	{"help",                FALSE, NULL, 'h'},
+	{"help",                no_argument,        NULL, 'h'},
 #define OPT_VERSION		1
-	{"version",             FALSE, NULL,  0 },
+	{"version",             no_argument,        NULL,  0 },
 #define OPT_LISTEN		2
-	{"listen",              FALSE, NULL, 'l'},
+	{"listen",              no_argument,        NULL, 'l'},
 #define OPT_PORT		3
-	{"port",                TRUE,  NULL, 'p'},
+	{"port",                required_argument,  NULL, 'p'},
 #define OPT_HOLD_TIMEOUT	4
-	{"hold-timeout",        TRUE,  NULL, 'q'},
+	{"hold-timeout",        required_argument,  NULL, 'q'},
 #define OPT_ADDRESS		5
-	{"address",             TRUE,  NULL, 's'},
+	{"address",             required_argument,  NULL, 's'},
 #define OPT_UDP			6
-	{"udp",                 FALSE, NULL, 'u'},
+	{"udp",                 no_argument,        NULL, 'u'},
 #define OPT_TIMEOUT		7
-	{"timeout",             TRUE,  NULL, 'w'},
+	{"timeout",             required_argument,  NULL, 'w'},
 #define OPT_IDLE_TIMEOUT	8
-	{"idle-timeout",        TRUE,  NULL, 't'},
+	{"idle-timeout",        required_argument,  NULL, 't'},
 #define OPT_TRANSFER		9
-	{"transfer",            FALSE, NULL, 'x'},
+	{"transfer",            no_argument,        NULL, 'x'},
 #define OPT_RECV_ONLY		10
-	{"recv-only",           FALSE, NULL,  0 },
+	{"recv-only",           no_argument,        NULL,  0 },
 #define OPT_SEND_ONLY		11
-	{"send-only",           FALSE, NULL,  0 },
+	{"send-only",           no_argument,        NULL,  0 },
 #define OPT_BUFFER_SIZE		12
-	{"buffer-size",         TRUE,  NULL,  0 },
+	{"buffer-size",         required_argument,  NULL,  0 },
 #define OPT_MTU			13
-	{"mtu",                 TRUE,  NULL,  0 },
+	{"mtu",                 required_argument,  NULL,  0 },
 #define OPT_NRU			14
-	{"nru",                 TRUE,  NULL,  0 },
+	{"nru",                 required_argument,  NULL,  0 },
 #define OPT_HALF_CLOSE		15
-	{"half-close",          FALSE, NULL,  0 },
+	{"half-close",          no_argument,        NULL,  0 },
 #define OPT_DISABLE_NAGLE	16
-	{"disable-nagle",       FALSE, NULL,  0 },
+	{"disable-nagle",       no_argument,        NULL,  0 },
 #define OPT_NO_REUSEADDR	17
-	{"no-reuseaddr",        FALSE, NULL,  0 },
+	{"no-reuseaddr",        no_argument,        NULL,  0 },
 #define OPT_SNDBUF_SIZE		18
-	{"sndbuf-size",         TRUE,  NULL,  0 },
+	{"sndbuf-size",         required_argument,  NULL,  0 },
 #define OPT_RCVBUF_SIZE		19
-	{"rcvbuf-size",         TRUE,  NULL,  0 },
+	{"rcvbuf-size",         required_argument,  NULL,  0 },
 #define OPT_EXEC		20
-	{"exec",                TRUE,  NULL, 'e'},
+	{"exec",                required_argument,  NULL, 'e'},
 #define OPT_CONTINUOUS		21
-	{"continuous",          FALSE, NULL,  0 },
-#define OPT_MAX			22
+	{"continuous",          no_argument,        NULL,  0 },
+#ifdef HAVE_BLUEZ
+/* OPT_BLUETOOTH and OPT_SCO must be the last 2 entries in long_options */
+#define OPT_BLUETOOTH		22
+	{"bluetooth",           no_argument,        NULL, 'b'},
+#define OPT_SCO			23
+	{"sco",			no_argument,        NULL,  0 },
+#endif
 	{0, 0, 0, 0}
 };
 
+#define OPT_MAX		((sizeof(long_options) / sizeof(long_options[0])) - 1)
+
+#ifdef HAVE_BLUEZ
+#define BLUEZ_OPTIONS	"b"
+#else
+#define BLUEZ_OPTIONS
+#endif
 
 static int parse_int_pair(const char *str, int *first, int *second);
 static void print_usage(FILE *fp);
@@ -148,7 +161,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46e:hlnp:q:s:uvw:x",
+	while ((c = getopt_long(argc, argv, "46e:hlnp:q:s:uvw:x" BLUEZ_OPTIONS,
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
@@ -195,6 +208,11 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			case OPT_CONTINUOUS:
 				ca_set_flag(attrs, CA_CONTINUOUS_ACCEPT);
 				break;
+#ifdef HAVE_BLUEZ
+			case OPT_SCO:
+				protocol = SCO_PROTOCOL;
+				break;
+#endif
 			default:
 				fatal(_("getopt returned unexpected long "
 				      "option offset index %d\n"), option_index);
@@ -207,6 +225,12 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			family = PROTO_IPv6;
 			ca_set_flag(attrs, CA_STRICT_IPV6);
 			break;
+#ifdef HAVE_BLUEZ
+		case 'b':
+			family = PROTO_BLUEZ;
+			protocol = L2CAP_PROTOCOL;
+			break;
+#endif
 		case 'e':
 			assert(optarg != NULL);
 			ca_set_local_exec(attrs, optarg);
@@ -337,9 +361,28 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	{
 		remote_address.service = NULL;
 	}
-
+	
+	switch (family) {
+		case PROTO_UNSPECIFIED:
+		case PROTO_IPv4:
+		case PROTO_IPv6:
+			if (protocol != UDP_PROTOCOL && 
+			    protocol != TCP_PROTOCOL)
+				fatal("unknown/unsupported transport protocol selected");
+#ifdef HAVE_BLUEZ
+		case PROTO_BLUEZ:
+			if (protocol != SCO_PROTOCOL && 
+			    protocol != L2CAP_PROTOCOL)
+				fatal("unknown/unsupported bluez protocol selected");
+#endif
+	}
+	
 	if (listen_mode == TRUE) {
 		if (local_address.service == NULL) {
+#ifdef HAVE_BLUEZ
+			/* it is ok not to specify a port with sco */
+			if (protocol == SCO_PROTOCOL) break;
+#endif
 			warning(_("in listen mode you must specify a port "
 			       "with the -p switch"));
 			print_usage(stderr);
@@ -367,9 +410,14 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			exit(EXIT_FAILURE);
 		}
 		
-		if (remote_address.address == NULL ||
+		if (remote_address.address == NULL || 
 		    remote_address.service == NULL)
 		{
+#ifdef HAVE_BLUEZ
+			/* it is ok not to specify a port with sco */
+			if (remote_address.address != NULL &&
+			    protocol == SCO_PROTOCOL) break;
+#endif
 			warning(_("you must specify the address/port couple "
 			       "of the remote endpoint"));
 			print_usage(stderr);
@@ -448,6 +496,9 @@ static void print_usage(FILE *fp)
 	fprintf(fp, _(
 " -4                     Use only IPv4\n"
 " -6                     Use only IPv6\n"
+#ifdef HAVE_BLUEZ
+" -b, --bluetooth        Use Bluetooth (L2CAP)\n"
+#endif
 " --buffer-size=BYTES    Set buffer size\n"
 " --continuous           Continuously accept connections\n"
 "                        (only in listen mode with --exec)\n"
@@ -467,6 +518,9 @@ static void print_usage(FILE *fp)
 " --rcvbuf-size          Kernel receive buffer size for network sockets\n"
 " --recv-only            Only receive data, don't transmit\n"
 " -s, --address=ADDRESS  Local source address\n"
+#ifdef HAVE_BLUEZ
+" --sco                  Use SCO over Bluetooth\n"
+#endif
 " --send-only            Only transmit data, don't receive\n"
 " --sndbuf-size          Kernel send buffer size for network sockets\n"
 " -t, --idle-timeout=SECONDS\n"
@@ -494,6 +548,7 @@ static void print_version(FILE *fp)
 	"\tMauro Tortonesi\n"
 	"\tChris Leishman\n"
 	"\tSimone Piunno\n"
+	"\tFilippo Natali\n"
 "<http://www.deepspace6.net>\n");
 
 #ifdef ENABLE_IPV6
@@ -502,6 +557,14 @@ _("Configured with IPv6 support\n"));
 #else
 	fprintf(fp,
 _("Configured without IPv6 support\n"));
+#endif
+	
+#ifdef HAVE_BLUEZ
+	fprintf(fp,
+_("Configured with Bluetooth support\n"));
+#else
+	fprintf(fp,
+_("Configured without Bluetooth support\n"));
 #endif
 }
 

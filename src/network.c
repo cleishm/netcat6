@@ -34,7 +34,14 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.48 2003-10-07 15:27:39 mauro Exp $");
+#include <limits.h>
+#ifdef HAVE_BLUEZ
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/sco.h>
+#include <bluetooth/l2cap.h>
+#endif
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.49 2004-01-08 17:18:54 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -45,8 +52,16 @@ static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
 #define CONNECTION_TIMEOUT	-1
 #define CONNECTION_FAILED	-2
 
+/* for SOCK_STREAM and SOCK_SEQPACKET sockets, we need to listen for 
+ * incoming connections. the backlog parameter is set to 5 for backward
+ * compatibility (as it seems that at least some BSD-derived system limit 
+ * the backlog parameter to this value). */
+#ifndef SOMAXCONN
+#define SOMAXCONN 5
+#endif
 
-static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout);
+static int connect_with_timeout(int fd, const struct sockaddr *sa, 
+		                socklen_t salen, int timeout);
 static void listen_once_callback(int fd, int socktype, void *cdata);
 static bool skip_address(const struct addrinfo *ai);
 static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str, 
@@ -58,7 +73,7 @@ static void warn_socket_details(const connection_attributes *attrs,
 
 
 
-int do_connect(const connection_attributes *attrs, int *rt_socktype)
+static int do_connect_ip(const connection_attributes *attrs, int *rt_socktype)
 {
 	const address *remote, *local;
 	int err, fd = -1;
@@ -79,7 +94,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	assert(remote->service != NULL && strlen(remote->service) > 0);
 	assert(local->address == NULL  || strlen(local->address)  > 0);
 	assert(local->service == NULL  || strlen(local->service)  > 0);
-
+	
 	/* setup flags */
 	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE) ? TRUE : FALSE;
 	
@@ -204,7 +219,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 		}
 
 		/* attempt the connection */
-		err = connect_with_timeout(fd, ptr, ca_connect_timeout(attrs));
+		err = connect_with_timeout(fd, ptr->ai_addr, ptr->ai_addrlen, 
+				           ca_connect_timeout(attrs));
 		
 		switch (err) {
 		case CONNECTION_SUCCESS: 
@@ -271,12 +287,122 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 
 
-static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout)
+#ifdef HAVE_BLUEZ
+int do_connect_bluez(const connection_attributes *attrs, int *rt_socktype)
+{
+	const address *remote, *local;
+	int err, fd = -1;
+	struct sockaddr_storage ss;
+	int protocol = 0;
+	socklen_t size = 0;
+
+	/* make sure that attrs is a valid pointer */
+	assert(attrs != NULL);
+	assert(ca_family(attrs) == PROTO_BLUEZ);
+	
+	/* setup the addresses of the two connection endpoints */
+	remote = ca_remote_address(attrs);
+	local  = ca_local_address(attrs);
+	
+	assert(remote->address != NULL && strlen(remote->address) > 0);
+	assert(local->address  == NULL);
+	assert(local->service  == NULL);
+
+	memset(&ss, 0, sizeof(ss));
+	*rt_socktype = SOCK_SEQPACKET;
+	
+	if (ca_protocol(attrs) == SCO_PROTOCOL) {
+		struct sockaddr_sco *ssco = (struct sockaddr_sco*)&ss;
+		
+		assert(remote->service == NULL);
+		
+		protocol = BTPROTO_SCO;
+		size = sizeof(struct sockaddr_sco);
+		
+		ssco->sco_family = AF_BLUETOOTH;
+		str2ba(remote->address, &ssco->sco_bdaddr);
+	} else if (ca_protocol(attrs) == L2CAP_PROTOCOL) {
+		struct sockaddr_l2 *sl2 = (struct sockaddr_l2*)&ss;
+		int psm;
+		
+		assert(remote->service != NULL && strlen(remote->service) > 0);
+		
+		protocol = BTPROTO_L2CAP;
+		size = sizeof(struct sockaddr_l2);
+		
+		sl2->l2_family = AF_BLUETOOTH;
+		str2ba(remote->address, &sl2->l2_bdaddr);
+		
+	        psm = safe_atoi(remote->service);
+		if (psm < 0 || psm > USHRT_MAX) {
+			fatal("psm out of range");
+		}
+		sl2->l2_psm = psm;
+	} else {
+		fatal("protocol not supported");
+	}
+
+	if ((fd = socket(PF_BLUETOOTH, SOCK_SEQPACKET, protocol)) < 0) {
+		fatal("unable to create bluez socket");
+	}
+
+	if (connect(fd, (struct sockaddr *)&ss, size) < 0) {
+		fatal("unable to connect to remote address bluez socket");
+	}
+
+	err = connect_with_timeout(fd, (struct sockaddr *)&ss, size, 
+			           ca_connect_timeout(attrs));
+		
+	switch (err) {
+	case CONNECTION_SUCCESS: 
+		/* everything went ok */
+		break;
+	case CONNECTION_FAILED: 
+		/* connection failed */
+		fatal(_("cannot connect to %s: %s"), remote->address, 
+		      strerror(errno));
+	case CONNECTION_TIMEOUT: 
+		/* connection failed */
+		fatal(_("timeout while connecting to %s"), remote->address);
+	default: 
+		fatal("internal error: invalid result from "
+		      "connect_with_timeout");
+	}
+	
+	return fd;
+}
+#endif /* HAVE_BLUEZ */
+
+
+
+int do_connect(const connection_attributes *attrs, int *rt_socktype)
+{
+	/* make sure that attrs is a valid pointer */
+	assert(attrs != NULL);
+	
+#ifdef HAVE_BLUEZ
+	if (ca_family(attrs) == PROTO_BLUEZ) 
+		return do_connect_bluez(attrs, rt_socktype);
+	else 
+#endif /* HAVE_BLUEZ */
+		return do_connect_ip(attrs, rt_socktype);
+	
+	/* never reached */
+	return -1;
+}
+
+
+
+static int connect_with_timeout(int fd, const struct sockaddr *sa, 
+		                socklen_t salen, int timeout)
 {
 	int err;
 	struct timeval tv, *tvp = NULL;
 	fd_set connect_fdset;
 	socklen_t len;
+	
+	assert(sa != NULL);
+	assert(salen > 0);
 	
 	/* set connect timeout */
 	if (timeout > 0) {
@@ -289,7 +415,7 @@ static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout)
 	nonblock(fd);
 	
 	/* attempt the connection */
-	err = connect(fd, ai->ai_addr, ai->ai_addrlen);
+	err = connect(fd, sa, salen);
 	
 	if (err != 0 && errno == EINPROGRESS) {
 		/* connection is proceeding
@@ -331,8 +457,9 @@ static int connect_with_timeout(int fd, const struct addrinfo *ai, int timeout)
 
 
 
-void do_listen_continuous(const connection_attributes* attrs,
-                          listen_callback callback, void* cdata, int max_accept)
+static void do_listen_continuous_ip(const connection_attributes* attrs,
+                                    listen_callback callback, void* cdata, 
+				    int max_accept)
 {
 	const address *remote, *local;
 	int nfd, i, fd, err, maxfd = -1;
@@ -486,12 +613,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 			continue;
 		}
 
-		/* for stream based sockets, we need to listen for incoming
-		 * connections. the backlog parameter is set to 5 for backward
-		 * compatibility (it seems that at least some BSD-derived
-		 * system limit the backlog parameter to this value). */
 		if (ptr->ai_socktype == SOCK_STREAM) {
-			err = listen(fd, 5);
+			err = listen(fd, SOMAXCONN);
 			if (err != 0)
 				fatal(_("cannot listen on %s: %s"),
 				      name_buf, strerror(errno));
@@ -663,6 +786,213 @@ void do_listen_continuous(const connection_attributes* attrs,
 
 	/* free the bound_socket list */
 	destroy_bound_sockets(bound_sockets);
+}
+
+
+
+#ifdef HAVE_BLUEZ
+static void do_listen_continuous_bluez(const connection_attributes* attrs,
+                                       listen_callback callback, void* cdata, 
+				       int max_accept)
+{
+	const address *remote, *local;
+	int fd = -1;
+	struct sockaddr_storage ss;
+	int protocol = 0;
+	socklen_t size = 0;
+	char name_buf[120];
+
+	/* make sure that the arguments are correct */
+	assert(attrs != NULL);
+	assert(ca_family(attrs) == PROTO_BLUEZ);
+	assert(callback != NULL);
+	
+	/* setup the addresses of the two connection endpoints */
+	remote = ca_remote_address(attrs);
+	local  = ca_local_address(attrs);
+
+	/* make sure all the preconditions are respected */
+	assert(local->address == NULL  || strlen(local->address)  > 0);
+	assert(remote->address == NULL || strlen(remote->address) > 0);
+
+	/* if max_accept is 0, just return */
+	if (max_accept == 0)
+		return;
+	
+	memset(&ss, 0, sizeof(ss));
+	
+	if (ca_protocol(attrs) == SCO_PROTOCOL) {
+		struct sockaddr_sco *ssco = (struct sockaddr_sco*)&ss;
+		
+		assert(local->service == NULL);
+		assert(remote->service == NULL);
+		
+		protocol = BTPROTO_SCO;
+		size = sizeof(struct sockaddr_sco);
+		
+		ssco->sco_family = AF_BLUETOOTH;
+		if (local->address != NULL)
+			str2ba(local->address, &ssco->sco_bdaddr);
+		
+		strncpy(name_buf, local->address, sizeof(name_buf) - 1);
+		name_buf[sizeof(name_buf) - 1] = '\0';
+	} else if (ca_protocol(attrs) == L2CAP_PROTOCOL) {
+		struct sockaddr_l2 *sl2 = (struct sockaddr_l2*)&ss;
+		int psm;
+		
+		assert(local->service  != NULL && strlen(local->service)  > 0);
+		assert(remote->service == NULL || strlen(remote->service) > 0);
+		
+		protocol = BTPROTO_L2CAP;
+		size = sizeof(struct sockaddr_l2);
+		
+		sl2->l2_family = AF_BLUETOOTH;
+		if (local->address != NULL)
+			str2ba(local->address, &sl2->l2_bdaddr);
+		
+	        psm = safe_atoi(local->service);
+		if (psm < 0 || psm > USHRT_MAX) {
+			fatal("psm out of range");
+		}
+		sl2->l2_psm = psm;
+			
+		snprintf(name_buf, sizeof(name_buf), "%s psm %s", 
+			 local->address, local->service);
+	} else {
+		fatal("protocol not supported");
+	}
+
+	if ((fd = socket(PF_BLUETOOTH, SOCK_SEQPACKET, protocol)) < 0) {
+		fatal(_("cannot create the socket: %s"), strerror(errno));
+	}
+
+	if (bind(fd, (struct sockaddr *)&ss, size) < 0) {
+		fatal(_("bind to source %s failed: %s"),
+		      name_buf, strerror(errno));
+	}
+
+	if (listen(fd, SOMAXCONN) != 0) {
+		fatal(_("cannot listen on %s: %s"), name_buf, 
+		      strerror(errno));
+	}
+
+	if (verbose_mode())
+		warning(_("listening on %s ..."), name_buf);
+	
+	/* enter into the accept loop */
+ 	for (;;) {
+		fd_set accept_fdset;
+		struct timeval tv, *tvp = NULL;
+		struct sockaddr_storage dest;
+		socklen_t destlen;
+		int ns, err;
+		char c_name_buf[120];
+
+		FD_ZERO(&accept_fdset);
+		FD_SET(fd, &accept_fdset);
+
+		/* setup timeout */
+		if (ca_connect_timeout(attrs) > 0) {
+			tv.tv_sec = (time_t)ca_connect_timeout(attrs);
+			tv.tv_usec = 0;
+			tvp = &tv;
+		}
+
+		/* wait for an incoming connection */
+		err = select(fd + 1, &accept_fdset, NULL, NULL, tvp);
+
+		if (err == 0)
+			fatal(_("connection timed out"));
+		
+		if (err < 0) {
+			if (errno == EINTR) continue;
+			fatal(_("select error: %s"), strerror(errno));
+		}
+
+		assert(FD_ISSET(fd, &accept_fdset));
+
+		destlen = sizeof(dest);	
+		ns = accept(fd, (struct sockaddr *)&dest, &destlen);
+		if (ns < 0)
+			fatal(_("accept failed: %s"), strerror(errno));
+
+		/* get names for each end of the connection */
+		if (verbose_mode()) {
+			struct sockaddr_storage src;
+			socklen_t srclen = sizeof(src);
+
+			/* find out what address the connection was to */
+			err = getsockname(ns, (struct sockaddr *)&src, &srclen);
+			if (err < 0)
+				fatal(_("getsockname failed: %s"),
+				      strerror(errno));
+
+			if (ca_protocol(attrs) == SCO_PROTOCOL) {
+				struct sockaddr_sco *ssco = (struct sockaddr_sco *)&src;
+				
+				safe_ba2str(&ssco->sco_bdaddr, c_name_buf, sizeof(c_name_buf));
+			} else {
+				struct sockaddr_l2 *sl2 = (struct sockaddr_l2 *)&src;
+				size_t len;
+				
+				assert(ca_protocol(attrs) == L2CAP_PROTOCOL);
+
+				safe_ba2str(&sl2->l2_bdaddr, c_name_buf, sizeof(c_name_buf));
+				
+				len = strlen(c_name_buf);
+				snprintf(c_name_buf + len, sizeof(c_name_buf) - len, 
+					 " psm %s", local->service);
+			}
+		}
+
+		/* check if connections from this client are allowed */
+		if ((remote == NULL) ||
+		    (remote->address == NULL && remote->service == NULL) ||
+		    (is_allowed((struct sockaddr*)&dest,remote,attrs) == TRUE))
+		{
+
+			if (verbose_mode()) {
+				warning(_("connect to %s from %s"),
+				        name_buf, c_name_buf);
+			}
+
+			/* give details about the new socket */
+			if (very_verbose_mode())
+				warn_socket_details(attrs, ns, SOCK_SEQPACKET);
+
+			callback(ns, SOCK_SEQPACKET, cdata);
+
+			if (max_accept > 0 && --max_accept == 0)
+				break;
+		} else {
+			close(ns);
+
+			if (verbose_mode()) {
+				warning(_("refused connect to %s from %s"),
+				     name_buf, c_name_buf);
+			}
+		}
+	}
+
+	/* close the listening socket */
+	close(fd);
+}
+#endif /* HAVE_BLUEZ */
+
+
+
+void do_listen_continuous(const connection_attributes* attrs,
+                          listen_callback callback, void* cdata, int max_accept)
+{
+	/* make sure that attrs is a valid pointer */
+	assert(attrs != NULL);
+	
+#ifdef HAVE_BLUEZ
+	if (ca_family(attrs) == PROTO_BLUEZ) 
+		do_listen_continuous_bluez(attrs, callback, cdata, max_accept);
+	else 
+#endif /* HAVE_BLUEZ */
+		do_listen_continuous_ip(attrs, callback, cdata, max_accept);
 }
 
 
@@ -858,6 +1188,11 @@ static void warn_socket_details(const connection_attributes *attrs,
 	
 	/* announce the socket in very verbose mode */
 	switch (socktype) {
+#ifdef HAVE_BLUEZ
+	case SOCK_SEQPACKET:
+		warning(_("using seqpacket socket"));
+		break;
+#endif /* HAVE_BLUEZ */
 	case SOCK_STREAM:
 		warning(_("using stream socket"));
 		break;
@@ -865,7 +1200,7 @@ static void warn_socket_details(const connection_attributes *attrs,
 		warning(_("using datagram socket"));
 		break;
 	default:
-		fatal(_("internal error: unsupported socktype %d"), socktype);
+		fatal(_("internal error: unsupported socket type %d"), socktype);
 	}
 
 	/* announce the real sndbuf size */

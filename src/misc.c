@@ -36,7 +36,12 @@
 #include <paths.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.21 2003-10-07 15:27:39 mauro Exp $");
+#ifdef HAVE_BLUEZ
+#include <stdint.h> /* needed for uint8_t */
+#include <bluetooth/bluetooth.h>
+#endif
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.22 2004-01-08 17:18:54 mauro Exp $");
 
 
 
@@ -221,5 +226,16 @@ int safe_atoi(const char *str)
 	if (*c != '\0') fatal(_("error parsing integer from string"));
 
 	return ((int)res);
+}
+#endif
+
+#ifdef HAVE_BLUEZ
+int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen)
+{
+	uint8_t b[6];
+
+	baswap((bdaddr_t *)b, ba);
+	return snprintf(str, strlen, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+			b[0], b[1], b[2], b[3], b[4], b[5]);
 }
 #endif

@@ -27,6 +27,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#ifdef HAVE_BLUEZ
+#include <bluetooth/bluetooth.h>
+#endif
+
 #undef  MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #undef  MIN
@@ -55,6 +59,10 @@ int safe_atoi(const char *str);
 #define safe_atoi atoi
 #endif
 
+#ifdef HAVE_BLUEZ
+int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen);
+#endif
+	
 /* operations on timevals - copied from BSD sys/time.h */
 #ifndef timerclear
 #define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0

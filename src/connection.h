@@ -29,12 +29,15 @@
 typedef enum sock_family_t {
 	PROTO_UNSPECIFIED,
 	PROTO_IPv6,
-	PROTO_IPv4
+	PROTO_IPv4,
+	PROTO_BLUEZ
 } sock_family;
 
 typedef enum sock_protocol_t {
 	TCP_PROTOCOL,
-	UDP_PROTOCOL
+	UDP_PROTOCOL,
+	SCO_PROTOCOL,
+	L2CAP_PROTOCOL
 } sock_protocol;
 
 typedef struct address_t
