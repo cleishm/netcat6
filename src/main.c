@@ -37,7 +37,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.32 2003-03-26 20:22:13 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.33 2003-03-26 20:23:28 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -152,6 +152,7 @@ static void accept_callback(int fd, int socktype, void *cdata)
 	int size;
 	char *new_name;
 	accept_callback_data* adata = (accept_callback_data*)cdata;
+	int retval;
 
 	/* fork and let the parent return */
 	pid = fork();
@@ -169,7 +170,7 @@ static void accept_callback(int fd, int socktype, void *cdata)
 	program_name = new_name;
 	
 	/* issue callback */
-	adata->callback(adata->attrs, fd, socktype);
+	retval = adata->callback(adata->attrs, fd, socktype);
 	exit((retval)? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
