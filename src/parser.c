@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.39 2003-01-13 20:30:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.40 2003-01-15 00:08:53 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -52,37 +52,39 @@ static unsigned long flags_mask;
 static const struct option long_options[] = {
 #define OPT_HELP		0
 	{"help",                FALSE, NULL, 'h'},
-#define OPT_LISTEN		1
+#define OPT_VERSION		1
+	{"version",             FALSE, NULL,  0 },
+#define OPT_LISTEN		2
 	{"listen",              FALSE, NULL, 'l'},
-#define OPT_PORT		2
+#define OPT_PORT		3
 	{"port",                TRUE,  NULL, 'p'},
-#define OPT_HOLD_TIMEOUT	3
+#define OPT_HOLD_TIMEOUT	4
 	{"hold-timeout",        TRUE,  NULL, 'q'},
-#define OPT_ADDRESS		4
+#define OPT_ADDRESS		5
 	{"address",             TRUE,  NULL, 's'},
-#define OPT_UDP			5
+#define OPT_UDP			6
 	{"udp",                 FALSE, NULL, 'u'},
-#define OPT_TIMEOUT		6
+#define OPT_TIMEOUT		7
 	{"timeout",             TRUE,  NULL, 'w'},
-#define OPT_TRANSFER		7
+#define OPT_TRANSFER		8
 	{"transfer",            FALSE, NULL, 'x'},
-#define OPT_RECV_ONLY		8
+#define OPT_RECV_ONLY		9
 	{"recv-only",           FALSE, NULL,  0 },
-#define OPT_SEND_ONLY		9
+#define OPT_SEND_ONLY		10
 	{"send-only",           FALSE, NULL,  0 },
-#define OPT_BUFFER_SIZE		10
+#define OPT_BUFFER_SIZE		11
 	{"buffer-size",         TRUE,  NULL,  0 },
-#define OPT_MTU			11
+#define OPT_MTU			12
 	{"mtu",                 TRUE,  NULL,  0 },
-#define OPT_NRU			12
+#define OPT_NRU			13
 	{"nru",                 TRUE,  NULL,  0 },
-#define OPT_HALF_CLOSE		13
+#define OPT_HALF_CLOSE		14
 	{"half-close",          FALSE, NULL,  0 },
-#define OPT_DISABLE_NAGLE	14
+#define OPT_DISABLE_NAGLE	15
 	{"disable-nagle",       FALSE, NULL,  0 },
-#define OPT_NO_REUSEADDR	15
+#define OPT_NO_REUSEADDR	16
 	{"no-reuseaddr",        FALSE, NULL,  'd' },
-#define OPT_MAX			16
+#define OPT_MAX			17
 	{0, 0, 0, 0}
 };
 
@@ -91,6 +93,7 @@ static void set_flag(unsigned long mask);
 static void unset_flag(unsigned long mask);
 static int parse_int_pair(const char *str, int *first, int *second);
 static void print_usage(FILE *fp);
+static void print_version(FILE *fp);
 
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
@@ -125,6 +128,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
  		switch (c) {
 		case 0:
 			switch (option_index) {
+			case OPT_VERSION:
+				print_version(stdout);
+				exit(EXIT_SUCCESS);
 			case OPT_RECV_ONLY:
 				set_flag(RECV_DATA_ONLY);
 				break;
@@ -393,7 +399,27 @@ static void print_usage(FILE *fp)
 "                    Disable nagle algorithm for TCP connections\n"
 "      --no-reuseaddr\n"
 "                    Disable SO_REUSEADDR socket option (only in listen mode)\n"
+"      --version     Display nc6 version information\n"
 "\n");
+}
+
+
+
+static void print_version(FILE *fp)
+{
+	fprintf(fp,
+"%s version %s\n", PACKAGE, VERSION);
+	fprintf(fp,
+"Copyright (C) 2001-2003\n"
+	"\tMauro Tortonesi\n"
+	"\tChris Leishman\n"
+	"\tSimone Piunno\n"
+"<http://www.deepspace6.net>\n"
+"Configured with "
+#ifndef ENABLE_IPV6
+	"no "
+#endif
+	"IPv6 support\n");
 }
 
 
