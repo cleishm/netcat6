@@ -84,11 +84,17 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv);
 
 
 /* read into the input buffer.
- * should only be called if ios_schedule_read returned a true value */
+ * should only be called if ios_schedule_read returned a true value.
+ * returns the total bytes read, or a negative error code */
 ssize_t ios_read(io_stream *ios);
 /* write from the output buffer.
- * should only be called if ios_schedule_write returned a true value */
+ * should only be called if ios_schedule_write returned a true value
+ * returns the total bytes read, or a negative error code */
 ssize_t ios_write(io_stream *ios);
+
+/* error return values from ios_read/ios_write */
+#define IOS_FAILED	-1
+#define IOS_EOF		-2
 
 
 /* signal that no more data will be added to the output buffer.  Once the
