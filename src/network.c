@@ -30,12 +30,6 @@
 #include <unistd.h>
 #include <assert.h>
 
-/* buffer size for warning messages */
-static const size_t WARN_MESSAGE_SIZE = 512;
-
-/* maximum number of fd's to listen for connections on */
-static const size_t MAX_LISTEN_FDS = 8;
-
 
 
 static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
@@ -49,11 +43,11 @@ static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 	/* Move all ipv6 addresses to the start of the list - keeping
 	 * them in original order */
 
-	if (ai->ai_family == AF_INET6)
+	if (ai->ai_family == PF_INET6)
 		lastv6 = ai;
 
 	for (ptr = ai; ptr && ptr->ai_next; ptr = ptr->ai_next) {
-		if (ptr->ai_next->ai_family == AF_INET6) {
+		if (ptr->ai_next->ai_family == PF_INET6) {
 			tmp = ptr->ai_next;
 			ptr->ai_next = tmp->ai_next;
 			if (lastv6) {
@@ -160,7 +154,7 @@ void do_connect(connection_attributes *attrs)
 		if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 		
 #ifdef IPV6_V6ONLY
-		if (ptr->ai_family == AF_INET6) {
+		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on,
@@ -236,22 +230,29 @@ void do_connect(connection_attributes *attrs)
 			break;
 	}
 
+	/* either all possibilities were exahusted, or a connection was made */
 	assert(ptr == NULL || fd >= 0);
 	
 	/* if the connection failed, output an error message */
 	if (ptr == NULL) {
+		/* if a connection was attempted, an error has already been output */
 		if (connect_attempted == FALSE)
 			fatal("forward lookup returned no usable socket types");
 		exit(EXIT_FAILURE);
 	}
 
-	/* cleanup addrinfo structure */
-	freeaddrinfo(res);
-
 	/* let the user know the connection has been established */
 	if (is_flag_set(VERBOSE_MODE)) {
 		warn("%s [%s] %s (%s) open", hbuf_rev, hbuf_num, sbuf_num, sbuf_rev);
 	}
+
+	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		warn("using %s socket",
+			(ptr->ai_socktype == SOCK_STREAM)? "stream":"datagram");
+	}
+
+	/* cleanup addrinfo structure */
+	freeaddrinfo(res);
 
 	/* fill out the io_streams for the local and remote */
 	ios_assign_stdio(&(attrs->local_stream));
@@ -260,13 +261,65 @@ void do_connect(connection_attributes *attrs)
 
 
 
+/* used to store the socktype of each fd being listened on in do_listen */
+typedef struct fd_socktype_t {
+	int fd;
+	int socktype;
+	struct fd_socktype_t* next;
+} fd_socktype;
+
+
+
+/* add a new fd/socktype pair to the list */
+static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
+		int fd, int socktype)
+{
+	fd_socktype* fdnew;
+	fdnew = (fd_socktype*) xmalloc(sizeof(fd_socktype));
+	fdnew->fd = fd;
+	fdnew->socktype = socktype;
+	/* prepend to the start of the list */
+	fdnew->next = fd_socktypes;
+	return fdnew;
+}
+
+
+
+/* retrieve a socktype for a given fd from the list */
+static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
+{
+	assert(fd_socktypes);
+	while (fd_socktypes && fd_socktypes->fd != fd)
+		fd_socktypes = fd_socktypes->next;
+	return (fd_socktypes)? fd_socktypes->socktype : -1;
+}
+
+
+
+/* destroy an fd_socktype list */
+static void destroy_fd_socktypes(fd_socktype* fd_socktypes)
+{
+	fd_socktype* tmp;
+	while (fd_socktypes) {
+		tmp = fd_socktypes;
+		fd_socktypes = fd_socktypes->next;
+		free(tmp);
+	}
+}
+
+
+
 void do_listen(connection_attributes *attrs)
 {
 	address *remote, *local;
-	int nfd, i, fd, err, ns = -1, maxfd = -1;
+	int nfd, i, fd, err, ns = -1, socktype = -1, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
 	char hbuf_num[NI_MAXHOST + 1];
 	char sbuf_num[NI_MAXSERV + 1];
+	char c_hbuf_rev[NI_MAXHOST + 1];
+	char c_hbuf_num[NI_MAXHOST + 1];
+	char c_sbuf_num[NI_MAXSERV + 1];
+	struct fd_socktype_t* fd_socktypes = NULL;
 	fd_set accept_fdset;
 
 	assert(attrs != NULL);
@@ -317,13 +370,9 @@ void do_listen(connection_attributes *attrs)
 	nfd = 0;	
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next) {
 
-		/* only accept socktypes we can handle */
+		/* only use socktypes we can handle */
 		if (ptr->ai_socktype != SOCK_STREAM && ptr->ai_socktype != SOCK_DGRAM)
 			continue;
-
-		/* sanity check */
-		assert((attrs->type == UDP_SOCKET && ptr->ai_socktype == SOCK_DGRAM) || 
-		       (attrs->type == TCP_SOCKET && ptr->ai_socktype == SOCK_STREAM));
 
 		/* get the numeric name for this source as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
@@ -339,7 +388,7 @@ void do_listen(connection_attributes *attrs)
 		if (fd < 0) fatal("cannot create the socket: %s", strerror(errno));
 
 #ifdef IPV6_V6ONLY
-		if (ptr->ai_family == AF_INET6) {
+		if (ptr->ai_family == PF_INET6) {
 			int on = 1;
 			/* in case of error, we will go on anyway... */
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
@@ -379,6 +428,9 @@ void do_listen(connection_attributes *attrs)
 			warn("listening on %s (%s) ...",
 			      hbuf_num, sbuf_num, strerror(errno));
 
+		/* add fd to fd_socktypes (just add to the head of the list) */
+		fd_socktypes = add_fd_socktype(fd_socktypes, fd, ptr->ai_socktype);
+
 		/* add fd to accept_fdset */
 		FD_SET(fd, &accept_fdset);
 		maxfd = MAX(maxfd, fd);
@@ -395,9 +447,6 @@ void do_listen(connection_attributes *attrs)
 		fd_set tmp_ap_fdset;
 		struct sockaddr_storage dest;
 		socklen_t destlen;
-		char c_hbuf_rev[NI_MAXHOST + 1];
-		char c_hbuf_num[NI_MAXHOST + 1];
-		char c_sbuf_num[NI_MAXSERV + 1];
 
 		/* make a copy of accept_fdset before passing to select */
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
@@ -411,31 +460,37 @@ void do_listen(connection_attributes *attrs)
 		}
 
 		/* find the ready filedescriptor */
-		for (i = 0; i <= maxfd && !FD_ISSET(i, &tmp_ap_fdset); ++i)
+		for (fd = 0; fd <= maxfd && !FD_ISSET(fd, &tmp_ap_fdset); ++fd)
 			;
 
 		/* if none were ready, loop to select again */
-		if (i > maxfd)
+		if (fd > maxfd)
 			continue;
+
+		/* find socket type in listen_fds */
+		socktype = find_fd_socktype(fd_socktypes, fd);
 
 		destlen = sizeof(dest);	
 
 		/* for stream sockets we can simply accept a new connection, while for 
 		 * dgram sockets we have to use MSG_PEEK to determine the sender */
-		if (attrs->type == TCP_SOCKET) {
-			ns = accept(i, (struct sockaddr *)&dest, &destlen);
+		if (socktype == SOCK_STREAM) {
+			ns = accept(fd, (struct sockaddr *)&dest, &destlen);
 			if (ns < 0)
 				fatal("cannot accept connection: %s", strerror(errno));
 		} else {
-			err = recvfrom(i, NULL, 0, MSG_PEEK,
+			/* this is checked when binding listen sockets */
+			assert(socktype == SOCK_DGRAM);
+
+			err = recvfrom(fd, NULL, 0, MSG_PEEK,
 			        (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
 				fatal("cannot recv from socket: %s", strerror(errno));
 
-			ns = dup(i);
+			ns = dup(fd);
 			if (ns < 0)
 				fatal("cannot duplicate file descriptor %d: %s",
-				      i, strerror(errno));
+				      fd, strerror(errno));
 		}
 
 		/* get names for each end of the connection */
@@ -485,7 +540,7 @@ void do_listen(connection_attributes *attrs)
 		    (remote->address == NULL && remote->service == NULL) ||
 		    (is_allowed((struct sockaddr*)&dest, remote, attrs) == TRUE)) {
 
-			if (attrs->type == UDP_SOCKET) {
+			if (socktype == SOCK_DGRAM) {
 				/* connect the socket to ensure we only talk with this client */
 				err = connect(ns, (struct sockaddr*)&dest, destlen);
 				if (err != 0)
@@ -498,9 +553,14 @@ void do_listen(connection_attributes *attrs)
 				      hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 
+			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+				warn("using %s socket",
+					(socktype == SOCK_STREAM)? "stream":"datagram");
+			}
+
 			break;
 		} else {
-			if (attrs->type == UDP_SOCKET) {
+			if (socktype == SOCK_DGRAM) {
 				/* the connection wasn't accepted - remove the queued packet */
 				recvfrom(ns, NULL, 0, 0, NULL, 0);
 			}
@@ -519,7 +579,14 @@ void do_listen(connection_attributes *attrs)
 		if (FD_ISSET(i, &accept_fdset) != 0) close(i);
 	}
 
+	/* the ns and socktype should be set */
+	assert(ns >= 0);
+	assert(socktype != -1);
+
+	/* free the fd_socktype list */
+	destroy_fd_socktypes(fd_socktypes);
+
 	/* create io_streams for the local and remote streams */
 	ios_assign_stdio(&(attrs->local_stream));
-	ios_assign_socket(&(attrs->remote_stream), ns, attrs->type);
+	ios_assign_socket(&(attrs->remote_stream), ns, socktype);
 }
