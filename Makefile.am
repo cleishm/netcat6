@@ -8,7 +8,7 @@ AUX_DIST		= $(auxdir)/install-sh \
 AUX_DIST_EXTRA		= $(auxdir)/in6_func_getaddrinfo.m4 \
 			  $(auxdir)/in6_struct_sockaddr.m4 \
 			  $(auxdir)/in6_struct_sockaddrin6.m4
-EXTRA_DIST		= bootstrap TODO COPYING 
+EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
 
 AUTOMAKE_OPTIONS 	= foreign
 SUBDIRS 		= docs src

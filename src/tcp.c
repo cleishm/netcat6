@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "config.h"
 #include "misc.h"
 #include "network.h"
 #include "readwrite.h"

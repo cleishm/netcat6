@@ -24,7 +24,7 @@ capabilities.
 %setup
 
 %build
-./bootstrap
+#./bootstrap
 ./configure
 make
 
