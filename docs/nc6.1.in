@@ -136,7 +136,7 @@ The default NRU for TCP connections is 1 byte, and 65536 bytes for UDP.
 .TP 13
 .I \--half-close
 Properly handle (and send) TCP half closes for protocols that support them
-(eg. TCP).
+(eg. TCP).  See "HALF CLOSE".
 .TP 13
 .I \--disable-nagle
 Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
@@ -178,17 +178,19 @@ given endpoint can no longer be read from (because EOF was received).  When
 the hold timeout occurs for a given endpoint, no more data is read from the
 opposite endpoint.  After data read from the timed out endpoint has been sent,
 then the connection is closed and nc6 exits.
-.P
+.IP "" 4
 For example, setting the hold time of the local endpoint to 5 would cause
 reading from the remote system to stop 5 seconds after stdin is closed (eg. by
 using ^D to send EOF).  All buffered data to be sent to the remote system is
-then sent, after which nc6 exits successfully (if no errors occured).
-.P
+then sent, after which nc6 exits successfully (if no errors occurred).
+.IP "" 4
 By default, the hold timeout is disabled for the local endpoint (essentially
 an 'infinite' timeout), and the hold timeout is set to 0 for the remote
 endpoint (an 'instant' timeout).  This means that nc6 effectively exits 
-immediately when the read from the remote server is closed (also see "HALF
-CLOSE").
+immediately when the read from the remote server is closed.
+.IP "" 4
+In half close mode (see "HALF CLOSE") all hold timeouts are disabled by
+default.
 .SH FILE TRANSFER
 netcat6 can be used to transfer files and data streams efficiently, using the
 \'-x' or '--transfer' command line option.
@@ -228,17 +230,16 @@ won't work the other way around, but you can make it do so by specifying the
 equivalent options instead of using '-x'.
 .SH HALF CLOSE
 Stream based data transfers, such as TCP, have 2 separate streams - the
-receive and the transmit stream (pretty obvious).  Contrary to common belief,
-the streams can be closed independently of each other - in TCP this is called
-a half-close.
+receive and the transmit stream.  Contrary to common belief, the streams can
+be closed independently of each other - in TCP this is called a half-close.
 .P
-In standard mode, netcat6 closes the entire remote connection when it detects
+In standard mode, netcat6 closes the everything connection when it detects
 that the remote receive stream has been closed.  This is a common operation
 for most TCP applications, because it is unusual that a server will keep
 accepting data after it has indicated that it will no longer send any.
 netcat6 also doesn't close it's remote transmit when it has no more data to
-send (eg.  when EOF has been received on stdin), so as not to confuse remote
-servers.
+send (eg. when EOF has been received on stdin), so as not to confuse remote
+servers by making them think that netcat6 isn't listening for data any more.
 .P
 However, some servers do make active use of TCP half-closes, and the default
 operation of netcat6 doesn't work well with these services.  For example, when
@@ -248,7 +249,8 @@ close the entire connection before sending the response back to the client.
 .P
 However, by specifying the "--half-close" option, netcat6 will keep trying to
 send data to the remote server after the receive stream has closed.  It will
-also close the remote transmit stream when there is no more data to send.
+also close the remote transmit stream when there is no more data to send
+(EOF has been received on stdin).
 .SH NAGLE ALGORITHM
 Named after its creator, John Nagle, the Nagle algorithm is used to combine
 together small writes to a TCP stream and thus decrease the number of packets
@@ -261,7 +263,7 @@ originating from a keyboard could result in the an entire packet (the single
 byte plus packet headers) being sent onto the network.
 .P
 The algorithm can, under some situations, add a small delay before the data is
-sent out on the wire - so as to allow for this concatination to occur.  This
+sent out on the wire - so as to allow for this concatenation to occur.  This
 is done in such a way that it is generally unnoticeable for normal
 applications, including interactive applications.
 .P
@@ -290,7 +292,7 @@ transfered successfully.
 .P
 If hold timeouts (see "TIMEOUTS") have been set for either the remote or local
 endpoint, nc6 will exit successfully if all buffered data from the endpoint
-that timed out is succesfully sent.  It DOES NOT indicate whether all data
+that timed out is successfully sent.  It DOES NOT indicate whether all data
 from the opposite endpoint was sent (or even read).
 .P
 For connectionless protocols like UDP there is no way of determining whether
