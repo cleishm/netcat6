@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.18 2002-12-28 09:55:45 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.19 2002-12-28 19:01:41 chris Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
@@ -301,13 +301,7 @@ void do_connect(connection_attributes *attrs)
 		     sbuf_num, sbuf_rev);
 	}
 
-	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
-		warn("using %s socket",
-		     (ptr->ai_socktype == SOCK_STREAM)? "stream":"datagram");
-	}
-
-	/* fill out the io_streams for the local and remote */
-	ios_assign_stdio(&(attrs->local_stream));
+	/* fill out the remote io_stream */
 	ios_assign_socket(&(attrs->remote_stream), fd, ptr->ai_socktype);
 
 	/* cleanup addrinfo structure */
@@ -637,12 +631,6 @@ void do_listen(connection_attributes *attrs)
 				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 
-			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
-				warn("using %s socket",
-				     (socktype == SOCK_STREAM)?
-				         "stream":"datagram");
-			}
-
 			break;
 		} else {
 			if (socktype == SOCK_DGRAM) {
@@ -673,7 +661,6 @@ void do_listen(connection_attributes *attrs)
 	/* free the fd_socktype list */
 	destroy_fd_socktypes(fd_socktypes);
 
-	/* create io_streams for the local and remote streams */
-	ios_assign_stdio(&(attrs->local_stream));
+	/* fill out the remote io_stream */
 	ios_assign_socket(&(attrs->remote_stream), ns, socktype);
 }

@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.8 2002-12-24 21:05:37 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.9 2002-12-28 19:01:41 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -56,7 +56,10 @@ int main(int argc, char **argv)
 	/* set flags and fill out the addresses and connection attributes */
 	mode = parse_arguments(argc, argv, &connection_attrs);
 
-	/* establish a connection */
+	/* setup local stream */
+	ios_assign_stdio(&(connection_attrs.local_stream));
+
+	/* establish remote connection */
 	switch (mode) {
 	case LISTEN_MODE:
 		do_listen(&connection_attrs);
@@ -66,8 +69,23 @@ int main(int argc, char **argv)
 		break;
 	default:
 		fatal("internal error: unknown connection mode");
-		break;
 	}
+
+	/* give information about the connection in very verbose mode */
+	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
+		switch (connection_attrs.remote_stream.socktype) {
+		case SOCK_STREAM:
+			warn("using stream socket");
+			break;
+		case SOCK_DGRAM:
+			warn("using datagram socket");
+			break;
+		default:
+			fatal("internal error: unsupported socktype %d",
+			      connection_attrs.remote_stream.socktype);
+		}
+	}
+
 
 	/* setup unidirectional data transfers (if requested) */
 	assert(!(is_flag_set(RECV_DATA_ONLY) && is_flag_set(SEND_DATA_ONLY)));
@@ -77,10 +95,8 @@ int main(int argc, char **argv)
 
 		/* close the remote stream for writing */
 		ios_shutdown(&(connection_attrs.remote_stream), SHUT_WR);
-
 		/* close the local stream for reading */
 		ios_shutdown(&(connection_attrs.local_stream), SHUT_RD);
-
 		/* don't stop because the read is closed */
 		ios_set_hold_timeout(&(connection_attrs.local_stream), -1);
 
@@ -95,10 +111,8 @@ int main(int argc, char **argv)
 
 		/* close the remote stream for reading */
 		ios_shutdown(&(connection_attrs.remote_stream), SHUT_RD);
-
 		/* don't stop because the read is closed */
 		ios_set_hold_timeout(&(connection_attrs.remote_stream), -1);
-
 		/* close the local stream for writing */
 		ios_shutdown(&(connection_attrs.local_stream), SHUT_WR);
 
