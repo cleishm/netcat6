@@ -1,5 +1,5 @@
 
-0.2pre4 
+0.3.0
 
 This release introduces the interesting timeout mode and features a 
 state-of-the-art UDP support. From this release nc6 uses, if present, 

@@ -67,15 +67,49 @@ Forces the use of IPv4.
 .I \-6
 Forces the use of IPv6 and inhibits the use IPV4-mapped addresses.
 .TP 13
+.I \--buffer-size=BYTES
+Set the buffer size for the local and remote endpoints.
+netcat6 does all reads into these buffers, so they should be large enough
+to minimize excessive reads from the socket and in UDP mode it should be large
+enough to receive an entire datagram (also see '--nru').  By default, the
+buffer size is 8 kilobytes for TCP connections and 128 kilobytes for UDP.
+.TP 13
+.I \--disable-nagle
+Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
+ALGORITHM").
+.TP 13
 .I \-h, --help
 Display a brief help listing.
+.TP 13
+.I \--half-close
+Properly handle (and send) TCP half closes for protocols that support them
+(eg. TCP).  See "HALF CLOSE".
 .TP 13
 .I \-l, --listen
 Selects listen mode (for inbound connects).
 .TP 13
+.I \--mtu=BYTES
+Set the Maximum Transmission Unit for the remote endpoint (network transmits).
+This is only really useful for datagram protocols like UDP.  For TCP the MTU
+is determined by the kernel and this will only affect the amount that is
+passed to the kernel at any one time.  There is no default MTU for TCP
+connections (and there should be no need to change this), and for UDP it is
+8 kilobytes.
+.TP 13
 .I \-n
 Disables DNS queries - you'll have to use numeric IP address 
 instead of hostnames.
+.TP 13
+.I \--no-reuseaddr
+Disables the SO_REUSEADDR socket option (this is only useful in listen mode).
+.TP 13
+.I \--nru=BYTES
+Set the miNimum Receive Unit for the remote endpoint (network receives).  Note
+that this does not mean that every network read will get the specified number
+of bytes, only that nc6 MUST be able to receive at least that amount of data
+when a read is done.  This is only really useful for datagram protocols like
+UDP where the entire datagram must be received in one call or it is truncated.
+The default NRU for TCP connections is 1 byte, and 65536 bytes for UDP.
 .TP 13
 .I \-p, --port=PORT
 Sets the port number for the local endpoint of the connection.
@@ -86,8 +120,14 @@ will set the hold timeout on the local endpoint, specifying a second value will
 set the hold timeout on the remote endpoint as well.  Either value can be '0'
 (for instant timeout) or '-' (for no hold timeout, eg. infinite hold).
 .TP 13
+.I \--recv-only
+Only receive data, don't transmit.  This also disables any hold timeouts.
+.TP 13
 .I \-s, --address=ADDRESS
 Sets the source address for the local endpoint of the connection.
+.TP 13
+.I \--send-only
+Only send data, don't receive.  This also disables any hold timeouts.
 .TP 13
 .I \-u, --udp
 With this option set, netcat6 will use UDP as the transport protocol (TCP is
@@ -97,6 +137,9 @@ the default).
 Enable verbose mode.  This gives some basic information about what netcat6
 is doing.  Use it twice for extra verbosity.
 .TP 13
+.I \--version
+Print netcat6 version and exit.
+.TP 13
 .I \-w, --timeout=SECONDS
 Timeout for network connects and accepts.
 .TP 13
@@ -104,51 +147,14 @@ Timeout for network connects and accepts.
 File transfer mode (see "FILE TRANSFER").  If listen mode is
 specified, this is equivalent to "--recv-only --buffer-size=65536" otherwise
 it is equivalent to "--send-only --buffer-size=65536".
-.TP 13
-.I \--recv-only
-Only receive data, don't transmit.  This also disables any hold timeouts.
-.TP 13
-.I \--send-only
-Only send data, don't receive.  This also disables any hold timeouts.
-.TP 13
-.I \--buffer-size=BYTES
-Set the buffer size for the local and remote endpoints.
-netcat6 does all reads into these buffers, so they should be large enough
-to minimize excessive reads from the socket and in UDP mode it should be large
-enough to receive an entire datagram (also see '--nru').  By default, the
-buffer size is 8192 bytes for TCP connections and 65536 bytes for UDP.
-.TP 13
-.I \--mtu=BYTES
-Set the Maximum Transmission Unit for the remote endpoint (network transmits).
-This is only really useful for datagram protocols like UDP.  For TCP the MTU
-is determined by the kernel and this will only affect the amount that is
-passed to the kernel at any one time.  There is no default MTU for TCP
-connections (and there should be no need to change this), and for UDP it is
-8192 bytes.
-.TP 13
-.I \--nru=BYTES
-Set the miNimum Receive Unit for the remote endpoint (network receives).  Note
-that this does not mean that every network read will get the specified number
-of bytes, only that nc6 MUST be able to receive at least that amount of data
-when a read is done.  This is only really useful for datagram protocols like
-UDP where the entire datagram must be received in one call or it is truncated.
-The default NRU for TCP connections is 1 byte, and 65536 bytes for UDP.
-.TP 13
-.I \--half-close
-Properly handle (and send) TCP half closes for protocols that support them
-(eg. TCP).  See "HALF CLOSE".
-.TP 13
-.I \--disable-nagle
-Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
-ALGORITHM").
-.TP 13
-.I \--no-reuseaddr
-Disables the SO_REUSEADDR socket option (this is only useful in listen mode).
 .SH UDP
 UDP support in netcat6 works very well in both connect and in listen mode.
 When using UDP in listen mode netcat6 accepts UDP packets from any source that
 matches the optional address and/or port specified (if it was specified).
-However, once the first packet is received, netcat6 will only receive packets from that client in future.  This is done by putting the UDP socket into "connected" state (see udp(4) and connect(2)).  Packets from other sources are discarded by the kernel and an ICMP unreachable response is sent.
+However, once the first packet is received, netcat6 will only receive packets 
+from that client in future.  This is done by putting the UDP socket into 
+"connected" state (see udp(4) and connect(2)).  Packets from other sources are 
+discarded by the kernel and an ICMP unreachable response is sent.
 .P
 When connecting to a remote host using UDP, nc6 will report that the
 connection is open regardless of whether a remote server is listening.  This
