@@ -65,13 +65,13 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 
 	switch (attrs->proto) {
 		case PROTO_IPv6:
-			ainfo->ai_family = AF_INET6;
+			ainfo->ai_family = PF_INET6;
 			break;
 		case PROTO_IPv4:
-			ainfo->ai_family = AF_INET;
+			ainfo->ai_family = PF_INET;
 			break;
 		case PROTO_UNSPECIFIED:
-			ainfo->ai_family = AF_UNSPEC;
+			ainfo->ai_family = PF_UNSPEC;
 			break;
 		default:
 			fatal("internal error: unknown socket domain");
@@ -80,9 +80,17 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 	switch (attrs->type) {
 		case UDP_SOCKET:
 			ainfo->ai_protocol = IPPROTO_UDP;
+			/* strictly speaking, this should not be required since UDP
+			 * implies a DGRAM type socket.  However, on some systems 
+			 * getaddrinfo fails if we set IPPROTO_UDP and don't set this */
+			ainfo->ai_socktype = SOCK_DGRAM;
 			break;
 		case TCP_SOCKET:
 			ainfo->ai_protocol = IPPROTO_TCP;
+			/* strictly speaking, this should not be required since TCP
+			 * implies a STREAM type socket.  However, on some systems 
+			 * getaddrinfo fails if we set IPPROTO_TCP and don't set this */
+			ainfo->ai_socktype = SOCK_STREAM;
 			break;
 		default:
 			fatal("internal error: unknown socket type");
