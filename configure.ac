@@ -2,7 +2,7 @@
 AC_INIT(src/main.c)
 AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(src/config.h)
-AM_INIT_AUTOMAKE(nc6, 0.2pre4b)
+AM_INIT_AUTOMAKE(nc6, 0.2pre4b-cvs)
 AC_PREREQ(2.52)
 
 
