@@ -156,31 +156,10 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 	ret = FALSE;
 	
 	memset(&hints, 0, sizeof(hints));
-	
-	switch (attrs->proto) {
-		case PROTO_IPv6:
-			hints.ai_family = AF_INET6;
-			break;
-		case PROTO_IPv4:
-			hints.ai_family = AF_INET;
-			break;
-		case PROTO_UNSPECIFIED:
-			hints.ai_family = AF_UNSPEC;
-			break;
-		default:
-			fatal("internal error: unknown socket domain");
-	}
-	
-	switch (attrs->type) {
-		case UDP_SOCKET:
-			hints.ai_socktype = SOCK_DGRAM;
-			break;
-		case TCP_SOCKET:
-			hints.ai_socktype = SOCK_STREAM;
-			break;
-		default:
-			fatal("internal error: unknown socket type");
-	}
+	connection_attributes_to_addrinfo(&hints, attrs);
+
+	if (is_flag_set(NUMERIC_MODE) == TRUE)
+		hints.ai_flags |= AI_NUMERICHOST;
 	
 	err = getaddrinfo(addr->address, addr->service, &hints, &res);
 	if (err != 0) fatal("getaddrinfo error: %s", gai_strerror(err));
