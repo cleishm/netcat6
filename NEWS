@@ -1,14 +1,24 @@
 
 0.3.0
 
-This release introduces the interesting timeout mode and features a 
-state-of-the-art UDP support. From this release nc6 uses, if present, 
-the AI_ADDRCONFIG flag of getaddrinfo for the connect mode. This changes 
-the stupid use-IPv6-by-default behaviour that is harmful if your system
-supports IPv6 but you don't have a global-scope IPv6 address configured 
-on your machine.
-Now file transfer mode works also with UDP. The configuration process has 
-been greatly improved.
+This release introduces many new interesting features:
+
+1) accept/connect timeouts 
+2) hold timeouts
+3) recv-only and send-only modes
+4) half-close mode
+5) high flexibility of use
+6) state-of-the-art UDP support
+
+For an in-depth description of these new features, please consult the man page.
+
+From this release nc6 uses, if present, the AI_ADDRCONFIG flag of getaddrinfo 
+for the connect mode. This changes the stupid use-IPv6-by-default behaviour 
+that is harmful if your system supports IPv6 but you don't have an IPv6 address 
+configured on your machine.
+
+Now file transfer mode works also with UDP. The configuration process and the 
+whole architecture of nc6 have been greatly improved.
 
 
 0.2pre3
@@ -39,3 +49,4 @@ buffers. It supports only TCP.
 
 					    Mauro Tortonesi
 					    <mauro _at_ deepspace6.net>
+					    
