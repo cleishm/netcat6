@@ -74,6 +74,11 @@ to minimize excessive reads from the socket and in UDP mode it should be large
 enough to receive an entire datagram (also see '--nru').  By default, the
 buffer size is 8 kilobytes for TCP connections and 128 kilobytes for UDP.
 .TP 13
+.I \--continuous
+Enable continuous accepting of connections in listen mode, like inetd.  Must
+be used with --exec to specify the command to run locally (try 'nc6
+--continuous --exec cat -l -p <port>' to make a simple echo server).
+.TP 13
 .I \--disable-nagle
 Disable the use of the Nagle algorithm for TCP connections (see "NAGLE
 ALGORITHM").

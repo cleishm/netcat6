@@ -1,6 +1,7 @@
 2003-03-26 Chris Leishman <chris _at_ leishman.org>
 
  * Added --exec option for setting a command to be executed after connect.
+ * Added --continous option for continuously accepting connections.
 
 2003-03-16 Chris Leishman <chris _at_ leishman.org>
 

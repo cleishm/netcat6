@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.50 2003-03-26 17:44:59 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.51 2003-03-26 20:18:38 chris Exp $");
 
 
 
@@ -98,7 +98,9 @@ static const struct option long_options[] = {
 	{"rcvbuf-size",         TRUE,  NULL,  0 },
 #define OPT_EXEC		20
 	{"exec",                TRUE,  NULL, 'e'},
-#define OPT_MAX			21
+#define OPT_CONTINUOUS		21
+	{"continuous",          FALSE, NULL,  0 },
+#define OPT_MAX			22
 	{0, 0, 0, 0}
 };
 
@@ -189,6 +191,9 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			case OPT_RCVBUF_SIZE:
 				assert(optarg != NULL);
 				rcvbuf_size = safe_atoi(optarg);
+				break;
+			case OPT_CONTINUOUS:
+				ca_set_flag(attrs, CA_CONTINUOUS_ACCEPT);
 				break;
 			default:
 				fatal(_("getopt returned unexpected long "
@@ -340,9 +345,23 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
+		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT) &&
+		    ca_local_exec(attrs) == NULL)
+		{
+			warn(_("--continuous option "
+			       "must be used with --exec"));
+			print_usage(stderr);
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 			warn(_("--no-reuseaddr option "
+			       "can be used only in listen mode"));
+			print_usage(stderr);
+			exit(EXIT_FAILURE);
+		}
+		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)) {
+			warn(_("--continuous option "
 			       "can be used only in listen mode"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -445,6 +464,8 @@ static void print_usage(FILE *fp)
 "  -w, --timeout=SECONDS\n"
 "                    Timeout for connects/accepts\n"
 "  -x, --transfer    File transfer mode\n"
+"      --continous   Continuously accept connections\n"
+"                    (only in listen mode with --exec)\n"
 "      --recv-only   Only receive data, don't transmit\n"
 "      --send-only   Only transmit data, don't receive\n"
 "      --buffer-size=BYTES\n"

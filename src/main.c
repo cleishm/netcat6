@@ -25,6 +25,8 @@
 #include "parser.h"
 #include "network.h"
 #include "readwrite.h"
+#include <sys/types.h>
+#include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +37,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.30 2003-03-26 17:44:59 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.31 2003-03-26 20:18:38 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -45,9 +47,18 @@ static char *program_name  = NULL;
 typedef int (*established_callback)(const connection_attributes *attrs,
                                     int fd, int socktype);
 
+/* cdata argument for continous listen callbacks */
+typedef struct accept_callback_data_t {
+	const connection_attributes *attrs;
+	established_callback callback;
+} accept_callback_data;
+
+
+
 /* function prototypes */
 static int establish_connection(const connection_attributes *attrs,
                                 established_callback callback);
+static void accept_callback(int fd, int socktype, void *cdata);
 static int connection_main(const connection_attributes *attrs,
                            int fd, int socktype);
 static void setup_local_stream(const connection_attributes *attrs,
@@ -107,6 +118,17 @@ static int establish_connection(const connection_attributes *attrs,
 
 	/* establish remote connection */
 	if (ca_is_flag_set(attrs, CA_LISTEN_MODE)) {
+
+		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)) {
+			accept_callback_data cdata;
+			cdata.attrs = attrs;
+			cdata.callback = callback;
+
+			do_listen_continuous(attrs, accept_callback, &cdata,-1);
+			/* not reached */
+			exit(EXIT_FAILURE);
+		}
+
 		fd = do_listen(attrs, &socktype);
 	} else if (ca_is_flag_set(attrs, CA_CONNECT_MODE)) {
 		fd = do_connect(attrs, &socktype);
@@ -120,6 +142,34 @@ static int establish_connection(const connection_attributes *attrs,
 	assert(socktype >= 0);
 
 	return callback(attrs, fd, socktype);
+}
+
+
+
+static void accept_callback(int fd, int socktype, void *cdata)
+{
+	int pid;
+	int size;
+	char *new_name;
+	accept_callback_data* adata = (accept_callback_data*)cdata;
+
+	/* fork and let the parent return */
+	pid = fork();
+	if (pid < 0) {
+		fatal(_("fork failed: %s"), strerror(errno));
+	} else if (pid > 0) {
+		/* parent */
+		return;
+	}
+
+	/* setup program_name */
+	size = strlen(program_name) + 10;
+	new_name = (char*) xmalloc(size * sizeof(char));
+	snprintf(new_name, size, "%s[%d]", program_name, getpid());
+	program_name = new_name;
+	
+	/* issue callback */
+	adata->callback(adata->attrs, fd, socktype);
 }
 
 

@@ -54,6 +54,7 @@ typedef struct address_t
 #define CA_RECV_DATA_ONLY	0x000020
 #define CA_SEND_DATA_ONLY	0x000040
 #define CA_DISABLE_NAGLE	0x000080
+#define CA_CONTINUOUS_ACCEPT	0x000100
 
 
 typedef struct connection_attributes_t
