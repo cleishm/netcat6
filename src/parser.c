@@ -131,17 +131,25 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		exit(EXIT_FAILURE);
 	}
 
+	/* sanity check */
+	if (attrs->remote_address.address != NULL &&
+		strlen(attrs->remote_address.address) == 0)
+	{
+		attrs->remote_address.address = NULL;
+	}
+
+	if (attrs->remote_address.service != NULL &&
+		strlen(attrs->remote_address.service) == 0)
+	{
+		attrs->remote_address.service = NULL;
+	}
+
 	if (is_flag_set(LISTEN_MODE) == TRUE) {	
 		if (attrs->local_address.service == NULL) {
 			warn("in listen mode you must specify a port with the -p switch");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
-
-		assert(attrs->remote_address.address == NULL ||
-		       strlen(attrs->remote_address.address) > 0);
-		assert(attrs->remote_address.service == NULL ||
-		       strlen(attrs->remote_address.service) > 0);
 
 		return LISTEN_MODE;
 	} else {
@@ -158,12 +166,6 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
-
-		/* sanity checks */
-		assert(attrs->remote_address.address != NULL &&
-		       strlen(attrs->remote_address.address) > 0);
-		assert(attrs->remote_address.service != NULL &&
-		       strlen(attrs->remote_address.service) > 0);
 
 		return CONNECT_MODE;
 	}
