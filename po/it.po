@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2003-01-25 14:53+0100\n"
+"POT-Creation-Date: 2003-01-25 15:49+0100\n"
 "PO-Revision-Date: 2003-01-14 22:27GMT\n"
 "Last-Translator: Simone Piunno <pioppo@ferrara.linux.it>\n"
 "MIME-Version: 1.0\n"
