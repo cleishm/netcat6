@@ -25,13 +25,8 @@
 #include "connection.h"
 #include "misc.h"
 
-extern int _verbosity_level;
-
-#define VERBOSE_MODE		0x01
-#define VERY_VERBOSE_MODE	0x02
-
-#define verbose_mode()		(_verbosity_level >= VERBOSE_MODE)
-#define very_verbose_mode()	(_verbosity_level >= VERY_VERBOSE_MODE)
+bool verbose_mode(void);
+bool very_verbose_mode(void);
 
 void parse_arguments(int argc, char **argv, connection_attributes *attrs);
 

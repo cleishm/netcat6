@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.45 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.46 2003-01-25 14:42:36 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -81,7 +81,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	assert(local->service == NULL  || strlen(local->service)  > 0);
 
 	/* setup flags */
-	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE)? TRUE : FALSE;
+	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE) ? TRUE : FALSE;
 	
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
@@ -227,7 +227,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			fd = -1;
 			continue;
 		default: 
-			assert(0&&"Invalid result from connect_with_timeout");
+			fatal("internal error: invalid result from "
+			      "connect_with_timeout");
 		}
 
 		/* exit from the loop if we have a valid connection */
@@ -364,7 +365,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		return;
 
 	/* setup flags */
-	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE)? TRUE : FALSE;
+	numeric_mode = ca_is_flag_set(attrs, CA_NUMERIC_MODE) ? TRUE : FALSE;
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -665,16 +666,21 @@ void do_listen_continuous(const connection_attributes* attrs,
 }
 
 
+
 typedef struct listen_once_result_t {
 	int fd;
 	int socktype;
 } listen_once_result;
 
 
+
 int do_listen(const connection_attributes *attrs, int *rt_socktype)
 {
 	listen_once_result result;
 
+	/* check arguments */
+	assert(attrs != NULL);
+	
 	/* listen for exactly one connection, using listen_once_callback
 	 * to capture the fd into the result struct */
 	do_listen_continuous(attrs, listen_once_callback, (void*)&result, 1);
@@ -691,6 +697,7 @@ static void listen_once_callback(int fd, int socktype, void *cdata)
 {
 	listen_once_result *result = (listen_once_result*)cdata;
 
+	/* check arguments */
 	assert(fd >= 0);
 	assert(socktype >= 0);
 	assert(result != NULL);
@@ -704,6 +711,7 @@ static void listen_once_callback(int fd, int socktype, void *cdata)
 
 static bool skip_address(const struct addrinfo *ai)
 {
+	/* check arguments */
 	assert(ai != NULL);
 	
 	/* only use socktypes we can handle */
@@ -714,10 +722,16 @@ static bool skip_address(const struct addrinfo *ai)
 #ifdef ENABLE_IPV6
 	/* 
 	 * skip IPv4 mapped addresses returned from getaddrinfo,
-	 * for security reasons. see:
+	 * for security reasons. see the documents:
 	 *
 	 * http://playground.iijlab.net/i-d/
 	 *       /draft-itojun-ipv6-transition-abuse-01.txt
+	 *       
+	 * http://playground.iijlab.net/i-d/
+	 *       /draft-cmetz-v6ops-v4mapped-api-harmful-00.txt
+	 *       
+	 * http://playground.iijlab.net/i-d/
+	 *       /draft-itojun-v6ops-v4mapped-harmful-01.txt
 	 */
 	if (is_address_ipv4_mapped(ai->ai_addr))
 		return TRUE;
@@ -735,7 +749,7 @@ static bool skip_address(const struct addrinfo *ai)
 
 
 static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str, 
-                         size_t size, bool numeric_mode)
+                           size_t size, bool numeric_mode)
 {
 	int err;
 	char hbuf_rev[NI_MAXHOST + 1];
@@ -743,6 +757,7 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 	char sbuf_rev[NI_MAXSERV + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 
+	/* check arguments */
 	assert(sa != NULL);
 	assert(len > 0);
 	assert(str != NULL);
@@ -782,6 +797,11 @@ static void set_sockopts(const connection_attributes *attrs,
 {
 	int on, err;
 
+	/* check arguments */
+	assert(attrs != NULL);
+	assert(sock >= 0);
+	assert(sockinfo != NULL);
+	
 	/* set the reuse address socket option */
 	if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 		on = 1;
@@ -832,6 +852,10 @@ static void warn_socket_details(const connection_attributes *attrs,
 {
 	int n, nlen;
 
+	/* check arguments */
+	assert(attrs != NULL);
+	assert(sock >= 0);
+	
 	/* announce the socket in very verbose mode */
 	switch (socktype) {
 	case SOCK_STREAM:
@@ -864,3 +888,4 @@ static void warn_socket_details(const connection_attributes *attrs,
 			warn(_("using socket rcvbuf size of %d"), n);
 	}
 }
+

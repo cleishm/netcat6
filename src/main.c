@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.28 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.29 2003-01-25 14:42:36 mauro Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 static int establish_connection(const connection_attributes *attrs,
                                 established_callback callback)
 {
-	int fd, socktype;
+	int fd = 0, socktype;
 
 	assert(attrs != NULL);
 	assert(callback != NULL);

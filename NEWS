@@ -1,5 +1,16 @@
 
-0.3.0
+0.4
+
+This release fixes a couple of bugs (parsing of --no-reuseaddr option and a 
+weird bug in the readwrite function that could generate an endless loop) 
+and introduces the new features:
+
+1) idle timeouts
+2) --sndbuf-size and --rcvbuf-size options for setting SO_RCVBUF and
+   SO_SNDBUF respectively
+
+
+0.3
 
 This release introduces many new interesting features:
 

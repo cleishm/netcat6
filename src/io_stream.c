@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.24 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.25 2003-01-25 14:42:36 mauro Exp $");
 
 
 static void ios_init(io_stream *ios, const char* name,
@@ -59,7 +59,12 @@ void ios_init_socket(io_stream *ios, const char* name,
 		     int fd, int socktype,
                      circ_buf *inbuf, circ_buf *outbuf)
 {
+	/* check arguments */
+	assert(ios != NULL);
+	assert(name != NULL);
 	assert(fd >= 0);
+	assert(inbuf  != NULL);
+	assert(outbuf != NULL);
 
 	ios_init(ios, name, fd, fd, socktype, inbuf, outbuf);
 }
@@ -71,6 +76,12 @@ void ios_init_stdio(io_stream *ios, const char* name,
 {
 	int fd_in, fd_out;
 
+	/* check arguments */
+	assert(ios != NULL);
+	assert(name != NULL);
+	assert(inbuf  != NULL);
+	assert(outbuf != NULL);
+	
 	if ((fd_in  = dup(STDIN_FILENO)) < 0) 
 		fatal(_("error in duplicating stdin file descriptor: %s"), 
 		      strerror(errno));
@@ -89,10 +100,13 @@ static void ios_init(io_stream *ios, const char* name,
 		     int fd_in, int fd_out, int socktype,
                      circ_buf *inbuf, circ_buf *outbuf)
 {
+	/* check arguments */
 	assert(ios    != NULL);
+	assert(name   != NULL);
+	assert(fd_in  >= 0);
+	assert(fd_out >= 0);
 	assert(inbuf  != NULL);
 	assert(outbuf != NULL);
-	assert(name   != NULL);
 
 	ios->fd_in  = fd_in;
 	ios->fd_out = fd_out;
@@ -123,6 +137,7 @@ static void ios_init(io_stream *ios, const char* name,
 
 void io_stream_destroy(io_stream *ios)
 {
+	/* check argument */
 	ios_assert(ios);
 	
 	ios_shutdown(ios, SHUT_RDWR);
@@ -135,6 +150,7 @@ int ios_schedule_read(io_stream *ios)
 {
 	size_t space;
 
+	/* check argument */
 	ios_assert(ios);
 	
 	space = cb_space(ios->buf_in);
@@ -152,6 +168,7 @@ int ios_schedule_read(io_stream *ios)
 
 int ios_schedule_write(io_stream *ios)
 {
+	/* check argument */
 	ios_assert(ios);
 	
 	/* if closed or there is no data in the buffer, then we can't write */
@@ -169,6 +186,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 	struct timeval now;
 	struct timeval* tvp = NULL;
 
+	/* check arguments */
 	ios_assert(ios);
 	assert(tv != NULL);
 
@@ -240,6 +258,7 @@ ssize_t ios_read(io_stream *ios)
 {
 	ssize_t rr;
 
+	/* check argument */
 	ios_assert(ios);
 	
 	/* should only be called if ios_schedule_read returned a true result */
@@ -295,6 +314,7 @@ ssize_t ios_write(io_stream *ios)
 {
 	ssize_t rr;
 
+	/* check argument */
 	ios_assert(ios);
 	
 	/* should only be called if ios_schedule_write returned a true result */
@@ -343,6 +363,7 @@ ssize_t ios_write(io_stream *ios)
 
 void ios_write_eof(io_stream* ios)
 {
+	/* check argument */
 	ios_assert(ios);
 	
 	ios->flags |= IOS_OUTPUT_EOF;
@@ -355,6 +376,7 @@ void ios_write_eof(io_stream* ios)
 
 void ios_shutdown(io_stream* ios, int how)
 {
+	/* check argument */
 	ios_assert(ios);
 
 	if (how == SHUT_RDWR) {
@@ -390,7 +412,8 @@ void ios_shutdown(io_stream* ios, int how)
 		}
 		ios->fd_in = -1;
 	} else {
-		assert(how == SHUT_WR);		
+		assert(how == SHUT_WR);	
+		
 		/* close the output */
 		if (ios->fd_out < 0)
 			return;

@@ -1,3 +1,10 @@
+
+2003-01-25 Mauro Tortonesi <mauro _at_ deepspace6.net>
+
+ * Added many more assertions in the code.
+ * Cleaned code of the verbose_mode and very_verbose_mode functions.
+ * Released netcat 0.4. 
+
 2003-01-24 Chris Leishman <chris _at_ leishman.org>
 
  * Restructured io_stream, especially with respect to timeout handling.

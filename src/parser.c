@@ -33,7 +33,8 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.47 2003-01-24 23:44:02 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.48 2003-01-25 14:42:36 mauro Exp $");
+
 
 
 /* default UDP MTU is 8kb */
@@ -45,8 +46,13 @@ static const size_t DEFAULT_UDP_BUFFER_SIZE = 131072;
 /* default buffer size for file transfers is 64k */
 static const size_t DEFAULT_FILE_TRANSFER_BUFFER_SIZE = 65536;
 
+/* these *VERBOSE* constants are defined here because they are not used 
+ * in any other module */
+static const int VERBOSE_MODE      = 0x01;
+static const int VERY_VERBOSE_MODE = 0x02;
+
 /* storage for the global flags */
-int _verbosity_level = 0;
+static int _verbosity_level = 0;
 
 /* long options */
 static const struct option long_options[] = {
@@ -124,6 +130,12 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	size_t sndbuf_size = 0;
 	size_t rcvbuf_size = 0;
 
+	/* check arguments */
+	assert(argc > 0);
+	assert(argv != NULL);
+	assert(*argv != NULL);
+	assert(attrs != NULL);
+	
 	/* initialize the addresses of the connection endpoints */
 	address_init(&remote_address);
 	address_init(&local_address);
@@ -178,7 +190,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				break;
 			default:
 				fatal(_("getopt returned unexpected long "
-				     "option offset index %d\n"), option_index);
+				      "option offset index %d\n"), option_index);
 			}
 			break;
 		case '4':
@@ -382,14 +394,32 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 
 
+bool verbose_mode()
+{
+	return ((_verbosity_level >= VERBOSE_MODE) ? TRUE : FALSE);
+}
+
+
+
+bool very_verbose_mode()
+{
+	return ((_verbosity_level >= VERY_VERBOSE_MODE) ? TRUE : FALSE);
+}
+
+
+
 static void print_usage(FILE *fp)
 {
 	const char *program_name = get_program_name();
 
+	assert(fp != NULL);
+	assert(program_name != NULL);
+	
 	fprintf(fp, _("Usage:\n"
 "\t%s [options...] hostname port\n"
 "\t%s -l -p port [-s addr] [options...] [hostname] [port]\n\n"
 "Recognized options are:\n"), program_name, program_name);
+	
 	fprintf(fp, _(
 "  -4                Use only IPv4\n"
 "  -6                Use only IPv6\n"
@@ -429,6 +459,8 @@ static void print_usage(FILE *fp)
 
 static void print_version(FILE *fp)
 {
+	assert(fp != NULL);
+	
 	fprintf(fp, _(
 "%s version %s\n"
 "Copyright (C) 2001-2003\n"), PACKAGE, VERSION);
@@ -444,7 +476,7 @@ static void print_version(FILE *fp)
 _("Configured with IPv6 support\n"));
 #else
 	fprintf(fp,
-_("Configured with no IPv6 support\n"));
+_("Configured without IPv6 support\n"));
 #endif
 }
 
@@ -466,5 +498,7 @@ static int parse_int_pair(const char *str, int *first, int *second)
 
 	if (first != NULL)
 		*first = (str[0] == '-')? -1 : safe_atoi(str);
+	
 	return count;
 }
+
