@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.31 2003-01-04 14:20:24 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.32 2003-01-06 14:00:05 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -158,13 +158,9 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			}
 			break;
 		case '4':
-			if (family != PROTO_UNSPECIFIED) 
-			    fatal("cannot specify the address family twice");
 			family = PROTO_IPv4;
 			break;
 		case '6':	
-			if (family != PROTO_UNSPECIFIED) 
-			    fatal("cannot specify the address family twice");
 			family = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
 			break;
