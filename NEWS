@@ -8,7 +8,8 @@ This release introduces many new interesting features:
 3) recv-only and send-only modes
 4) half-close mode
 5) high flexibility of use
-6) state-of-the-art UDP support
+6) i18n support
+7) enhanced UDP support
 
 For an in-depth description of these new features, please consult the man page.
 

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(nc6, 0.2pre4b-cvs, [ds6-devel@deepspace6.net])
+AC_INIT(nc6, 0.3, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE(1.6)        dnl Automake 1.6 or better is required

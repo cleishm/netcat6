@@ -12,6 +12,8 @@ auxdir			= @ac_aux_dir@
 EXTRA_DIST		= bootstrap BUGS CREDITS \
 			  config/ai_constants.m4 \
 			  config/in6_guess_stack.m4 \
+			  config/member_sin6_scope_id.m4 \
+			  config/paths.m4 \
 			  config/proto_inet6.m4 \
 			  config/type_struct_sockaddr_storage.m4 \
 			  config/type_struct_sockaddr_in6.m4 \

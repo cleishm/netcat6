@@ -1,3 +1,9 @@
+2003-01-21 Mauro Tortonesi <mauro _at_ deepspace6.net>
+
+ * Minor changes to the manpage and the other documentation files
+   (BUGS, README and TODO).
+ * Released netcat 0.3. 
+ 
 2003-01-18 Simone Piunno <simone _at_ deepspace6.net>
 
  * Merged in i18n branch
