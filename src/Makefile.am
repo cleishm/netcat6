@@ -4,8 +4,10 @@ noinst_HEADERS = \
   filter.h \
   misc.h \
   network.h \
+  netsupport.h \
   parser.h \
   readwrite.h \
+  rt_config.h \
   io_stream.h \
   connection.h
 
@@ -15,8 +17,10 @@ nc6_SOURCES = \
   main.c \
   misc.c \
   network.c \
+  netsupport.c \
   parser.c \
   readwrite.c \
+  rt_config.c \
   io_stream.c \
   connection.c
 

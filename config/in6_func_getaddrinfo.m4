@@ -242,11 +242,13 @@ else
 	$5
 fi
 ])
+
 AC_DEFUN(IN6_FUNC_GETADDRINFO_AI_ADDRCONFIG,[
 _IN6_FUNC_GETADDRINFO_AI_FLAGS(
 	in6_cv_func_getaddrinfo_ai_addrconfig,
 	AI_ADDRCONFIG,
 	[$1],[$2],[$3])])
+	
 AC_DEFUN(IN6_FUNC_GETADDRINFO_AI_ALL,[
 _IN6_FUNC_GETADDRINFO_AI_FLAGS(
 	in6_cv_func_getaddrinfo_ai_all,

@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.2 2002-12-24 20:07:09 chris Exp $
+$Id: README.Maint,v 1.3 2002-12-29 14:12:10 mauro Exp $
 
 
 Source layout
@@ -27,21 +27,99 @@ script.
 Style guide
 -----------
 
-Read the CodingStyle doc from the linux kernel.  The very basics are:
+Read Linus Torvalds' CodingStyle document (included in the linux kernel
+sources, in the Documentation directory). It is really an enlightening 
+reading. Since the beginning of its development, the nc6 code has 
+been written according to the rules described by this document. 
+
+The most important coding style rules for nc6 are:
 
 * 8-column indent.
-* Opening curly on same line as keyword, if possible, otherwise line up.
+
+* Always open curly bracket on same line as keyword. If this is not possible
+  (but there must be a __REALLY__ valid reason) put it on the following line,
+  vertically aligned with the keyword.
+
 * No space before the semicolon.
+
 * Space around most operators.
-* Space around a "complex" subscript (inside brackets).
+
+* Space around a "complex" subscript (e.g. inside brackets).
+
 * Blank lines between chunks that do different things.
+
 * Cuddled elses.
+
 * No space between function name and its opening parenthesis.
+
 * Space after each comma.
+
 * Long lines broken after an operator.
-* Line up corresponding items vertically.
+
+* Line up corresponding items (especially function arguments and, if possible,
+  operations on related variables) vertically. e.g.:
+ 
+  /* do this for both invocations ... */
+  foo(arg1,
+      arg2);
+      
+  /* ... and declarations */
+  int foo(int arg1,
+          long arg2);
+
+  /* do this only if variables arg1, arg2a and longname are related */
+  arg1     = 1;
+  arg2a    = 2;
+  longname = 3;
+  
+* Don't assume that NULL is equal to zero. On some platforms this may not
+  be true. Use: 
+  
+  	assert(ptr != NULL);
+	
+  instead of:
+
+  	assert(ptr);
+
+* In a similar way, don't assume that TRUE is one and FALSE is zero. These
+  are the values assigned respectively to the constants TRUE and FALSE at 
+  the moment, but those values can changed in future releases of nc6. Use: 
+  
+  	assert(flag1 == TRUE);
+  	assert(flag2 == FALSE);
+	
+  instead of:
+
+  	assert(flag1);
+  	assert(!flag2);
+	
 * Omit redundant punctuation as long as clarity doesn't suffer.
 
+* The pointer operators * and & must go __before__ a variable of function 
+  name and not after the pointer type. Also, in casts there must be a space
+  between the pointer type and the * or & operator.
+  For instance, don't write:
+
+	/* do __NOT__ do this!!! */
+	int* foo(const char* str) {
+		int* ret;
+		
+		ret = (int*)xmalloc(safe_atoi(str));
+		
+		return ret;
+	}
+
+  but:
+
+	/* this is the correct layout for the code above */
+	int *foo(const char *str) {
+		int *ret;
+		
+		ret = (int *)xmalloc(safe_atoi(str));
+		
+		return ret;
+	}
+  
 
 Version numbering
 -----------------
@@ -87,7 +165,7 @@ To make a new release, the following process should be followed:
 This will build a tar.gz and tar.bz2 in the root of the source tree.  These
 should be made available for download from the deepspace6 website.
 
-9) make maintainer-clean
+9) Clean the source tree again (make maintainer-clean)
 10) Edit configure.ac to add '-cvs' onto the end of the version number
 11) Commit changes
 

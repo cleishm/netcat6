@@ -70,7 +70,7 @@ if test "X$ipv6" = "Xyes"; then
 fi
 
 if test "X$ipv6" = "Xyes"; then
-  AC_DEFINE([ENABLE_IPV6], 1, [Define if IPV6 support is enabled.])
+  AC_DEFINE([ENABLE_IPV6], 1, [Define if IPv6 support is enabled.])
 fi
 
 
@@ -122,6 +122,16 @@ IN6_FUNC_GETADDRINFO_AI_ADDRCONFIG(
   )
 )
 
+IN6_FUNC_GETADDRINFO_AI_ALL(
+  [AC_DEFINE(
+    [HAVE_GETADDRINFO_AI_ALL], 1, 
+    [Define if getaddrinfo supports AI_ALL flag.]
+  )
+  AC_DEFINE(
+    [HAVE_GETADDRINFO_AI_V4MAPPED], 1, 
+    [Define if getaddrinfo supports AI_V4MAPPED flag.]
+  )]
+)
 
 
 # The CFLAGS to use with GCC
