@@ -25,3 +25,6 @@ dist-hook:
 	for file in $(AUX_DIST) $(AUX_DIST_EXTRA); do \
 	  cp $$file $(distdir)/$$file; \
 	done
+
+catalog:
+	xgettext -F -k_ -o i18n/messages.pot src/*.[ch]
