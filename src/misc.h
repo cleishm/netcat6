@@ -94,4 +94,13 @@ int safe_atoi(const char *str);
 #define RCSID(X)
 #endif
 
+#if ENABLE_NLS
+#include <libintl.h>
+#define _(String) gettext(String)
+#define N_(String) (String)
+#else
+#define _(String) (String)
+#define N_(String) (String)
+#endif
+
 #endif /* MISC_H */

@@ -1,0 +1,14 @@
+# Package source files
+src/circ_buf.c
+src/connection.c
+src/filter.c
+src/io_stream.c
+src/main.c
+src/misc.c
+src/network.c
+src/parser.c
+src/readwrite.c
+
+# Contib files
+contrib/getopt.c
+# getopt1.c

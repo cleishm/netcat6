@@ -29,8 +29,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+ 
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.22 2003-01-13 20:30:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.23 2003-01-18 20:06:36 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -50,7 +54,7 @@ static void setup_local_stream(const connection_attributes *attrs,
 static void setup_remote_stream(const connection_attributes *attrs,
                                 int fd, int socktype, io_stream* remote);
 static int run_transfer(io_stream *remote_stream, io_stream *local_stream);
-
+static void i18n_init(void);
 
 
 int main(int argc, char **argv)
@@ -58,6 +62,8 @@ int main(int argc, char **argv)
 	connection_attributes connection_attrs;
 	char *ptr;
 	int mode, retval;
+
+	i18n_init();
 
 	/* initialise connection attributes */
 	ca_init(&connection_attrs);
@@ -104,7 +110,7 @@ static int establish_connection(int mode, const connection_attributes *attrs,
 		fd = do_connect(attrs, &socktype);
 		break;
 	default:
-		fatal("internal error: unknown connection mode");
+		fatal(_("internal error: unknown connection mode"));
 		/* not reached - but stops warnings about uninitialized fd */
 		fd = -1;
 		break;
@@ -117,13 +123,13 @@ static int establish_connection(int mode, const connection_attributes *attrs,
 	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 		switch (socktype) {
 		case SOCK_STREAM:
-			warn("using stream socket");
+			warn(_("using stream socket"));
 			break;
 		case SOCK_DGRAM:
-			warn("using datagram socket");
+			warn(_("using datagram socket"));
 			break;
 		default:
-			fatal("internal error: unsupported socktype %d",
+			fatal(_("internal error: unsupported socktype %d"),
 			      socktype);
 		}
 	}
@@ -174,12 +180,12 @@ static int connection_main(const connection_attributes *attrs,
 
 	/* give information about the connection in very verbose mode */
 	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
-		warn("using buffer size of %d", remote_buffer.buf_size);
+		warn(_("using buffer size of %d"), remote_buffer.buf_size);
 		if (remote_stream.nru > 0)
-			warn("using remote receive nru of %d",
+			warn(_("using remote receive nru of %d"),
 			     remote_stream.nru);
 		if (remote_stream.mtu > 0)
-			warn("using remote send mtu of %d",
+			warn(_("using remote send mtu of %d"),
 			     remote_stream.mtu);
 	}
 
@@ -247,7 +253,8 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 		ios_set_hold_timeout(local_stream, -1);
 
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("receiving from remote only, transmit disabled");
+			warn(_("receiving from remote only, "
+			     "transmit disabled"));
 	}
 
 	if (is_flag_set(SEND_DATA_ONLY) == TRUE) {
@@ -262,14 +269,15 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 		ios_set_hold_timeout(local_stream, -1);
 
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("transmitting to remote only, receive disabled");
+			warn(_("transmitting to remote only, "
+			     "receive disabled"));
 	}
 
 	/* run the main read/write loop */
 	retval = readwrite(remote_stream, local_stream);
 
 	if (is_flag_set(VERBOSE_MODE) == TRUE)
-		warn("connection closed (sent %d, rcvd %d)",
+		warn(_("connection closed (sent %d, rcvd %d)"),
 		     ios_bytes_sent(remote_stream),
 		     ios_bytes_received(remote_stream));
 
@@ -281,4 +289,16 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 const char *get_program_name(void)
 {
 	return program_name;
+}
+
+static void i18n_init(void)
+{
+#ifdef ENABLE_NLS
+#ifdef HAVE_SETLOCALE
+	setlocale(LC_ALL, "");
+	setlocale(LC_MESSAGES, "");
+#endif /* HAVE_SETLOCALE */
+	bindtextdomain(PACKAGE, LOCALEDIR);
+	textdomain(PACKAGE);
+#endif /* ENABLE_NLS */
 }

@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.22 2003-01-14 20:39:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.23 2003-01-18 20:06:36 chris Exp $");
 
 
 
@@ -213,7 +213,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 		case EAI_SOCKTYPE:
 			return FALSE;
 		default:
-			fatal("getaddrinfo error: %s", gai_strerror(err));
+			fatal(_("getaddrinfo error: %s"), gai_strerror(err));
 		}
 	}
 

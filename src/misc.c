@@ -36,7 +36,7 @@
 #include <paths.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.17 2003-01-13 20:30:35 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.18 2003-01-18 20:06:36 chris Exp $");
 
 
 
@@ -82,7 +82,7 @@ void *xmalloc(size_t size)
 {
 	register void *value = malloc(size);
 	
-	if (value == NULL) fatal("virtual memory exhausted");
+	if (value == NULL) fatal(_("virtual memory exhausted"));
 
 	return value;
 }
@@ -103,13 +103,13 @@ void nonblock(int fd)
 {
 	int arg;
 	if ((arg = fcntl(fd, F_GETFL, 0)) < 0)
-		fatal("error reading file descriptor flags: %s",
+		fatal(_("error reading file descriptor flags: %s"),
 		      strerror(errno));
 
 	arg |= O_NONBLOCK;
 
 	if (fcntl(fd, F_SETFL, arg) < 0)
-		fatal("error setting flag O_NONBLOCK on file descriptor",
+		fatal(_("error setting flag O_NONBLOCK on file descriptor"),
 		      strerror(errno));
 }
 
@@ -166,22 +166,22 @@ int open3(char *cmd, int *in, int *out, int *err)
 		/* replace stdin, stdout and stderr */
 		close(STDIN_FILENO);
 		if (dup2(inpipe[0], STDIN_FILENO) < 0)
-			fatal("dup2 failed: %s", strerror(errno));
+			fatal(_("dup2 failed: %s"), strerror(errno));
 		close(inpipe[0]);
 
 		close(STDOUT_FILENO);
 		if (dup2(outpipe[1], STDOUT_FILENO) < 0)
-			fatal("dup2 failed: %s", strerror(errno));
+			fatal(_("dup2 failed: %s"), strerror(errno));
 		close(outpipe[1]);
 
 		close(STDERR_FILENO);
 		if (dup2(errpipe[1], STDERR_FILENO) < 0)
-			fatal("dup2 failed: %s", strerror(errno));
+			fatal(_("dup2 failed: %s"), strerror(errno));
 		close(errpipe[1]);
 
 		/* exec the required command */
 		execv(_PATH_BSHELL, argv);
-		fatal("execv failed: %s", strerror(errno));
+		fatal(_("execv failed: %s"), strerror(errno));
 	}
 
 	/* parent */
@@ -211,9 +211,9 @@ int safe_atoi(const char *str)
 	errno = 0;
 	res = strtol(str, &c, 10);
 	if (errno == ERANGE || res > INT_MAX || res < INT_MIN)
-		fatal("error parsing integer: out of range");
+		fatal(_("error parsing integer: out of range"));
 	
-	if (*c != '\0') fatal("error parsing integer from string");
+	if (*c != '\0') fatal(_("error parsing integer from string"));
 
 	return ((int)res);
 }

@@ -17,9 +17,9 @@ EXTRA_DIST		= bootstrap BUGS CREDITS \
 			  config/type_struct_sockaddr_in6.m4 \
 			  config/type_socklen_t.m4 
 
-AUTOMAKE_OPTIONS 	= dist-bzip2
+AUTOMAKE_OPTIONS 	= 1.6 dist-bzip2
 ACLOCAL_AMFLAGS		= -I $(top_srcdir)/config
-SUBDIRS 		= docs contrib src
+SUBDIRS 		= contrib intl po src docs
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
 			  config.h.in config.status config.log \
 			  $(auxdir)/depcomp $(auxdir)/install-sh \

@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.20 2003-01-11 19:55:41 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.21 2003-01-18 20:06:36 chris Exp $");
 
 
 
@@ -110,11 +110,11 @@ void ios_assign_stdio(io_stream *ios)
 	ios_assert(ios);
 
 	if ((ios->fd_in  = dup(STDIN_FILENO)) < 0) 
-		fatal("error in duplicating stdin file descriptor: %s", 
+		fatal(_("error in duplicating stdin file descriptor: %s"), 
 		      strerror(errno));
 	
 	if ((ios->fd_out = dup(STDOUT_FILENO)) < 0) 
-		fatal("error in duplicating stdout file descriptor: %s", 
+		fatal(_("error in duplicating stdout file descriptor: %s"), 
 		      strerror(errno));
 
 	/* pretend stdio is a stream socket */
@@ -182,7 +182,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 		/* timeout has expired */
 		timerclear(tv);
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("%s hold timed out", ios->name);
+			warn(_("%s hold timed out"), ios->name);
 #ifndef NDEBUG
 	} else if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 		warn("%s timer expires in %d.%06d",
@@ -221,7 +221,7 @@ ssize_t ios_read(io_stream *ios)
 	} else if (rr == 0) {
 		/* read eof - close read stream */
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("read eof from %s", ios->name);
+			warn(_("read eof from %s"), ios->name);
 		ios_shutdown(ios, SHUT_RD);
 		return IOS_EOF;
 	} else if (errno == EAGAIN) {
@@ -230,7 +230,7 @@ ssize_t ios_read(io_stream *ios)
 	} else {
 		/* weird error */
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("error reading from %s: %s",
+			warn(_("error reading from %s: %s"),
 			     ios->name, strerror(errno));
 		return IOS_FAILED;
 	}
@@ -273,9 +273,9 @@ ssize_t ios_write(io_stream *ios)
 	} else {
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 			if (errno == EPIPE)
-				warn("received SIGPIPE on %s", ios->name);
+				warn(_("received SIGPIPE on %s"), ios->name);
 			else
-				warn("error writing to %s: %s",
+				warn(_("error writing to %s: %s"),
 				     ios->name, strerror(errno));
 		}
 		return IOS_FAILED;
@@ -314,7 +314,7 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
 			close(ios->fd_out);
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-			warn("closed %s", ios->name);
+			warn(_("closed %s"), ios->name);
 		ios->fd_in = ios->fd_out = -1;
 	} else if (how == SHUT_RD) {
 		/* close the input */
@@ -326,12 +326,13 @@ void ios_shutdown(io_stream* ios, int how)
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_in, SHUT_RD);
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn("shutdown %s for read", ios->name);
+					warn(_("shutdown %s for read"),
+					     ios->name);
 			}
 		} else {
 			close(ios->fd_in);
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("closed %s for read", ios->name);
+				warn(_("closed %s for read"), ios->name);
 		}
 		ios->fd_in = -1;
 		/* record the read shutdown time */
@@ -347,12 +348,13 @@ void ios_shutdown(io_stream* ios, int how)
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_out, SHUT_WR);
 				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-					warn("shutdown %s for write",ios->name);
+					warn(_("shutdown %s for write"),
+					     ios->name);
 			}
 		} else {
 			close(ios->fd_out);
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
-				warn("closed %s for write", ios->name);
+				warn(_("closed %s for write"), ios->name);
 		}
 		ios->fd_out = -1;
 	}

@@ -2,9 +2,13 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(nc6, 0.2pre4b-cvs, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(1.6)        dnl Automake 1.6 or better is required
 AM_CONFIG_HEADER(config.h)
 AC_PREREQ(2.52)              dnl Autoconf 2.52 or better is required
+
+
+dnl Languages supported
+ALL_LINGUAS="it"
 
 
 dnl Checks for programs.
@@ -19,7 +23,6 @@ AC_PROG_INSTALL
 dnl Check paths
 PATH_BSHELL
 PATH_DEVNULL
-
 
 dnl default CFLAGS to use for nc6 source
 NC6_CFLAGS=""
@@ -42,6 +45,10 @@ AC_CHECK_TYPE(ssize_t, int)
 TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
+
+
+dnl internationalization macros
+AM_GNU_GETTEXT
 
 
 dnl Configure IPv6 support
@@ -146,6 +153,21 @@ GETADDRINFO_AI_ALL(
 )
 
 
+dnl Set the locale directory
+localedir=${datadir}/locale
+AC_ARG_WITH(localedir,
+  AC_HELP_STRING(
+    [--with-localedir=DIR],
+    [locale files [[DATADIR/locale]]]
+  ),[
+    localedir=$with_localedir
+  ],[
+    localedir=${datadir}/locale
+  ]
+)
+AC_SUBST(localedir)
+
+
 dnl The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then
   NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
@@ -181,9 +203,10 @@ else
     NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
   fi
 fi
-    
+
+
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile \
-	nc6.spec docs/nc6.1])
+	intl/Makefile po/Makefile.in nc6.spec docs/nc6.1])
 AC_OUTPUT
