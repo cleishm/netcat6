@@ -160,6 +160,8 @@ void readwrite(io_stream *ios1, io_stream *ios2)
 	 * 
 	 * 1) the local or the remote input streams has been closed
 	 * 2) the timeout set by the user is expired 
+	 *
+	 * a pipe error when writing either stream will also exit the loop.
 	 */
 	while(((timeout_mode == FALSE) && (ios1->fd_in >= 0)) ||
 	      ((timeout_mode == TRUE) && (((ios1->fd_in >= 0) || 
@@ -327,8 +329,20 @@ void readwrite(io_stream *ios1, io_stream *ios2)
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1->fd_out:
 				 * print an error message and exit. */
-				fatal("error writing to fd %d: %s",
-					ios1->fd_out, strerror(errno));
+				if (errno != EPIPE)
+					fatal("error writing to fd %d: %s",
+						ios1->fd_out, strerror(errno));
+				
+				/* the pipe is broken, clear buffer and stop the loop */
+#ifndef NDEBUG
+				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+					warn("received SIGPIPE on ios1 (%d)", ios1->fd_out);
+#endif
+
+				clear_cb(buf2);
+
+				/* exit the main loop */
+				break;
 			}
 		}
 
@@ -364,8 +378,20 @@ void readwrite(io_stream *ios1, io_stream *ios2)
 			} else if (rr < 0 && errno != EAGAIN) {
 				/* error while writing to ios1->fd_out:
 				 * print an error message and exit. */
-				fatal("error writing to fd %d: %s",
-					ios2->fd_out, strerror(errno));
+				if (errno != EPIPE)
+					fatal("error writing to fd %d: %s",
+						ios2->fd_out, strerror(errno));
+				
+				/* the pipe is broken, clear buffer and stop the loop */
+#ifndef NDEBUG
+				if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+					warn("received SIGPIPE on ios2 (%d)", ios2->fd_out);
+#endif
+
+				clear_cb(buf1);
+
+				/* exit the main loop */
+				break;
 			}
 		}
 	}
