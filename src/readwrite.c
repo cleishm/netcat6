@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.15 2002-12-24 20:08:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.16 2002-12-24 20:20:31 mauro Exp $");
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = 8192;
@@ -132,16 +132,16 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		/* sanity checks */
 		/* writefd should be set iff the buffer contains data */
 		assert(XOR(is_empty(buf1) == TRUE,
-		    is_write_open(ios2) && FD_ISSET(ios_writefd(ios2), &write_fdset)));
+		       is_write_open(ios2) && FD_ISSET(ios_writefd(ios2), &write_fdset)));
 		assert(XOR((is_empty(buf2) == TRUE),
-		    is_write_open(ios1) && FD_ISSET(ios_writefd(ios1), &write_fdset)));
+		       is_write_open(ios1) && FD_ISSET(ios_writefd(ios1), &write_fdset)));
 		/* readfd should be set (or closed) iff the buffer is not full
 		 * or tbuf1 is in use and it still contains data */
 		assert(XOR(
-		    (tbuf1 && tbuf1_bytes > 0) || (!tbuf1 && is_full(buf1) == TRUE),
-		    !is_read_open(ios1) || FD_ISSET(ios_readfd(ios1), &read_fdset)));
+		       (tbuf1 && tbuf1_bytes > 0) || (!tbuf1 && is_full(buf1) == TRUE),
+		       !is_read_open(ios1) || FD_ISSET(ios_readfd(ios1), &read_fdset)));
 		assert(XOR(is_full(buf2) == TRUE,
-		    !is_read_open(ios2) || FD_ISSET(ios_readfd(ios2), &read_fdset)));
+		       !is_read_open(ios2) || FD_ISSET(ios_readfd(ios2), &read_fdset)));
 		/* if tbuf1 is not being used, tbuf1_bytes must be 0 */
 		assert(tbuf1 || tbuf1_bytes == 0);
 
@@ -219,8 +219,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				 * OR if reading straight to buf1 and it's full,
 				 * then suspend further reading */
 				if ((tbuf1 && tbuf1_bytes > 0) ||
-				    (!tbuf1 && is_full(buf1) == TRUE))
-				{
+				    (!tbuf1 && is_full(buf1) == TRUE)) {
 					FD_CLR(ios_readfd(ios1), &read_fdset);
 				}
 				    

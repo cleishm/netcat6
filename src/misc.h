@@ -30,7 +30,7 @@
 #undef  MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-#undef XOR
+#undef  XOR
 #define XOR(a,b) (((a)||(b)) && !((a)&&(b)))
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;

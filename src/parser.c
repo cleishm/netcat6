@@ -31,13 +31,13 @@
 #include <unistd.h>
 #include <netdb.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.12 2002-12-24 20:08:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.13 2002-12-24 20:20:31 mauro Exp $");
 
 
 static unsigned long flags_mask;
 static void set_flag(unsigned long mask);
 static void parse_and_set_timeouts(const char *str,
-		connection_attributes *attrs);
+                                   connection_attributes *attrs);
 static void print_usage(FILE *fp);
 
 
@@ -144,14 +144,12 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	/* sanity check */
 	if (attrs->remote_address.address != NULL &&
-		strlen(attrs->remote_address.address) == 0)
-	{
+		strlen(attrs->remote_address.address) == 0) {
 		attrs->remote_address.address = NULL;
 	}
 
 	if (attrs->remote_address.service != NULL &&
-		strlen(attrs->remote_address.service) == 0)
-	{
+		strlen(attrs->remote_address.service) == 0) {
 		attrs->remote_address.service = NULL;
 	}
 
@@ -171,8 +169,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		}
 		
 		if (attrs->remote_address.address == NULL ||
-		    attrs->remote_address.service == NULL)
-		{
+		    attrs->remote_address.service == NULL) {
 			warn("you must specify the address/port couple of the remote endpoint");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -219,11 +216,11 @@ static void parse_and_set_timeouts(const char *str,
 	if ((s = strchr(str, ':')) != NULL) {
 		*s++ = '\0';
 		ios_set_hold_timeout(&(attrs->remote_stream),
-		      (s[0] == '-')? -1 : safe_atoi(s));
+		                     (s[0] == '-')? -1 : safe_atoi(s));
 	}
 
 	ios_set_hold_timeout(&(attrs->local_stream),
-	      (str[0] == '-')? -1 : safe_atoi(str));
+	                     (str[0] == '-')? -1 : safe_atoi(str));
 }
 
 

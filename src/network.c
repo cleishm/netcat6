@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.15 2002-12-24 20:08:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.16 2002-12-24 20:20:31 mauro Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when
@@ -44,8 +44,7 @@ RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.15 2002
  * ipv6 addresses to the start of the getaddrinfo results.
  */
 #ifdef ENABLE_IPV6
-inline
-static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
+inline static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
 {
 	struct addrinfo* ptr;
 	struct addrinfo* lastv6 = NULL;
@@ -87,8 +86,7 @@ static struct addrinfo* order_ipv6_first(struct addrinfo *ai)
  * used - resulting in a failure when trying to create the socket.
  * This function checks for all the different error codes that indicate this
  * situation */
-inline
-static bool unsupported_sock_error(int err)
+inline static bool unsupported_sock_error(int err)
 {
 	return (err == EPFNOSUPPORT ||
 	        err == EAFNOSUPPORT ||
@@ -160,8 +158,8 @@ void do_connect(connection_attributes *attrs)
 
 		/* get the numeric name for this destination as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		        hbuf_num, sizeof(hbuf_num), sbuf_num, 
-		        sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		                  hbuf_num, sizeof(hbuf_num), sbuf_num, 
+		                  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
 		if (err != 0)
@@ -173,12 +171,12 @@ void do_connect(connection_attributes *attrs)
 		{
 			/* get the real name for this destination as a string */
 			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-					hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
-					sizeof(sbuf_rev), 0);
+			                  hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
+			                  sizeof(sbuf_rev), 0);
 
 			if (err != 0)
 				warn("inverse lookup failed for %s: %s",
-					 hbuf_num, gai_strerror(err));
+				     hbuf_num, gai_strerror(err));
 		} else {
 			err = 1;
 		}
@@ -209,8 +207,7 @@ void do_connect(connection_attributes *attrs)
 #endif 
 
 		/* setup local source address and/or service */
-		if (local->address != NULL || local->service != NULL)
-		{
+		if (local->address != NULL || local->service != NULL) {
 			struct addrinfo *src_res = NULL, *src_ptr;
 		
 			/* setup hints structure to be passed to getaddrinfo */
@@ -227,7 +224,7 @@ void do_connect(connection_attributes *attrs)
 			err = getaddrinfo(local->address, local->service, &hints, &src_res);
 			if (err != 0)
 				fatal("forward host lookup failed for source address %s: %s",
-				     local->address, gai_strerror(err));
+				      local->address, gai_strerror(err));
 
 			/* check the results of getaddrinfo */
 			assert(src_res != NULL);
@@ -246,9 +243,9 @@ void do_connect(connection_attributes *attrs)
 				
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
 					warn("bind to source addr/port failed "
-						 "when connecting %s [%s] %s (%s): %s",
-						 hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
-						 strerror(errno));
+				             "when connecting %s [%s] %s (%s): %s",
+					     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
+					     strerror(errno));
 				}
 				freeaddrinfo(src_res);
 				close(fd);
@@ -264,7 +261,7 @@ void do_connect(connection_attributes *attrs)
 		if (err != 0) {
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("%s [%s] %s (%s): %s",
-				    hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
+				     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
 			}
 			close(fd);
 			fd = -1;
@@ -293,7 +290,7 @@ void do_connect(connection_attributes *attrs)
 
 	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 		warn("using %s socket",
-			(ptr->ai_socktype == SOCK_STREAM)? "stream":"datagram");
+		     (ptr->ai_socktype == SOCK_STREAM)? "stream":"datagram");
 	}
 
 	/* cleanup addrinfo structure */
@@ -316,12 +313,11 @@ typedef struct fd_socktype_t {
 
 
 /* add a new fd/socktype pair to the list */
-inline
-static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
-		int fd, int socktype)
+inline static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
+                                    int fd, int socktype)
 {
 	fd_socktype* fdnew;
-	fdnew = (fd_socktype*) xmalloc(sizeof(fd_socktype));
+	fdnew = (fd_socktype*)xmalloc(sizeof(fd_socktype));
 	fdnew->fd = fd;
 	fdnew->socktype = socktype;
 	/* prepend to the start of the list */
@@ -332,10 +328,9 @@ static fd_socktype* add_fd_socktype(fd_socktype* fd_socktypes,
 
 
 /* retrieve a socktype for a given fd from the list */
-inline
-static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
+inline static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
 {
-	assert(fd_socktypes);
+	assert(fd_socktypes != NULL);
 	while (fd_socktypes && fd_socktypes->fd != fd)
 		fd_socktypes = fd_socktypes->next;
 	return (fd_socktypes)? fd_socktypes->socktype : -1;
@@ -344,8 +339,7 @@ static int find_fd_socktype(const fd_socktype* fd_socktypes, int fd)
 
 
 /* destroy an fd_socktype list */
-inline
-static void destroy_fd_socktypes(fd_socktype* fd_socktypes)
+inline static void destroy_fd_socktypes(fd_socktype* fd_socktypes)
 {
 	fd_socktype* tmp;
 	while (fd_socktypes) {
@@ -397,7 +391,7 @@ void do_listen(connection_attributes *attrs)
 	if (err != 0) 
 		fatal("forward host lookup failed for local endpoint %s (%s): %s",
 		      local->address? local->address : "[unspecified]",
-			  local->service, gai_strerror(err));
+		      local->service, gai_strerror(err));
 		
 	/* check the results of getaddrinfo */
 	assert(res != NULL);
@@ -430,8 +424,8 @@ void do_listen(connection_attributes *attrs)
 
 		/* get the numeric name for this source as a string */
 		err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-		        hbuf_num, sizeof(hbuf_num), sbuf_num, 
-		        sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
+		                  hbuf_num, sizeof(hbuf_num), sbuf_num, 
+		                  sizeof(sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		/* this should never happen */
 		if (err != 0)
@@ -485,7 +479,7 @@ void do_listen(connection_attributes *attrs)
 
 		if (is_flag_set(VERBOSE_MODE) == TRUE)
 			warn("listening on %s (%s) ...",
-			      hbuf_num, sbuf_num, strerror(errno));
+			     hbuf_num, sbuf_num, strerror(errno));
 
 		/* add fd to fd_socktypes (just add to the head of the list) */
 		fd_socktypes = add_fd_socktype(fd_socktypes, fd, ptr->ai_socktype);
@@ -542,7 +536,7 @@ void do_listen(connection_attributes *attrs)
 			assert(socktype == SOCK_DGRAM);
 
 			err = recvfrom(fd, NULL, 0, MSG_PEEK,
-			        (struct sockaddr*)&dest, &destlen);
+			               (struct sockaddr*)&dest, &destlen);
 			if (err < 0)
 				fatal("cannot recv from socket: %s", strerror(errno));
 
@@ -564,8 +558,8 @@ void do_listen(connection_attributes *attrs)
 
 			/* get the numeric name for this source as a string */
 			err = getnameinfo((struct sockaddr *)&src, srclen,
-			        hbuf_num, sizeof(hbuf_num), NULL, 0,
-			        NI_NUMERICHOST | NI_NUMERICSERV);
+			                  hbuf_num, sizeof(hbuf_num), NULL, 0,
+			                  NI_NUMERICHOST | NI_NUMERICSERV);
 
 			/* this should never happen */
 			if (err != 0)
@@ -573,7 +567,7 @@ void do_listen(connection_attributes *attrs)
 
 			/* get the numeric name for this client as a string */
 			err = getnameinfo((struct sockaddr *)&dest, destlen,
-			        c_hbuf_num, sizeof(c_hbuf_num), c_sbuf_num, 
+			                  c_hbuf_num, sizeof(c_hbuf_num), c_sbuf_num, 
 					  sizeof(c_sbuf_num), NI_NUMERICHOST | NI_NUMERICSERV);
 			if (err != 0)
 				fatal("getnameinfo failed: %s", gai_strerror(err));
@@ -581,10 +575,10 @@ void do_listen(connection_attributes *attrs)
 			/* get the real name for this client as a string */
 			if (is_flag_set(NUMERIC_MODE) == FALSE) {
 				err = getnameinfo((struct sockaddr *)&dest, destlen,
-					c_hbuf_rev, sizeof(c_hbuf_rev), NULL, 0, 0);
+				                  c_hbuf_rev, sizeof(c_hbuf_rev), NULL, 0, 0);
 				if (err != 0)
 					warn("inverse lookup failed for %s: %s",
-					      c_hbuf_num, gai_strerror(err));
+				             c_hbuf_num, gai_strerror(err));
 			} else {
 				err = 1;
 			}
@@ -609,12 +603,12 @@ void do_listen(connection_attributes *attrs)
 
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("connect to %s (%s) from %s [%s] %s",
-				      hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				     hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 
 			if (is_flag_set(VERY_VERBOSE_MODE) == TRUE) {
 				warn("using %s socket",
-					(socktype == SOCK_STREAM)? "stream":"datagram");
+				     (socktype == SOCK_STREAM)? "stream":"datagram");
 			}
 
 			break;
@@ -628,7 +622,7 @@ void do_listen(connection_attributes *attrs)
 
 			if (is_flag_set(VERBOSE_MODE) == TRUE) {
 				warn("refused connect to %s (%s) from %s [%s] %s",
-					hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				     hbuf_num, sbuf_num, c_hbuf_rev, c_hbuf_num, c_sbuf_num);
 			}
 		}
 	}

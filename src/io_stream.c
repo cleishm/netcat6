@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.4 2002-12-24 20:08:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.5 2002-12-24 20:20:31 mauro Exp $");
 
 
 /* static void nonblock(int fd); */
@@ -38,7 +38,7 @@ RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.4 200
 
 void io_stream_init(io_stream *ios)
 {
-	assert(ios);
+	assert(ios != NULL);
 
 	ios->fd_in = -1;
 	ios->fd_out = -1;
@@ -51,7 +51,7 @@ void io_stream_init(io_stream *ios)
 
 void io_stream_destroy(io_stream *ios)
 {
-	assert(ios);
+	assert(ios != NULL);
 	ios_shutdown(ios, SHUT_RDWR);
 }
 
@@ -59,7 +59,7 @@ void io_stream_destroy(io_stream *ios)
 
 void ios_assign_socket(io_stream *ios, int fd, int socktype)
 {
-	assert(ios);
+	assert(ios != NULL);
 	assert(fd >= 0);
 
 	/* nonblock(fd); */
@@ -72,7 +72,7 @@ void ios_assign_socket(io_stream *ios, int fd, int socktype)
 
 void ios_assign_stdio(io_stream *ios)
 {
-	assert(ios);
+	assert(ios != NULL);
 
 	if ((ios->fd_in  = dup(STDIN_FILENO)) < 0) 
 		fatal("error in duplicating stdin file descriptor: %s", 
@@ -92,12 +92,11 @@ void ios_assign_stdio(io_stream *ios)
 
 void ios_shutdown(io_stream* ios, int how)
 {
-	assert(ios);
+	assert(ios != NULL);
 
 	if (how == SHUT_RDWR) {
 		/* close both the input and the output */
-		if (ios->fd_in != -1)
-		{
+		if (ios->fd_in != -1) {
 			close(ios->fd_in);
 			/* record the read shutdown time */
 			gettimeofday(&(ios->read_closed), NULL);
@@ -138,8 +137,8 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 {
 	struct timeval now;
 
-	assert(ios);
-	assert(tv);
+	assert(ios != NULL);
+	assert(tv != NULL);
 
 	/* no timeout if read is still open or hold time is infinite */
 	if (is_read_open(ios) || ios->hold_time < 0)
