@@ -1,0 +1,99 @@
+README.Maint - information for nc6 maintainers
+--------------------------------------------------------------
+
+$Id: README.Maint,v 1.1 2002-12-24 09:18:52 chris Exp $
+
+
+Source layout
+-------------
+
+/		- build files (configure, Makefile.am, etc)
+/config		- autoconf macros
+/src		- all source code
+/docs		- documentation, man pages, etc
+
+
+Getting started
+---------------
+
+To get a usable configure system after checking source out of CVS, run
+
+./bootstrap
+
+This will process all the automake/autoconf files and build a configure
+script.
+
+
+Style guide
+-----------
+
+* 4-column indent.
+* Opening curly on same line as keyword, if possible, otherwise line up.
+* No space before the semicolon.
+* Space around most operators.
+* Space around a "complex" subscript (inside brackets).
+* Blank lines between chunks that do different things.
+* Cuddled elses.
+* No space between function name and its opening parenthesis.
+* Space after each comma.
+* Long lines broken after an operator.
+* Line up corresponding items vertically.
+* Omit redundant punctuation as long as clarity doesn't suffer.
+
+
+Version numbering
+-----------------
+
+nc6 will use a simple major.minor version numbering scheme.  For each minor
+release the minor number is incremented, and for a major release the major
+number is incremented and the minor number reset to 0.
+
+A typical release pattern might be as follows:
+
+	0.8
+	0.9
+	0.10
+	0.11
+	1.0
+	1.1
+	1.2
+	2.0
+	etc
+
+Versions built from the CVS tree will have the version number of the last
+release, appended with the '-cvs' modifier (eg. 1.2-cvs).  This indicates
+the source is based on the 1.2 release, but may contain modifications.
+
+Each release should also contain a corresponding CVS tag in the repository -
+of the form 'release_XX_XX' (eg. release_0_11).
+
+
+Making a Release 
+----------------
+
+To make a new release, the following process should be followed:
+
+1) Clean the source tree (make maintainer-clean)
+2) Edit the ChangeLog
+3) Edit the version number in configure.ac (and be sure to remove the '-cvs')
+4) Commit changes
+5) Tag the repository with the release tag
+6) ./bootstrap
+7) ./configure
+8) make dist
+
+This will build a tar.gz and tar.bz2 in the root of the source tree.  These
+should be made available for download from the deepspace6 website.
+
+9) make maintainer-clean
+10) Edit configure.ac to add '-cvs' onto the end of the version number
+11) Commit changes
+
+
+Release Announcements
+---------------------
+
+(TODO: where should releases be announced to?)
+
+
+
