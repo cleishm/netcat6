@@ -70,9 +70,9 @@ void warn(const char *template, ...)
 
 
 /* same as `malloc' but report error if no memory available */
-uint8_t *xmalloc(size_t size)
+void *xmalloc(size_t size)
 {
-	register uint8_t *value = (uint8_t *)malloc(size);
+	register void *value = malloc(size);
 	
 	if (value == NULL) fatal("virtual memory exhausted");
 
