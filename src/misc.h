@@ -24,6 +24,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #undef  MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -48,6 +49,37 @@ int safe_atoi(const char *str);
 #else
 #define safe_atoi atoi
 #endif
+
+/* operations on timevals - copied from BSD sys/time.h */
+#ifndef timerclear
+#define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
+#endif
+#ifndef timerisset
+#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
+#endif
+#ifndef timeradd
+#define timeradd(tvp, uvp, vvp)						\
+	do {								\
+		(vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;		\
+		(vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;	\
+		if ((vvp)->tv_usec >= 1000000) {			\
+			(vvp)->tv_sec++;				\
+			(vvp)->tv_usec -= 1000000;			\
+		}							\
+	} while (0)
+#endif
+#ifndef timersub
+#define	timersub(tvp, uvp, vvp)						\
+	do {								\
+		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;		\
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;	\
+		if ((vvp)->tv_usec < 0) {				\
+			(vvp)->tv_sec--;				\
+			(vvp)->tv_usec += 1000000;			\
+		}							\
+	} while (0)
+#endif
+
 
 #ifndef lint
 #define RCSID(X) static const char rcsid[] = X
