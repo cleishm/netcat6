@@ -115,26 +115,30 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Missing functions required to compile nc6])]
 )
 
-IN6_FUNC_GETADDRINFO([],
-  [AC_MSG_ERROR([Your system has a buggy getaddrinfo implementation])]
-)
-
-IN6_FUNC_GETADDRINFO_AI_ADDRCONFIG(
+# actually, the GETADDRINFO_AI_* macros do __NOT__ check if getaddrinfo 
+# supports the AI_* flag, but only if the flag is defined in <netdb.h>
+GETADDRINFO_AI_ADDRCONFIG(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_ADDRCONFIG], 1, 
-    [Define if getaddrinfo supports AI_ADDRCONFIG flag.]
-  )
+    [Define if the system headers support the AI_ADDRCONFIG flag.]
+  ),
+  AC_MSG_NOTICE([getaddrinfo does not support the AI_ADDRCONFIG flag.])
 )
 
-IN6_FUNC_GETADDRINFO_AI_ALL(
-  [AC_DEFINE(
-    [HAVE_GETADDRINFO_AI_ALL], 1, 
-    [Define if getaddrinfo supports AI_ALL flag.]
-  )
+GETADDRINFO_AI_V4MAPPED(
   AC_DEFINE(
     [HAVE_GETADDRINFO_AI_V4MAPPED], 1, 
-    [Define if getaddrinfo supports AI_V4MAPPED flag.]
-  )]
+    [Define if the system headers support the AI_V4MAPPED flag.]
+  ),
+  AC_MSG_NOTICE([getaddrinfo does not support the AI_V4MAPPED flag.])
+)
+
+GETADDRINFO_AI_ALL(
+  AC_DEFINE(
+    [HAVE_GETADDRINFO_AI_ALL], 1, 
+    [Define if the system headers support the AI_ALL flag.]
+  ),
+  AC_MSG_NOTICE([getaddrinfo does not support the AI_ALL flag.])
 )
 
 

@@ -13,13 +13,14 @@ small hacks/bugfixes that _MUST_ be done before final release 0.2.0:
 
 big features to be added in the next releases:
 
-- ascii logging of connections
-- hexdump logging
+- ascii and hexdump logging of connections
 - UDP path mtu discovery support
 - ssl support
 - simple (maybe even advanced/stealth?) portscanning
-- add support for execution of programs?
-- add inetd-like continuos listening mode?
+- add support for execution of programs
+- add inetd-like continuos listening mode
+- simple telnet support?
+- plugin capability
 
 
 

@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.9 2002-12-28 19:01:41 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.10 2002-12-29 17:56:12 mauro Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 
 	/* setup local stream */
 	ios_assign_stdio(&(connection_attrs.local_stream));
-
+	
 	/* establish remote connection */
 	switch (mode) {
 	case LISTEN_MODE:

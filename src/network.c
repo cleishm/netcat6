@@ -32,7 +32,7 @@
 #include "rt_config.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.21 2002-12-29 14:12:10 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.22 2002-12-29 17:56:12 mauro Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -48,21 +48,23 @@ void do_connect(connection_attributes *attrs)
 	char sbuf_rev[NI_MAXSERV + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 
-	/* make sure all the preconditions are respected */
+	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
+	
+	/* setup the addresses of the two connection endpoints */
+	remote = &(attrs->remote_address);
+	local  = &(attrs->local_address);
+
+	/* make sure all the preconditions are respected */
 	assert(remote->address != NULL && strlen(remote->address) > 0);
 	assert(remote->service != NULL && strlen(remote->service) > 0);
 	assert(local->address == NULL || strlen(local->address) > 0);
 	assert(local->service == NULL || strlen(local->service) > 0);
 
 	/* setup flags */
-	numeric_mode      = is_flag_set(NUMERIC_MODE);
-	verbose_mode      = is_flag_set(VERBOSE_MODE);
+	numeric_mode = is_flag_set(NUMERIC_MODE);
+	verbose_mode = is_flag_set(VERBOSE_MODE);
 	
-	/* setup the addresses of the two connection endpoints */
-	remote = &(attrs->remote_address);
-	local  = &(attrs->local_address);
-
 	/* setup hints structure to be passed to getaddrinfo */
 	memset(&hints, 0, sizeof(hints));
 	connection_attributes_to_addrinfo(&hints, attrs);
@@ -324,8 +326,14 @@ void do_listen(connection_attributes *attrs)
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
 
-	/* make sure all the preconditions are respected */
+	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
+	
+	/* setup the addresses of the two connection endpoints */
+	remote = &(attrs->remote_address);
+	local  = &(attrs->local_address);
+
+	/* make sure all the preconditions are respected */
 	assert(local->address == NULL || strlen(local->address) > 0);
 	assert(local->service != NULL && strlen(local->service) > 0);
 	assert(remote->address == NULL || strlen(remote->address) > 0);
@@ -336,10 +344,6 @@ void do_listen(connection_attributes *attrs)
 	verbose_mode    = is_flag_set(VERBOSE_MODE);
 	dont_reuse_addr = is_flag_set(DONT_REUSE_ADDR);
 	
-	/* setup the addresses of the two connection endpoints */
-	remote = &(attrs->remote_address);
-	local  = &(attrs->local_address);
-
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
 	
