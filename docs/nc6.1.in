@@ -92,8 +92,8 @@ Only receive data, don't transmit.  This also disables any hold timeouts.
 Only send data, don't receive.  This also disables any hold timeouts.
 .TP 13
 .I \--buffer-size=BYTES
-Set the buffer size for the remote endpoint (network receives).
-netcat6 does all network reads into this buffer, so it should be large enough
+Set the buffer size for the local and remote endpoints.
+netcat6 does all reads into these buffers, so they should be large enough
 to minimize excessive reads from the socket and in UDP mode it should be large
 enough to receive an entire datagram (also see '--nru').  By default, the
 buffer size is 8192 bytes for TCP connections and 65536 bytes for UDP.

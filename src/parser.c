@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.30 2003-01-03 23:25:19 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.31 2003-01-04 14:20:24 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -112,8 +112,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	int remote_hold_timeout;
 	size_t remote_mtu = 0;
 	size_t remote_nru = 0;
-	size_t remote_buffer_size = 0;
-	size_t local_buffer_size = 0;
+	size_t buffer_size = 0;
 
 	/* initialize the addresses of the connection endpoints */
 	address_init(&remote_address);
@@ -134,7 +133,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				break;
 			case OPT_BUFFER_SIZE:
 				assert(optarg != NULL);
-				remote_buffer_size = safe_atoi(optarg);
+				buffer_size = safe_atoi(optarg);
 				break;
 			case OPT_MTU:
 				assert(optarg != NULL);
@@ -203,8 +202,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				remote_mtu = DEFAULT_UDP_MTU;
 			if (remote_nru == 0)
 				remote_nru = DEFAULT_UDP_NRU;
-			if (remote_buffer_size == 0)
-				remote_buffer_size = DEFAULT_UDP_BUFFER_SIZE;
+			if (buffer_size == 0)
+				buffer_size = DEFAULT_UDP_BUFFER_SIZE;
 			break;
 		case 'v':	
 			if (++verbosity_level > 1) 
@@ -240,10 +239,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	/* setup file transfer depending on the mode */
 	if (file_transfer == TRUE) {
-		if (remote_buffer_size == 0)
-			remote_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
-		if (local_buffer_size == 0)
-			local_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;		
+		if (buffer_size == 0)
+			buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
 		if (listen_mode == TRUE) {
 			set_flag(RECV_DATA_ONLY);
 			unset_flag(SEND_DATA_ONLY);
@@ -254,8 +251,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	}
 
 	/* check nru - if it's too big data will never be received */
-	if (remote_nru > remote_buffer_size)
-		remote_nru = remote_buffer_size;
+	if (remote_nru > buffer_size)
+		remote_nru = buffer_size;
 
 	/* check to make sure the user wasn't silly enough to set both
 	 * --recv-only and --send-only */
@@ -348,10 +345,10 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ca_set_MTU(attrs, remote_mtu);
 	if (remote_nru > 0)
 		ca_set_NRU(attrs, remote_nru);
-	if (remote_buffer_size > 0)
-		ca_resize_remote_buf(attrs, remote_buffer_size);
-	if (local_buffer_size > 0)
-		ca_resize_local_buf(attrs, local_buffer_size);
+	if (buffer_size > 0) {
+		ca_resize_remote_buf(attrs, buffer_size);
+		ca_resize_local_buf(attrs, buffer_size);
+	}
 
 	assert(ret != -1);
 	return ret;
@@ -375,7 +372,7 @@ static void print_usage(FILE *fp)
 "  -n                Numeric-only IP addresses, no DNS\n" 
 "  -p, --port=PORT   Local source port\n"
 "  -q, --hold-timeout=SEC1[:SEC2]\n"
-"                    Set hold timeout(s)\n"
+"                    Set hold timeout(s) for local [and remote]\n"
 "  -s, --address=ADDRESS\n"
 "                    Local source address\n"
 "  -u, --udp         Require use of UDP\n"
@@ -386,7 +383,7 @@ static void print_usage(FILE *fp)
 "      --recv-only   Only receive data, don't transmit\n"
 "      --send-only   Only transmit data, don't receive\n"
 "      --buffer-size=BYTES\n"
-"                    Set buffer size for network receives\n"
+"                    Set buffer size\n"
 "      --mtu=BYTES   Set MTU for network connection transmits\n"
 "      --nru=BYTES   Set NRU for network connection receives\n"
 "      --half-close  Handle network half-closes correctly\n"
