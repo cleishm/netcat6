@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.5 2003-01-03 00:14:39 mauro Exp $
+$Id: README.Maint,v 1.6 2003-01-03 08:40:24 chris Exp $
 
 
 Source layout
@@ -142,7 +142,8 @@ The most important coding style rules for nc6 are:
   For instance, don't write:
 
 	/* do __NOT__ do this!!! */
-	int* foo(const char* str) {
+	int* foo(const char* str)
+	{
 		int* ret;
 		
 		ret = (int*)xmalloc(safe_atoi(str));
@@ -153,7 +154,8 @@ The most important coding style rules for nc6 are:
   but:
 
 	/* this is the correct layout for the code above */
-	int *foo(const char *str) {
+	int *foo(const char *str)
+	{
 		int *ret;
 		
 		ret = (int *)xmalloc(safe_atoi(str));
