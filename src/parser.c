@@ -32,7 +32,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.16 2002-12-29 14:22:27 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.17 2002-12-29 22:35:48 chris Exp $");
 
 
 static unsigned long flags_mask;
@@ -66,7 +66,7 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	attrs->type  = TCP_SOCKET;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46hlnp:q:s:t:uvx",
+	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch(c) {
