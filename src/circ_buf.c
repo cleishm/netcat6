@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.11 2002-12-27 22:58:32 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.12 2002-12-28 18:41:48 chris Exp $");
 
 
 
@@ -298,8 +298,8 @@ ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
 	if (cb_is_empty(cb)) return 0;
 	
 	/* set nbytes appropriately */
-	if (nbytes == 0 || nbytes > cb_size(cb))
-		nbytes = cb_size(cb);
+	if (nbytes == 0 || nbytes > cb_used(cb))
+		nbytes = cb_used(cb);
 
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {
@@ -366,8 +366,8 @@ ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
 	if (cb_is_empty(cb)) return 0;
 	
 	/* set nbytes appropriately */
-	if (nbytes == 0 || nbytes > cb_size(cb))
-		nbytes = cb_size(cb);
+	if (nbytes == 0 || nbytes > cb_used(cb))
+		nbytes = cb_used(cb);
 	
 	/* prepare for reading from buffer */
 	if (cb->ptr + cb->data_size > cb->buf + cb->buf_size) {

@@ -41,7 +41,8 @@ typedef struct circ_buf_t {
 void cb_init(circ_buf *cb, size_t size);
 void cb_destroy(circ_buf *cb);
 
-#define cb_size(CB)	((CB)->data_size)
+#define cb_size(CB)	((CB)->buf_size)
+#define cb_used(CB)	((CB)->data_size)
 #define cb_space(CB)	((CB)->buf_size - (CB)->data_size)
 
 #define cb_is_empty(CB)	(cb_size(CB) == 0)
