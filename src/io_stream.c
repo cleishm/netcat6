@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.21 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.22 2003-01-20 23:03:05 chris Exp $");
 
 
 
@@ -169,6 +169,8 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 	if (ios->hold_time == 0) {
 		/* instant timeout */
+		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+			warn(_("%s hold timed out (instant)"), ios->name);
 		timerclear(tv);
 		return tv;
 	}

@@ -34,7 +34,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.23 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.24 2003-01-20 23:03:05 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -280,6 +280,10 @@ static int run_transfer(io_stream *remote_stream, io_stream *local_stream)
 		warn(_("connection closed (sent %d, rcvd %d)"),
 		     ios_bytes_sent(remote_stream),
 		     ios_bytes_received(remote_stream));
+#ifndef NDEBUG
+	if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
+		warn("readwrite returned %d", retval);
+#endif
 
 	return retval;
 }
