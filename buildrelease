@@ -1,0 +1,113 @@
+#! /bin/sh
+# buildrelease -- make a release
+
+set -e
+PACKAGE=nc6
+
+# determine the version number
+current_version=`grep AC_INIT ./configure.ac | sed -e 's/^AC_INIT(.*, \(.*\)-cvs, .*)$/\1/'`
+if [ "X$current_version" = "X" ]; then
+    echo "Can't determine current version number.  Please check configure.ac"
+    exit 1
+fi
+
+current_major=`echo $current_version | sed -e 's/^\(.*\)\..*$/\1/'`
+if [ "X$current_major" = "X" ]; then
+    echo "Can't determine current major version number.  Please check configure.ac"
+    exit 1
+fi
+
+current_minor=`echo $current_version | sed -e 's/^.*\.\(.*\)$/\1/'`
+if [ "X$current_minor" = "X" ]; then
+    echo "Can't determine current minor version number.  Please check configure.ac"
+    exit 1
+fi
+
+new_version=$current_major.`expr $current_minor + 1`
+
+echo -n "What is the next version number [$new_version]? "
+read response
+
+case "$response" in
+ '')
+   ;;
+ *)
+   new_version=$response
+   ;;
+esac
+
+
+release_tag=release_`echo $new_version | sed -e 's/^\([0-9]+\)\.\([0-9+]\)$/\1_\2/'`
+if [ "X$release_tag" = "Xrelease_" ]; then
+    echo "Invalid new version number '$new_version'"
+    exit 1
+fi
+
+
+# update the po files
+echo
+echo "Updating po files"
+if [ -e po/Makefile ]; then
+    (cd po && make update-po) > /dev/null
+else
+    echo "Please configure the source first" >&2
+    exit 1
+fi
+
+
+# edit the changelog
+echo
+echo -n "Should I open the changelog for editing [Y/n]? "
+read response
+
+case "$response" in
+ y|yes|Y|YES|Yes|'')
+   if [ "X$EDITOR" = "X" ]; then
+       EDITOR=vi
+   fi
+   $EDITOR ./ChangeLog
+   ;;
+ n|no|N|NO|No)
+   ;;
+ *)
+   echo "Bad response" >&2;
+   exit 1
+   ;;
+esac
+
+
+# update version in configure.ac
+echo
+echo "Updating configure.ac with release version"
+cp configure.ac configure.ac.$$
+cat configure.ac.$$ | sed -e "s/^\(AC_INIT(.*, \).*-cvs\(, .*)\)$/\1$new_version\2/" > configure.ac
+
+cvs commit
+
+echo
+echo "Tagging dist with release version"
+cvs tag $release_tag
+
+echo
+echo "Updating configure.ac with new cvs version"
+cat configure.ac.$$ | sed -e "s/^\(AC_INIT(.*, \).*\(-cvs, .*)\)$/\1$new_version\2/" > configure.ac
+rm -f configure.ac.$$
+
+cvs commit
+
+
+# do the build
+echo
+echo "Building release"
+set -x
+
+cvs export -r $release_tag -d release_build $PACKAGE
+cd release_build
+
+./bootstrap
+./configure
+make dist
+make distcheck
+cp *.tar.gz *.tar.bz2 ..
+cd ..
+rm -rf release_build
