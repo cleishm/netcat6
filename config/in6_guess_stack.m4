@@ -1,23 +1,13 @@
 dnl ====================================================
-dnl IN6_GUESS_STACK(ipv6,ipv6libdir,ipv6lib,CFLAGS,LIBS)
+dnl IN6_GUESS_STACK(ipv6,ipv6libdir,ipv6lib)
 dnl ====================================================
 AC_DEFUN([IN6_GUESS_STACK],[
 	AC_MSG_CHECKING([IPv6 stack type])
-	AC_CACHE_VAL([ds6_cv_ds6_cv_ipv6_stack],[
+	AC_CACHE_VAL([ds6_cv_ipv6_stack],[
 	ds6_cv_ipv6_stack=unknown
-	for inet6_i in inria kame usagi linux linux_inet6 toshiba v6d zeta solaris7; do
+	dnl removed inria, linux_inet6, toshiba, v6d, zeta
+	for inet6_i in kame usagi linux solaris7; do
 		case ${inet6_i} in
-		inria)	
-			dnl http://www.kame.net/
-			AC_EGREP_CPP(%%%yes%%%, [
-#include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-%%%yes%%%
-#endif],
-			[if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-				ds6_cv_ipv6_stack=${inet6_i}
-			fi])
-			;;
 		kame)	
 			dnl http://www.kame.net/
 			AC_EGREP_CPP(%%%yes%%%, [
@@ -40,56 +30,23 @@ AC_DEFUN([IN6_GUESS_STACK],[
 				ds6_cv_ipv6_stack=${inet6_i}
 			fi])
 			;;
-		linux)	
-			dnl http://www.v6.linux.or.jp/
-			AC_EGREP_CPP(%%%yes%%%, [
+		linux)
+			dnl http://www.kernel.org/
+			if test `uname -s` = "Linux"
+			then
+			  AC_EGREP_CPP(%%%yes%%%, [
 #include <features.h>
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 %%%yes%%%
 #endif],
-			[if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-				ds6_cv_ipv6_stack=${inet6_i}
-			fi])
-			;;
-		linux_inet6)
-			dnl http://www.v6.linux.or.jp/
-			if test -d /usr/inet6; then
-				if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-					ds6_cv_ipv6_stack=${inet6_i}
-				fi
+			  [if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
+			  	ds6_cv_ipv6_stack=${inet6_i}
+			  fi])
 			fi
 			;;
-		toshiba)
-			AC_EGREP_CPP(%%%yes%%%, [
-#include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-%%%yes%%%
-#endif],
-			[if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-				ds6_cv_ipv6_stack=${inet6_i}
-			fi])
-			;;
-		v6d)
-			AC_EGREP_CPP(%%%yes%%%, [
-#include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-%%%yes%%%
-#endif],
-			[if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-				ds6_cv_ipv6_stack=${inet6_i}
-			fi])
-			;;
-		zeta)	
-			AC_EGREP_CPP(%%%yes%%%, [
-#include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-#endif],
-			[if test "X$ds6_cv_ipv6_stack" = "Xunknown"; then
-				ds6_cv_ipv6_stack=${inet6_i}
-			fi])
-			;;
 		solaris7)
+			dnl This is broken. In autoconf 2.5x the $host variable does not seem
+			dnl to be defined.
 			case "$host" in
 			*-*-solaris*)
 				if test -c /devices/pseudo/ip6@0:ip6; then
@@ -121,50 +78,19 @@ yes
 	inet6_cppflags=
 
 	case "$inet6_ipv6type" in
-	unknown) ;;
-	inria) ;;
-	kame)
-		if test -f /usr/local/v6/lib/libinet6.a; then
-			inet6_ipv6lib=inet6
-			inet6_ipv6libdir=/usr/local/v6/lib
-		fi
-		;;
-	usagi)
+	kame | usagi)
 		if test -f /usr/local/v6/lib/libinet6.a; then
 			inet6_ipv6lib=inet6
 			inet6_ipv6libdir=/usr/local/v6/lib
 		fi
 		;;
 	linux) ;;
-	linux_inet6)
-		inet6_ipv6lib=inet6
-		inet6_ipv6libdir=/usr/inet6/lib
-		inet6_cppflags=-I/usr/inet6/include
-		;;
-	toshiba)
-		inet6_ipv6lib=inet6
-		inet6_ipv6libdir=/usr/local/v6/lib
-		;;
-	v6d)
-		inet6_ipv6lib=v6
-		inet6_cppflags=-I/usr/local/v6/include
-		;;
-	zeta)
-		inet6_ipv6lib=zeta
-		inet6_ipv6libdir=/usr/local/v6/lib
-		inet6_cppflags=-I/usr/local/v6/include
-		;;
 	solaris7) ;;
 	*)
 		AC_MSG_WARN([Unknown stack type $inet6_ipv6type])
 		;;
 	esac
 
-	if test "X$inet6_ipv6type" != "Xunknown"; then
-		if test "X$inet6_cppflags" != "X"; then
-			INET6_CPPFLAGS="-DINET6 $inet6_cppflags"
-		fi
-	fi
 	if test "X$inet6_ipv6lib" != "X"; then
 		INET6_LIBS="-l$inet6_ipv6lib"
 		if test "X$inet6_ipv6libdir" != "X"; then
