@@ -1,213 +1,236 @@
-2003-06-04 Mauro Tortonesi <mauro _at_ deepspace6.net>
+2004-04-19 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Fixed CFLAGS handling problem. Thanks to Filippo Natali for
-   the patch and to the FreeBSD maintainers for reporting the bug.
+	* Updated i18n subsystem to gettext 0.14.1
 
-2003-05-11 Mauro Tortonesi <mauro _at_ deepspace6.net>
+2004-01-23 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Released nc6 0.5
+	* Added configuration time detection of Bluez.
 
-2003-03-26 Chris Leishman <chris _at_ leishman.org>
+2004-01-09 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Added --exec option for setting a command to be executed after connect.
- * Added --continous option for continuously accepting connections.
+	* Applied Chris's patch that fixes SOMAXCONN backlog parameter for
+	  listen(2) in src/network.c, slightly modified.
 
-2003-03-16 Chris Leishman <chris _at_ leishman.org>
+2004-01-08 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Fixed bug in --half-close mode where the remote transmit stream wasn't
-   actually being half-closed.
+	* Added support for Bluez (http://www.bluez.org) on Linux systems.
 
-2003-01-25 Mauro Tortonesi <mauro _at_ deepspace6.net>
+2003-10-07 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Added many more assertions in the code.
- * Cleaned code of the verbose_mode and very_verbose_mode functions.
- * Released netcat 0.4. 
+	* Fixed a conflict with FreeBSD profiling library by renaming warn()
+	  to warning(). Thanks to Filippo Natali for reporting the bug.
 
-2003-01-24 Chris Leishman <chris _at_ leishman.org>
+2003-06-04 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Restructured io_stream, especially with respect to timeout handling.
- * Added --idle-timeout option for setting the idle timeout on the remote
-   stream.
+	* Fixed CFLAGS handling problem. Thanks to Filippo Natali for
+	  the patch and to the FreeBSD maintainers for reporting the bug.
 
-2003-01-23 Chris Leishman <chris _at_ leishman.org>
+2003-05-11 Mauro Tortonesi <mauro@deepspace6.net>
 
- * Fixed bug with --no-reuseaddr option not being recognized.
- * Fixed bug in readwrite that could result in non-termination.
- * Added --sndbuf-size and --rcvbuf-size options for setting SO_RCVBUF and
-   SO_SNDBUF respectively.
+	* Released nc6 0.5
 
-2003-01-21 Mauro Tortonesi <mauro _at_ deepspace6.net>
+2003-03-26 Chris Leishman <chris@leishman.org>
 
- * Minor changes to the manpage and the other documentation files
-   (BUGS, README and TODO).
- * Released netcat 0.3. 
- 
-2003-01-18 Simone Piunno <simone _at_ deepspace6.net>
+	* Added --exec option for setting a command to be executed after connect.
+	* Added --continous option for continuously accepting connections.
 
- * Merged in i18n branch
-   - Full GNU gettext support, and i18n of nc6 source.
-   - Initial italian translation.
+2003-03-16 Chris Leishman <chris@leishman.org>
 
-2003-01-15 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Fixed bug in --half-close mode where the remote transmit stream wasn't
+	   actually being half-closed.
 
- * Merged in mauro_refactor_130103 branch
-   - Reorganisation of do_connection and do_listen, mostly by separating into
-     a few different utility functions.
+2003-01-25 Mauro Tortonesi <mauro@deepspace6.net>
 
-2003-01-14 Chris Leishman <chris _at_ leishman.org>
+	* Added many more assertions in the code.
+	* Cleaned code of the verbose_mode and very_verbose_mode functions.
+	* Released netcat 0.4. 
 
- * Added checking of sin6_scope_id in the address comparison.
- * Added extra checks of getaddrinfo results.
+2003-01-24 Chris Leishman <chris@leishman.org>
 
-2003-01-13 Chris Leishman <chris _at_ leishman.org>
+	* Restructured io_stream, especially with respect to timeout handling.
+	* Added --idle-timeout option for setting the idle timeout on the remote
+	  stream.
 
- * Merged in chris_refactor_060103 branch
-   - Reduced connection_attributes to a pure attribute store.
-   - Reorganised main such that the buffers and io_streams are initialized
-     there.
-   - Changed do_connect / do_listen to return an fd/socktype rather than
-     setting up the remote_stream directly.
-   - Added do_listen_continous() to allow for and inetd like mode.
-   - An open3 function for exec'ing and talking to an external process (to
-     allow for a --exec mode).
- * Increased UDP buffer sizes to 128k.
+2003-01-23 Chris Leishman <chris@leishman.org>
 
-2003-01-11 Simone Piunno <simone _at_ deepspace6.net>
+	* Fixed bug with --no-reuseaddr option not being recognized.
+	* Fixed bug in readwrite that could result in non-termination.
+	* Added --sndbuf-size and --rcvbuf-size options for setting SO_RCVBUF and
+	  SO_SNDBUF respectively.
 
- * String marking for i18n.
+2003-01-21 Mauro Tortonesi <mauro@deepspace6.net>
 
-2003-01-03 Chris Leishman <chris _at_ leishman.org>
+	* Minor changes to the manpage and the other documentation files
+	  (BUGS, README and TODO).
+	* Released netcat 0.3. 
 
- * Added ios_write_eof() method to io_stream.  This allows for proper flushing
-   and shutdown with half close support.
- * Moved much of the readwrite logging into io_stream.
+2003-01-18 Simone Piunno <simone@deepspace6.net>
 
-2003-01-03 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Merged in i18n branch
+	  - Full GNU gettext support, and i18n of nc6 source.
+	  - Initial italian translation.
 
- * Started code cleanup for 0.3 release.  Added a lot of assertions, and
-   cleaned up the general layout and style.
- * Made connection_attributes more OO in style.
+2003-01-15 Mauro Tortonesi <mauro@deepspace6.net>
 
-2003-01-01 Chris Leishman <chris _at_ leishman.org>
+	* Merged in mauro_refactor_130103 branch
+	  - Reorganisation of do_connection and do_listen, mostly by separating into
+	    a few different utility functions.
 
- * Added full solution for "double bind" issue.  Seems to work correctly in
-   all situations.
- * Made network code skip IPv4 mapped results from getaddrinfo.
- * Updated README.
- * Man page updates.
- * Added development principles and objectives to README.Maint.
- * Rewrote IPv6 stack guess autoconf macro.
+2003-01-14 Chris Leishman <chris@leishman.org>
 
-2002-12-30 Chris Leishman <chris _at_ leishman.org>
+	* Added checking of sin6_scope_id in the address comparison.
+	* Added extra checks of getaddrinfo results.
 
- * Added half close support (useful for TCP connections).
- * Increased the buffer sizes for file transfer mode.
- * Added support for disabling the nagle algorithm for connections.
+2003-01-13 Chris Leishman <chris@leishman.org>
 
-2002-12-29 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Merged in chris_refactor_060103 branch
+	  - Reduced connection_attributes to a pure attribute store.
+	  - Reorganised main such that the buffers and io_streams are initialized
+	    there.
+	  - Changed do_connect / do_listen to return an fd/socktype rather than
+	    setting up the remote_stream directly.
+	  - Added do_listen_continous() to allow for and inetd like mode.
+	  - An open3 function for exec'ing and talking to an external process (to
+	    allow for a --exec mode).
+	* Increased UDP buffer sizes to 128k.
 
- * Refactored network support code (eg. the linked socket list), creating
-   a new netsupport.c and .h, and adding some more cleanup for the
-   "double bind" issue.
- * Fixed up some autoconf macros and added support for checking getaddrinfo
-   flag support.
+2003-01-11 Simone Piunno <simone@deepspace6.net>
 
-2002-12-29 Chris Leishman <chris _at_ leishman.org>
+	* String marking for i18n.
 
- * Merged in chris_refactor_291202 branch
-   - io_streams now handle their own scheduling, the readwrite loop queries
-     the io_streams to determine if and how they should be scheduled.
-   - Added support for setting the buffer sizes.
-   - Added support for configuring MTU's and NRU's.
- * Added long option support.
- * Added alloca source into contrib for hosts that don't provide their own
-   (tested on HP-UX).
+2003-01-03 Chris Leishman <chris@leishman.org>
 
-2002-12-28 Chris Leishman <chris _at_ leishman.org>
+	* Added ios_write_eof() method to io_stream.  This allows for proper flushing
+	  and shutdown with half close support.
+	* Moved much of the readwrite logging into io_stream.
 
- * Added cb_recv(), cv_extract() and cb_resize() methods to circ_buf's.
- * Moved creation of local io_stream out of network code.
- * Added timeout support for connects/accepts.
+2003-01-03 Mauro Tortonesi <mauro@deepspace6.net>
 
-2002-12-24 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Started code cleanup for 0.3 release.  Added a lot of assertions, and
+	  cleaned up the general layout and style.
+	* Made connection_attributes more OO in style.
 
- * General code cleanup to match style guide.
+2003-01-01 Chris Leishman <chris@leishman.org>
 
-2002-12-24 Chris Leishman <chris _at_ leishman.org>
+	* Added full solution for "double bind" issue.  Seems to work correctly in
+	  all situations.
+	* Made network code skip IPv4 mapped results from getaddrinfo.
+	* Updated README.
+	* Man page updates.
+	* Added development principles and objectives to README.Maint.
+	* Rewrote IPv6 stack guess autoconf macro.
 
- * Added REAME.Maint with information for maintainers.
- * Added RCSID's to source files.
- * Reworked circ_buf to have a more OO interface.
+2002-12-30 Chris Leishman <chris@leishman.org>
 
-2002-12-23 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Added half close support (useful for TCP connections).
+	* Increased the buffer sizes for file transfer mode.
+	* Added support for disabling the nagle algorithm for connections.
 
- * Updated nc6.spec file
+2002-12-29 Mauro Tortonesi <mauro@deepspace6.net>
 
-2002-12-20 Chris Leishman <chris _at_ leishman.org>
+	* Refactored network support code (eg. the linked socket list), creating
+	  a new netsupport.c and .h, and adding some more cleanup for the
+	  "double bind" issue.
+	* Fixed up some autoconf macros and added support for checking getaddrinfo
+	  flag support.
 
- * Update autoconf macros to accurately determine if ipv6 code can be
-   supported at compile time, and moved other checks to runtime.  Ensured ipv6
-   support is fully optional.
- * Tested builds are successful on *BSD and linux systems, with and without
-   ipv6 support.
- * Reworked readwrite() to ensure buffers are correctly flushed before the
-   connection closes.
- * Reworked file transfer mode to instead use RECV_DATA_ONLY or
-   SEND_DATA_ONLY flag.
+2002-12-29 Chris Leishman <chris@leishman.org>
 
-2002-12-15 Chris Leishman <chris _at_ leishman.org>
+	* Merged in chris_refactor_291202 branch
+	  - io_streams now handle their own scheduling, the readwrite loop queries
+	    the io_streams to determine if and how they should be scheduled.
+	  - Added support for setting the buffer sizes.
+	  - Added support for configuring MTU's and NRU's.
+	* Added long option support.
+	* Added alloca source into contrib for hosts that don't provide their own
+	  (tested on HP-UX).
 
- * Added handling of EPIPE errors for writes.
- * Merged in chris_refactor_101202 branch
-   - Reorganised execution flow to avoid depth first traversal.
-   - Moved io_stream code to it's own header/source.
-   - Moved connection_attributes to it's own header/source.
-   - Reworked the timeout system into the io_stream.
-   - Renamed "port" in address_t to "service".
- * Changed parser.c to set IPPROTO_* flags instead of setting the socktype
-   to differentiate TCP vs UDP connections.
- * Updated do_listen() to listen to an arbitrary number of sockets, using a
-   linked list structure to manage them.
- * Reworked autoconf files to autoconf 2.5 standards.
- * Added a BUGS file.
+2002-12-28 Chris Leishman <chris@leishman.org>
 
-2002-12-07 Chris Leishman <chris _at_ leishman.org>
+	* Added cb_recv(), cv_extract() and cb_resize() methods to circ_buf's.
+	* Moved creation of local io_stream out of network code.
+	* Added timeout support for connects/accepts.
 
- * Fixes to autoconf so that it doesn't define unnecessary entries in config.h.
- * Removed outdated tcp/udp separation messages from the manpage.
- * Cleaned up verbose messages in connection setup code (network.c).
- * Cleaned up reverse DNS code.
- * Did some work on the "double bind" issue.
+2002-12-24 Mauro Tortonesi <mauro@deepspace6.net>
 
-2002-11-28 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* General code cleanup to match style guide.
 
- * Merged 10 patches from Chris Leishman, including various bug fixes to
-   the code and build system, and a refactoring of the network and readwrite
-   code to remove the separation between udp and tcp code.
+2002-12-24 Chris Leishman <chris@leishman.org>
 
-2002-04-03 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Added REAME.Maint with information for maintainers.
+	* Added RCSID's to source files.
+	* Reworked circ_buf to have a more OO interface.
 
- * We have finally managed to port netcat6 to freebsd and to let it work with 
-   glibc 2.1. autoconf/automake stuff has been updated.
- * We have also performed a minor review of the code, with some cleaning.
+2002-12-23 Mauro Tortonesi <mauro@deepspace6.net>
 
-2002-01-16 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Updated nc6.spec file
 
- * Updated man page.
- * Fixed a compilation bug with glibc 2.1 (thanks to
-   KUNITAKE Koichi for reporting it) - it should work now.
+2002-12-20 Chris Leishman <chris@leishman.org>
 
-2001-12-31 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Update autoconf macros to accurately determine if ipv6 code can be
+	  supported at compile time, and moved other checks to runtime.  Ensured ipv6
+	  support is fully optional.
+	* Tested builds are successful on *BSD and linux systems, with and without
+	  ipv6 support.
+	* Reworked readwrite() to ensure buffers are correctly flushed before the
+	  connection closes.
+	* Reworked file transfer mode to instead use RECV_DATA_ONLY or
+	  SEND_DATA_ONLY flag.
 
- * Added UDP support.
+2002-12-15 Chris Leishman <chris@leishman.org>
 
-2001-11-11 Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Added handling of EPIPE errors for writes.
+	* Merged in chris_refactor_101202 branch
+	  - Reorganised execution flow to avoid depth first traversal.
+	  - Moved io_stream code to it's own header/source.
+	  - Moved connection_attributes to it's own header/source.
+	  - Reworked the timeout system into the io_stream.
+	  - Renamed "port" in address_t to "service".
+	* Changed parser.c to set IPPROTO_* flags instead of setting the socktype
+	  to differentiate TCP vs UDP connections.
+	* Updated do_listen() to listen to an arbitrary number of sockets, using a
+	  linked list structure to manage them.
+	* Reworked autoconf files to autoconf 2.5 standards.
+	* Added a BUGS file.
 
- * Complete re-organization of the package. Added GNU autoconf and automake
-   support.
+2002-12-07 Chris Leishman <chris@leishman.org>
 
-2001-10-* Mauro Tortonesi <mauro _at_ deepspace6.net>
+	* Fixes to autoconf so that it doesn't define unnecessary entries in config.h.
+	* Removed outdated tcp/udp separation messages from the manpage.
+	* Cleaned up verbose messages in connection setup code (network.c).
+	* Cleaned up reverse DNS code.
+	* Did some work on the "double bind" issue.
 
- * Many bugfixes code cleaning, refactoring of the most importants parts 
-   of the code (argument parsing, networking code and select loop).
- * Merging of some patches/bugfixes from Simone Piunno.
+2002-11-28 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Merged 10 patches from Chris Leishman, including various bug fixes to
+	  the code and build system, and a refactoring of the network and readwrite
+	  code to remove the separation between udp and tcp code.
+
+2002-04-03 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* We have finally managed to port netcat6 to freebsd and to let it work with 
+	  glibc 2.1. autoconf/automake stuff has been updated.
+	* We have also performed a minor review of the code, with some cleaning.
+
+2002-01-16 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Updated man page.
+	* Fixed a compilation bug with glibc 2.1 (thanks to
+	  KUNITAKE Koichi for reporting it) - it should work now.
+
+2001-12-31 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Added UDP support.
+
+2001-11-11 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Complete re-organization of the package. Added GNU autoconf and automake
+	  support.
+
+2001-10-* Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Many bugfixes code cleaning, refactoring of the most importants parts 
+	  of the code (argument parsing, networking code and select loop).
+	* Merging of some patches/bugfixes from Simone Piunno.
+

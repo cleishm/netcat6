@@ -276,6 +276,6 @@ fi
 
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
-AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile \
+AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile  config/Makefile \
 	intl/Makefile po/Makefile.in nc6.spec docs/nc6.1])
 AC_OUTPUT

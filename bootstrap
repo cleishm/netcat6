@@ -8,6 +8,6 @@
 set -x
 aclocal -I config $@
 autoheader
-automake --add-missing --copy
+automake --verbose --add-missing --copy -W all
 autoconf
 ## @end 1

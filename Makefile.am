@@ -9,24 +9,9 @@
 # build directory.  This is probably a bug in my version of automake (1.6.1).
 
 auxdir			= @ac_aux_dir@
-EXTRA_DIST		= bootstrap BUGS CREDITS \
-			  config/ai_constants.m4 \
-			  config/in6_guess_stack.m4 \
-			  config/member_sin6_scope_id.m4 \
-			  config/paths.m4 \
-			  config/proto_inet6.m4 \
-			  config/type_struct_sockaddr_storage.m4 \
-			  config/type_struct_sockaddr_in6.m4 \
-			  config/type_socklen_t.m4 \
-			  config/somaxconn_constant.m4 \
-			  config/proto_bluez.m4 \
-			  config/type_struct_sockaddr_l2.m4 \
-			  config/gettext.m4
-
+EXTRA_DIST		= bootstrap BUGS CREDITS
 AUTOMAKE_OPTIONS 	= 1.6 dist-bzip2
-ACLOCAL_AMFLAGS		= -I $(top_srcdir)/config
-SUBDIRS 		= contrib intl po src docs
+ACLOCAL_AMFLAGS		= -I config
+SUBDIRS 		= config contrib intl po src docs
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
-			  config.h.in config.status config.log \
-			  $(auxdir)/depcomp $(auxdir)/install-sh \
-			  $(auxdir)/missing $(auxdir)/mkinstalldirs
+			  config.h.in config.status config.log 

@@ -24,7 +24,7 @@ nc6_SOURCES = \
 
 localedir=$(datadir)/locale
 
-nc6_LDADD = $(top_builddir)/contrib/libnc6contrib.a @INTLLIBS@
+nc6_LDADD = $(top_builddir)/contrib/libnc6contrib.a @LIBINTL@
 
 AM_CPPFLAGS = -I$(top_srcdir)/contrib -I../intl -DLOCALEDIR=\"$(localedir)\"
 AM_CFLAGS = @CFLAGS@ @NC6_CFLAGS@
