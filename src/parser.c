@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.52 2003-03-26 20:34:06 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.53 2003-03-27 09:09:49 chris Exp $");
 
 
 
@@ -449,7 +449,7 @@ static void print_usage(FILE *fp)
 " -4                     Use only IPv4\n"
 " -6                     Use only IPv6\n"
 " --buffer-size=BYTES    Set buffer size\n"
-" --continous            Continuously accept connections\n"
+" --continuous           Continuously accept connections\n"
 "                        (only in listen mode with --exec)\n"
 " --disable-nagle        Disable nagle algorithm for TCP connections\n"
 " -e, --exec=CMD         Exec command after connect\n"
