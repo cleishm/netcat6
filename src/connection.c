@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.14 2003-01-01 12:50:58 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.15 2003-01-01 13:40:49 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -90,7 +90,7 @@ void connection_attributes_to_addrinfo(struct addrinfo *ainfo,
 
 	switch (attrs->proto) {
 		case PROTO_IPv6:
-#ifdef ENABLE_INET6
+#ifdef ENABLE_IPV6
 			ainfo->ai_family = PF_INET6;
 #else
 			fatal("internal error: system does not support ipv6");
