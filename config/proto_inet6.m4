@@ -1,5 +1,5 @@
 AC_DEFUN([PROTO_INET6],[
-  AC_CACHE_CHECK([for INET6 protocol support], [nc_cv_proto_inet6],[
+  AC_CACHE_CHECK([for INET6 protocol support], [ds6_cv_proto_inet6],[
     AC_TRY_CPP([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,13 +11,13 @@ AC_DEFUN([PROTO_INET6],[
 #error Mlssing AF_INET6
 #endif
     ],[
-      nc_cv_proto_inet6=yes
+      ds6_cv_proto_inet6=yes
     ],[
-      nc_cv_proto_inet6=no
+      ds6_cv_proto_inet6=no
     ])
   ])
 
-  if test "X$nc_cv_proto_inet6" = "Xyes"; then :
+  if test "X$ds6_cv_proto_inet6" = "Xyes"; then :
     $1
   else :
     $2
