@@ -4,7 +4,6 @@ AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(src/config.h)
 AM_INIT_AUTOMAKE(nc6, 0.2pre4b)
 AC_PREREQ(2.52)
-m4_pattern_allow([dnl])
 
 # Checks for programs.
 AC_PROG_CC
@@ -12,66 +11,27 @@ AC_PROG_CPP
 AC_ISC_POSIX
 AC_PROG_INSTALL
 
-# Checks for libraries.
+# CFLAGS to use during configure (warnings and such are added later)
+CFLAGS=""
 
-# The CFLAGS to always use
-CFLAGS="-pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
 
-# Add extra flags if in debug mode
-AC_ARG_ENABLE(debug,
-  AC_HELP_STRING(
-    [--enable-debug],
-    [Enable debugging - useful only for developers]
-  ),
-  [case "${enable_debug}" in
-  yes)
-    AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
-    CFLAGS="${CFLAGS} -g -O0"
-    ;;
-  no) 
-    AC_DEFINE(NDEBUG, 1, [Define if nc6 is to be build without debug information.])
-    CFLAGS="${CFLAGS} -O2 -finline-functions"
-    ;;
-  *)    
-    AC_MSG_ERROR(bad value ${enable_debug} for --enable-debug option) 
-    ;;
-  esac],
-  AC_DEFINE(NDEBUG,1)
-)
-    
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([errno.h fcntl.h limits.h netdb.h netinet/in.h signal.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS(
+  [errno.h fcntl.h limits.h netdb.h netinet/in.h signal.h sys/socket.h sys/time.h unistd.h],,
+  [AC_MSG_ERROR([Missing headers required to compile nc6])]
+)
+AC_CHECK_HEADER(stdint.h)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
+AC_C_INLINE
 AC_TYPE_SIZE_T
+TYPE_SOCKLEN_T
 
-# From the autoconf 2.13 documentation:
-#
-#  - Macro: AC_HEADER_TIME
-#      If a program may include both `time.h' and `sys/time.h', define
-#      `TIME_WITH_SYS_TIME'.  On some older systems, `sys/time.h'
-#      includes `time.h', but `time.h' is not protected against multiple
-#      inclusion, so programs should not explicitly include both files.
-#      This macro is useful in programs that use, for example, `struct
-#      timeval' or `struct timezone' as well as `struct tm'.  It is best
-#      used in conjunction with `HAVE_SYS_TIME_H', which can be checked
-#      for using `AC_CHECK_HEADERS(sys/time.h)'.
-#                                        
-#           #if TIME_WITH_SYS_TIME
-#           # include <sys/time.h>
-#           # include <time.h>
-#           #else
-#           # if HAVE_SYS_TIME_H
-#           #  include <sys/time.h>
-#           # else
-#           #  include <time.h>
-#           # endif
-#           #endif
-#
-AC_HEADER_TIME
-SOCKLEN_T
+IN6_STRUCT_SOCKADDR_STORAGE([],
+  [AC_MSG_ERROR([Your system does not support struct sockaddr_storage, which is needed to compile nc6])]
+)
 
 # Configure IPv6 support
 AC_ARG_ENABLE(stack-guess,
@@ -94,8 +54,12 @@ AC_ARG_ENABLE(stack-guess,
 )
 
 IN6_ENABLE_IPV6(
-  AC_DEFINE(INET6, 1, [Define if the system is IPv6-enabled.]),
-  [ipv6=no]
+  [
+    AC_DEFINE(INET6, 1, [Define if the system is IPv6-enabled.])
+    ipv6=yes
+  ],
+  [ipv6=no],
+  [ipv6=maybe]
 )
 
 if test "X$guess" != "Xno" -a "X$ipv6" != "Xno"; then
@@ -105,74 +69,65 @@ if test "X$guess" != "Xno" -a "X$ipv6" != "Xno"; then
 fi
 
 # Check for IPv6 structures, only if needed
-if test "X$ipv6" != "Xno"; then
-  IN6_STRUCT_SOCKADDR_STORAGE(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_STORAGE], 1,
-      [Define if the system supports struct sockaddr_storage.]
-    ),
-    [AC_MSG_ERROR([Your system does not support struct sockaddr_storage, which is needed to compile nc6])]
-  )
-  IN6_STRUCT_SOCKADDR_STORAGE_SS_FAMILY(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY], 1,
-      [Define if struct sockaddr_storage has the ss_family member.]
-    )
-  )
-  IN6_STRUCT_SOCKADDR_STORAGE___SS_FAMILY(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_STORAGE__SS_FAMILY], 1,
-      [Define if struct sockaddr_storage has the __ss_family member.]
-    )
-  )
-  IN6_STRUCT_SOCKADDR_IN6(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_IN6], 1,
-      [Define if the system supports struct sockaddr_in6.]
-    ),
-    [AC_MSG_ERROR([Your system does not support struct sockaddr_in6, which is needed to compile nc6])]
-  )
-  IN6_STRUCT_SOCKADDR_SA_LEN(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_SA_LEN], 1,
-      [Define if struct sockaddr has the sa_len member.]
-    )
-  )
-  IN6_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID(
-    AC_DEFINE(
-      [HAVE_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID], 1,
-      [Define if struct sockaddr_in6 has the sin6_scope_id member.]
-    )
-  )
-fi
+IN6_STRUCT_SOCKADDR_IN6([],
+  [AC_MSG_ERROR([Your system does not support struct sockaddr_in6, which is needed to compile nc6])]
+)
 
 # Checks for library functions.
 AC_FUNC_ALLOCA
 AC_FUNC_MEMCMP
-# AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero gettimeofday memset select socket strerror strrchr strtol signal fcntl])
 
-IN6_FUNC_GETADDRINFO(
-    AC_DEFINE(
-      [HAVE_GETADDRINFO], 1,
-      [Define if the system implements the getaddrinfo function.]
-    ),
-    [AC_MSG_ERROR([Your system does not support getaddrinfo, which is needed to compile nc6])]
+AC_CHECK_FUNCS(
+  [gettimeofday memset select socket strerror strrchr strtol signal fcntl getaddrinfo freeaddrinfo gai_strerror getnameinfo],,
+  [AC_MSG_ERROR([Missing functions required to compile nc6])]
+)
+
+IN6_FUNC_GETADDRINFO([],
+  [AC_MSG_ERROR([Your system has a buggy getaddrinfo implementation])]
 )
 
 IN6_FUNC_GETADDRINFO_AI_ADDRCONFIG(
-    AC_DEFINE(
-      [HAVE_GETADDRINFO_AI_ADDRCONFIG], 1, 
-      [Define if getaddrinfo supports AI_ADDRCONFIG flag.]
-    )
+  AC_DEFINE(
+    [HAVE_GETADDRINFO_AI_ADDRCONFIG], 1, 
+    [Define if getaddrinfo supports AI_ADDRCONFIG flag.]
+  )
 )
 
-AC_CHECK_FUNCS([freeaddrinfo gai_strerror getnameinfo getipnodebyname getipnodebyaddr freehostent])
 
+
+# The CFLAGS to use with GCC
+if test "X$GCC" = "Xyes"; then
+  CFLAGS="${CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
+fi
+
+# Add extra flags if in debug mode
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING(
+    [--enable-debug],
+    [Enable debugging - useful only for developers]
+  ),
+  [case "${enable_debug}" in
+  yes)
+    AC_DEFINE(DEBUG, 1, [Define if nc6 is to be build with debug information.])
+    CFLAGS="${CFLAGS} -g -O0"
+    ;;
+  no) 
+    AC_DEFINE(NDEBUG, 1, [Define if nc6 is to be build without debug information.])
+    CFLAGS="${CFLAGS} -O2"
+    if test "X$GCC" = "Xyes"; then 
+      CFLAGS="${CFLAGS} -finline-functions"
+    fi
+    ;;
+  *)    
+    AC_MSG_ERROR(bad value ${enable_debug} for --enable-debug option) 
+    ;;
+  esac],
+  AC_DEFINE(NDEBUG,1)
+)
+    
 
 AC_SUBST(ac_aux_dir)
-
 AC_OUTPUT([Makefile docs/Makefile src/Makefile],
 [test -z "$CONFIG_HEADERS" || echo timestamp > src/stamp-h.in])
