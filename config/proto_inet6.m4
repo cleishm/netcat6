@@ -6,8 +6,12 @@ AC_DEFUN([PROTO_INET6],[
 #include <sys/types.h>
 #include <sys/socket.h>
 
-int pf = PF_INET6;
-int af = AF_INET6;
+#ifndef PF_INET6
+#error Missing PF_INET6
+#endif
+#ifndef AF_INET6
+#error Mlssing AF_INET6
+#endif
     ],[
       cv_proto_inet6=yes
     ],[
