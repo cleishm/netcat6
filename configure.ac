@@ -199,7 +199,7 @@ dnl Add extra flags if in profiling mode
 AC_ARG_ENABLE(profiling,
   AC_HELP_STRING(
     [--enable-profiling],
-    [enable profiling - useful only for developers]
+    [Enable profiling - useful only for developers]
   ),
   [case "${enable_profiling}" in
   yes)
