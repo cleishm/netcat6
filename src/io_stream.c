@@ -31,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.27 2003-07-22 18:51:43 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.28 2003-10-07 15:27:39 mauro Exp $");
 
 
 #ifndef NDEBUG
@@ -198,7 +198,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 		/* check if the timeout has expired */
 		if (istimerexpired(tv)) {
 			if (very_verbose_mode())
-				warn(_("%s idle timed out"), ios->name);
+				warning(_("%s idle timed out"), ios->name);
 			ios->flags |= IOS_IDLE_TIMEDOUT;
 			timerclear(tv);
 		}
@@ -225,7 +225,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 		/* check if the timeout has expired */
 		if (istimerexpired(&hold_tv)) {
 			if (very_verbose_mode())
-				warn(_("%s hold timed out"), ios->name);
+				warning(_("%s hold timed out"), ios->name);
 			/* set flag */
 			ios->flags |= IOS_HOLD_TIMEDOUT;
 			timerclear(&hold_tv);
@@ -240,7 +240,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 #ifndef NDEBUG
 	if (tvp && !istimerexpired(tvp) && very_verbose_mode())
-		warn("%s timer expires in %d.%06d",
+		warning("%s timer expires in %d.%06d",
 		     ios->name, tvp->tv_sec, tvp->tv_usec);
 #endif
 
@@ -270,7 +270,7 @@ ssize_t ios_read(io_stream *ios)
 		ios->rcvd += rr;
 #ifndef NDEBUG
 		if (very_verbose_mode())
-			warn("read %d bytes from %s", rr, ios->name);
+			warning("read %d bytes from %s", rr, ios->name);
 #endif
 		/* record that the ios was active */
 		gettimeofday(&(ios->last_active), NULL);
@@ -279,7 +279,7 @@ ssize_t ios_read(io_stream *ios)
 	} else if (rr == 0) {
 		/* read eof - close read stream */
 		if (very_verbose_mode())
-			warn(_("read eof from %s"), ios->name);
+			warning(_("read eof from %s"), ios->name);
 
 		/* record the time eof was received */
 		gettimeofday(&(ios->read_eof), NULL);
@@ -297,7 +297,7 @@ ssize_t ios_read(io_stream *ios)
 	} else {
 		/* weird error */
 		if (very_verbose_mode())
-			warn(_("error reading from %s: %s"),
+			warning(_("error reading from %s: %s"),
 			     ios->name, strerror(errno));
 		return IOS_FAILED;
 	}
@@ -326,7 +326,7 @@ ssize_t ios_write(io_stream *ios)
 		ios->sent += rr;
 #ifndef NDEBUG
 		if (very_verbose_mode())
-			warn("wrote %d bytes to %s", rr, ios->name);
+			warning("wrote %d bytes to %s", rr, ios->name);
 #endif
 		/* record that the ios was active */
 		gettimeofday(&(ios->last_active), NULL);
@@ -345,9 +345,9 @@ ssize_t ios_write(io_stream *ios)
 	} else {
 		if (very_verbose_mode()) {
 			if (errno == EPIPE)
-				warn(_("received SIGPIPE on %s"), ios->name);
+				warning(_("received SIGPIPE on %s"), ios->name);
 			else
-				warn(_("error writing to %s: %s"),
+				warning(_("error writing to %s: %s"),
 				     ios->name, strerror(errno));
 		}
 		return IOS_FAILED;
@@ -385,7 +385,7 @@ void ios_shutdown(io_stream* ios, int how)
 		if (ios->fd_out >= 0 && ios->fd_out != ios->fd_in)
 			close(ios->fd_out);
 		if (very_verbose_mode())
-			warn(_("closed %s"), ios->name);
+			warning(_("closed %s"), ios->name);
 		ios->fd_in = ios->fd_out = -1;
 	} else if (how == SHUT_RD) {
 		/* close the input */
@@ -397,13 +397,13 @@ void ios_shutdown(io_stream* ios, int how)
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_in, SHUT_RD);
 				if (very_verbose_mode())
-					warn(_("shutdown %s for read"),
+					warning(_("shutdown %s for read"),
 					     ios->name);
 			}
 		} else {
 			close(ios->fd_in);
 			if (very_verbose_mode())
-				warn(_("closed %s for read"), ios->name);
+				warning(_("closed %s for read"), ios->name);
 		}
 		ios->fd_in = -1;
 	} else {
@@ -418,13 +418,13 @@ void ios_shutdown(io_stream* ios, int how)
 			if (!ios->half_close_suppress) {
 				shutdown(ios->fd_out, SHUT_WR);
 				if (very_verbose_mode())
-					warn(_("shutdown %s for write"),
+					warning(_("shutdown %s for write"),
 					     ios->name);
 			}
 		} else {
 			close(ios->fd_out);
 			if (very_verbose_mode())
-				warn(_("closed %s for write"), ios->name);
+				warning(_("closed %s for write"), ios->name);
 		}
 		ios->fd_out = -1;
 	}

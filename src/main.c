@@ -37,7 +37,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.35 2003-07-22 18:51:43 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.36 2003-10-07 15:27:39 mauro Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -217,12 +217,12 @@ static int connection_main(const connection_attributes *attrs,
 
 	/* give information about the connection in very verbose mode */
 	if (very_verbose_mode()) {
-		warn(_("using buffer size of %d"), remote_buffer.buf_size);
+		warning(_("using buffer size of %d"), remote_buffer.buf_size);
 		if (remote_stream.nru > 0)
-			warn(_("using remote receive nru of %d"),
+			warning(_("using remote receive nru of %d"),
 			     remote_stream.nru);
 		if (remote_stream.mtu > 0)
-			warn(_("using remote send mtu of %d"),
+			warning(_("using remote send mtu of %d"),
 			     remote_stream.mtu);
 	}
 
@@ -252,7 +252,7 @@ static void setup_local_stream(const connection_attributes *attrs,
 	if (cmd != NULL) {
 		int in, out;
 		if (very_verbose_mode())
-			warn(_("Executing '%s'"), cmd);
+			warning(_("Executing '%s'"), cmd);
 		if (open3(cmd, &in, &out, NULL) < 0) {
 			fatal(_("Failed to exec '%s': %s"),
 			      cmd, strerror(errno));
@@ -308,7 +308,7 @@ static int run_transfer(const connection_attributes* attrs,
 		ios_set_hold_timeout(local_stream, -1);
 
 		if (very_verbose_mode())
-			warn(_("receiving from remote only, "
+			warning(_("receiving from remote only, "
 			     "transmit disabled"));
 	}
 
@@ -324,7 +324,7 @@ static int run_transfer(const connection_attributes* attrs,
 		ios_set_hold_timeout(local_stream, -1);
 
 		if (very_verbose_mode())
-			warn(_("transmitting to remote only, "
+			warning(_("transmitting to remote only, "
 			     "receive disabled"));
 	}
 
@@ -332,12 +332,12 @@ static int run_transfer(const connection_attributes* attrs,
 	retval = readwrite(remote_stream, local_stream);
 
 	if (very_verbose_mode())
-		warn(_("connection closed (sent %d, rcvd %d)"),
+		warning(_("connection closed (sent %d, rcvd %d)"),
 		     ios_bytes_sent(remote_stream),
 		     ios_bytes_received(remote_stream));
 #ifndef NDEBUG
 	if (very_verbose_mode())
-		warn("readwrite returned %d", retval);
+		warning("readwrite returned %d", retval);
 #endif
 
 	return retval;

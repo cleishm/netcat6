@@ -40,7 +40,7 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 const char *get_program_name(void);
 
 void fatal(const char *template, ...);
-void warn(const char *template, ...);
+void warning(const char *template, ...);
 
 void *xmalloc(size_t size);
 char *xstrdup(const char* str);

@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.55 2003-09-10 13:23:41 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.56 2003-10-07 15:27:39 mauro Exp $");
 
 
 
@@ -340,7 +340,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 	if (listen_mode == TRUE) {
 		if (local_address.service == NULL) {
-			warn(_("in listen mode you must specify a port "
+			warning(_("in listen mode you must specify a port "
 			       "with the -p switch"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -348,20 +348,20 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT) &&
 		    ca_local_exec(attrs) == NULL)
 		{
-			warn(_("--continuous option "
+			warning(_("--continuous option "
 			       "must be used with --exec"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	} else {
 		if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
-			warn(_("--no-reuseaddr option "
+			warning(_("--no-reuseaddr option "
 			       "can be used only in listen mode"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)) {
-			warn(_("--continuous option "
+			warning(_("--continuous option "
 			       "can be used only in listen mode"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -370,7 +370,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		if (remote_address.address == NULL ||
 		    remote_address.service == NULL)
 		{
-			warn(_("you must specify the address/port couple "
+			warning(_("you must specify the address/port couple "
 			       "of the remote endpoint"));
 			print_usage(stderr);
 			exit(EXIT_FAILURE);

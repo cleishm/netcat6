@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.47 2003-07-22 18:51:43 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.48 2003-10-07 15:27:39 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -130,7 +130,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
 			if (err < 0) 
-				warn(_("error with sockopt IPV6_V6ONLY"));
+				warning(_("error with sockopt IPV6_V6ONLY"));
 		}
 #endif 
 
@@ -162,7 +162,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			                  &hints, &src_res);
 			if (err != 0) {
 				if (verbose_mode()) {
-					warn(_("bind to source addr/port "
+					warning(_("bind to source addr/port "
 					     "failed when connecting to "
 					     "%s: %s"), name_buf,
 					     gai_strerror(err));
@@ -189,7 +189,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				assert(src_ptr == NULL);
 				
 				if (verbose_mode()) {
-					warn(_("bind to source addr/port "
+					warning(_("bind to source addr/port "
 					     "failed when connecting to "
 					     "%s: %s"), name_buf,
 					     strerror(errno));
@@ -213,7 +213,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 		case CONNECTION_FAILED: 
 			/* connection failed */
 			if (verbose_mode())
-				warn(_("cannot connect to %s: %s"),
+				warning(_("cannot connect to %s: %s"),
 				     name_buf, strerror(errno));
 			close(fd);
 			fd = -1;
@@ -221,7 +221,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 		case CONNECTION_TIMEOUT: 
 			/* connection failed */
 			if (verbose_mode())
-				warn(_("timeout while connecting to %s"),
+				warning(_("timeout while connecting to %s"),
 				     name_buf);
 			close(fd);
 			fd = -1;
@@ -253,7 +253,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 	/* let the user know the connection has been established */
 	if (verbose_mode())
-		warn(_("%s open"), name_buf);
+		warning(_("%s open"), name_buf);
 
 	/* give details about the new socket */
 	if (very_verbose_mode())
@@ -450,7 +450,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 			err = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 			                 &on, sizeof(on));
 			if (err < 0)
-				warn(_("error with sockopt IPV6_V6ONLY"));
+				warning(_("error with sockopt IPV6_V6ONLY"));
 			else
 				set_ipv6_only = TRUE;
 		}
@@ -475,12 +475,12 @@ void do_listen_continuous(const connection_attributes* attrs,
 			    bound_ipv6_any == TRUE)
 			{
 				if (verbose_mode())
-					warn(_("listening on %s ..."),name_buf);
+					warning(_("listening on %s ..."),name_buf);
 				close(fd);
 				continue;
 			}
 #endif
-			warn(_("bind to source %s failed: %s"),
+			warning(_("bind to source %s failed: %s"),
 			     name_buf, strerror(errno));
 			close(fd);
 			continue;
@@ -498,7 +498,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		}
 
 		if (verbose_mode())
-			warn(_("listening on %s ..."), name_buf);
+			warning(_("listening on %s ..."), name_buf);
 
 #ifdef ENABLE_IPV6
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
@@ -629,7 +629,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 			}
 
 			if (verbose_mode()) {
-				warn(_("connect to %s from %s"),
+				warning(_("connect to %s from %s"),
 				     name_buf, c_name_buf);
 			}
 
@@ -650,7 +650,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 			close(ns);
 
 			if (verbose_mode()) {
-				warn(_("refused connect to %s from %s"),
+				warning(_("refused connect to %s from %s"),
 				     name_buf, c_name_buf);
 			}
 		}
@@ -780,7 +780,7 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 			snprintf(str, size, "%s (%s) %s [%s]", hbuf_rev, 
 			         hbuf_num, sbuf_num, sbuf_rev);
 		} else {
-			warn(_("inverse lookup failed for %s: %s"),
+			warning(_("inverse lookup failed for %s: %s"),
 			     hbuf_num, gai_strerror(err));
 			
 			snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
@@ -809,7 +809,7 @@ static void set_sockopts(const connection_attributes *attrs,
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 				 &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with setsockopt SO_REUSEADDR: %s"),
+			warning(_("error with setsockopt SO_REUSEADDR: %s"),
 			     strerror(errno));
 	}
 
@@ -822,7 +822,7 @@ static void set_sockopts(const connection_attributes *attrs,
 		err = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 				 &on, sizeof(on));
 		if (err < 0) 
-			warn(_("error with setsockopt TCP_NODELAY: %s"),
+			warning(_("error with setsockopt TCP_NODELAY: %s"),
 			     strerror(errno));
 	}
 
@@ -831,7 +831,7 @@ static void set_sockopts(const connection_attributes *attrs,
 		/* in case of error, we will go on anyway... */
 		err = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with setsockopt SO_SNDBUF: %s"),
+			warning(_("error with setsockopt SO_SNDBUF: %s"),
 			     strerror(errno));
 	}
 
@@ -840,7 +840,7 @@ static void set_sockopts(const connection_attributes *attrs,
 		/* in case of error, we will go on anyway... */
 		err = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on));
 		if (err < 0)
-			warn(_("error with setsockopt SO_RCVBUF: %s"),
+			warning(_("error with setsockopt SO_RCVBUF: %s"),
 			     strerror(errno));
 	}
 }
@@ -859,10 +859,10 @@ static void warn_socket_details(const connection_attributes *attrs,
 	/* announce the socket in very verbose mode */
 	switch (socktype) {
 	case SOCK_STREAM:
-		warn(_("using stream socket"));
+		warning(_("using stream socket"));
 		break;
 	case SOCK_DGRAM:
-		warn(_("using datagram socket"));
+		warning(_("using datagram socket"));
 		break;
 	default:
 		fatal(_("internal error: unsupported socktype %d"), socktype);
@@ -872,20 +872,20 @@ static void warn_socket_details(const connection_attributes *attrs,
 	if (ca_sndbuf_size(attrs) > 0) {
 		nlen = sizeof(n);
 		if (getsockopt(sock, SOL_SOCKET, SO_SNDBUF, &n, &nlen) < 0)
-			warn(_("error with getsockopt SO_SNDBUF: %s"),
+			warning(_("error with getsockopt SO_SNDBUF: %s"),
 			     strerror(errno));
 		else
-			warn(_("using socket sndbuf size of %d"), n);
+			warning(_("using socket sndbuf size of %d"), n);
 	}
 
 	/* announce the real rcvbuf size */
 	if (ca_rcvbuf_size(attrs) > 0) {
 		nlen = sizeof(n);
 		if (getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &n, &nlen) < 0)
-			warn(_("error with getsockopt SO_RCVBUF: %s"),
+			warning(_("error with getsockopt SO_RCVBUF: %s"),
 			     strerror(errno));
 		else
-			warn(_("using socket rcvbuf size of %d"), n);
+			warning(_("using socket rcvbuf size of %d"), n);
 	}
 }
 

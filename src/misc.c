@@ -36,7 +36,7 @@
 #include <paths.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.20 2003-07-22 18:51:43 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.21 2003-10-07 15:27:39 mauro Exp $");
 
 
 
@@ -60,7 +60,7 @@ void fatal(const char *template, ...)
 
 
 
-void warn(const char *template, ...)
+void warning(const char *template, ...)
 {
 	va_list ap;
 
