@@ -180,5 +180,6 @@ fi
     
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
-AC_OUTPUT([Makefile docs/Makefile src/Makefile contrib/Makefile nc6.spec],
-[test -z "$CONFIG_HEADERS" || echo timestamp > src/stamp-h.in])
+AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile \
+	nc6.spec docs/nc6.1])
+AC_OUTPUT

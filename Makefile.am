@@ -12,9 +12,9 @@ AUX_DIST_EXTRA		= $(auxdir)/ai_constants.m4 \
 		          $(auxdir)/type_struct_sockaddr_storage.m4 \
 		          $(auxdir)/type_struct_sockaddr_in6.m4 \
 		          $(auxdir)/type_socklen_t.m4 
-EXTRA_DIST		= bootstrap TODO COPYING CREDITS nc6.spec
+EXTRA_DIST		= bootstrap BUGS CREDITS
 
-AUTOMAKE_OPTIONS 	= foreign dist-bzip2
+AUTOMAKE_OPTIONS 	= dist-bzip2
 ACLOCAL_AMFLAGS		= -I $(auxdir)
 SUBDIRS 		= docs contrib src #config 
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure \
