@@ -11,12 +11,16 @@ AC_PREREQ(2.52)
 AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_RANLIB
 AC_ISC_POSIX
 AC_PROG_INSTALL
 
 
-# CFLAGS to use during configure (warnings and such are added later)
+# default CFLAGS to use
 CFLAGS=""
+
+# default CFLAGS to use for nc6 source
+NC6_CFLAGS=""
 
 
 # Checks for header files.
@@ -76,8 +80,8 @@ fi
 
 AC_ARG_ENABLE(stack-guess,
   AC_HELP_STRING(
-    [--enable-stack-guess],
-    [Enable guess of IPv6 stack (default)]
+    [--disable-stack-guess],
+    [Disable guess of IPv6 stack]
   ),
   [case "${enable_stack_guess}" in
   yes)  
@@ -136,7 +140,7 @@ IN6_FUNC_GETADDRINFO_AI_ALL(
 
 # The CFLAGS to use with GCC
 if test "X$GCC" = "Xyes"; then
-  CFLAGS="${CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
+  NC6_CFLAGS="${NC6_CFLAGS} -pipe -W -Wall -Wpointer-arith -Wstrict-prototypes -Wcast-qual -Wcast-align"
 fi
 
 # Add extra flags if in debug mode
@@ -154,7 +158,7 @@ AC_ARG_ENABLE(debug,
     AC_DEFINE(NDEBUG, 1, [Define if nc6 is to be build without debug information.])
     CFLAGS="${CFLAGS} -O2"
     if test "X$GCC" = "Xyes"; then 
-      CFLAGS="${CFLAGS} -finline-functions"
+      NC6_CFLAGS="${NC6_CFLAGS} -finline-functions"
     fi
     ;;
   *)    
@@ -164,7 +168,7 @@ AC_ARG_ENABLE(debug,
   AC_DEFINE(NDEBUG,1)
 )
     
-
+AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
-AC_OUTPUT([Makefile docs/Makefile src/Makefile nc6.spec],
+AC_OUTPUT([Makefile docs/Makefile src/Makefile contrib/Makefile nc6.spec],
 [test -z "$CONFIG_HEADERS" || echo timestamp > src/stamp-h.in])
