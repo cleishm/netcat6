@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.42 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.43 2003-01-23 15:15:59 chris Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -83,7 +83,7 @@ static const struct option long_options[] = {
 #define OPT_DISABLE_NAGLE	15
 	{"disable-nagle",       FALSE, NULL,  0 },
 #define OPT_NO_REUSEADDR	16
-	{"no-reuseaddr",        FALSE, NULL,  'd' },
+	{"no-reuseaddr",        FALSE, NULL,  0 },
 #define OPT_MAX			17
 	{0, 0, 0, 0}
 };
