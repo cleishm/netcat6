@@ -1,4 +1,6 @@
-Known bugs that have not been resolved:
+
+Known bugs that have not been resolved yet:
+
 -----------------------------------------------------------------------------
 
 Sending data to a UDP host that isn't listening gives a strange error:

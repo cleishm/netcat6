@@ -24,7 +24,7 @@ nc6_SOURCES = \
 
 nc6_LDADD = ../contrib/libnc6contrib.a
 
-CPPFLAGS = -I../contrib
-CFLAGS = @CFLAGS@ @NC6_CFLAGS@
+AM_CPPFLAGS = -I../contrib
+AM_CFLAGS = @CFLAGS@ @NC6_CFLAGS@
 
 MAINTAINERCLEANFILES 	= Makefile.in config.h.in stamp-h.in

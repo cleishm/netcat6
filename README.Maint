@@ -1,7 +1,7 @@
 README.Maint - information for nc6 maintainers
 --------------------------------------------------------------
 
-$Id: README.Maint,v 1.4 2003-01-01 21:15:50 chris Exp $
+$Id: README.Maint,v 1.5 2003-01-03 00:14:39 mauro Exp $
 
 
 Source layout
@@ -47,7 +47,7 @@ The following are the principles for netcat6:
      and implementation are public).
   * Economy of mechanism: Keep the design as simple as possible.
   * Least astonishment: The application behavior should match what is
-   naively expected.
+     naively expected.
   * Simplicity of function: The application should perform functions that are
      useful in the context of general use of the application (eg. it should 
      not become bloated with oft unnecessary features).
@@ -65,9 +65,21 @@ The most important coding style rules for nc6 are:
 
 * 8-column indent.
 
-* Always open curly bracket on same line as keyword. If this is not possible
-  (but there must be a __REALLY__ valid reason) put it on the following line,
-  vertically aligned with the keyword.
+* Always open curly bracket on same line as keyword. e.g.:
+
+  /* this is the preferred layout */
+  for (i = 0; i < len; ++i) {
+          ...
+  }
+
+  If this is not possible (but there must be a __REALLY__ valid reason) 
+  put it on the following line, vertically aligned with the keyword. e.g.:
+
+  /* this is also acceptable, but deprecated */
+  for (i = 0; i < len; ++i) 
+  {
+          ...
+  }
 
 * No space before the semicolon.
 

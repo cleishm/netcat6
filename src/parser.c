@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.26 2003-01-01 15:55:19 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.27 2003-01-03 00:14:39 mauro Exp $");
 
 
 /* default UDP MTU is 8kb */
@@ -96,7 +96,7 @@ static void print_usage(FILE *fp);
 
 int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 {
-	int c, verbosity_level = 0;
+	int c, ret, verbosity_level = 0;
 	bool listen_mode = FALSE;
 	bool file_transfer = FALSE;
 	size_t remote_mtu = 0;
@@ -104,15 +104,25 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	size_t remote_buffer_size = 0;
 	size_t local_buffer_size = 0;
 	int option_index = 0;
+	sock_proto protocol;
+	sock_type socket_type;
+	int connect_timeout = -1;
+	address local_address, remote_address;
+	bool half_close = FALSE;
+
+	/* initialize the addresses of the connection endpoints */
+	address_init(&remote_address);
+	address_init(&local_address);
 
 	/* set socket types to default values */
-	attrs->proto = PROTO_UNSPECIFIED;
-	attrs->type  = TCP_SOCKET;
+	protocol = PROTO_UNSPECIFIED;
+	socket_type = TCP_SOCKET;
+
+	ret = CONNECT_MODE;
 
 	/* option recognition loop */
 	while ((c = getopt_long(argc, argv, "46hlnp:q:s:uvw:x",
-	                        long_options, &option_index)) >= 0)
-	{
+	                        long_options, &option_index)) >= 0) {
  		switch(c) {
 		case 0:
 			switch(option_index) {
@@ -123,20 +133,19 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				set_flag(SEND_DATA_ONLY);
 				break;
 			case OPT_BUFFER_SIZE:
+				assert(optarg != NULL);
 				remote_buffer_size = safe_atoi(optarg);
 				break;
 			case OPT_MTU:
+				assert(optarg != NULL);
 				remote_mtu = safe_atoi(optarg);
 				break;
 			case OPT_NRU:
+				assert(optarg != NULL);
 				remote_nru = safe_atoi(optarg);
 				break;
 			case OPT_HALF_CLOSE:
-				/* keep remote open after half close */
-				ios_suppress_half_close(
-					&(attrs->remote_stream), FALSE);
-				ios_set_hold_timeout(
-					&(attrs->remote_stream), -1);
+				half_close = TRUE;
 				break;
 			case OPT_DISABLE_NAGLE:
 				set_flag(DISABLE_NAGLE);
@@ -145,19 +154,19 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				set_flag(DONT_REUSE_ADDR);
 				break;
 			default:
-				fatal("getopt returned unexpected "
-				      "long offset index %d\n", option_index);
+				fatal("getopt returned unexpected long option "
+				      "offset index %d\n", option_index);
 			}
 			break;
 		case '4':
-			if (attrs->proto != PROTO_UNSPECIFIED) 
+			if (protocol != PROTO_UNSPECIFIED) 
 			    fatal("cannot specify the address family twice");
-			attrs->proto = PROTO_IPv4;
+			protocol = PROTO_IPv4;
 			break;
 		case '6':	
-			if (attrs->proto != PROTO_UNSPECIFIED) 
+			if (protocol != PROTO_UNSPECIFIED) 
 			    fatal("cannot specify the address family twice");
-			attrs->proto = PROTO_IPv6;
+			protocol = PROTO_IPv6;
 			set_flag(STRICT_IPV6);
 			break;
 		case 'h':	
@@ -170,21 +179,20 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			set_flag(NUMERIC_MODE);
 			break;
 		case 'p':	
-			if (optarg == NULL) {
-				warn("you must specify a port with the -p switch");
-				print_usage(stderr);
-				exit(EXIT_FAILURE);
-			}
-			attrs->local_address.service = xstrdup(optarg);
+			assert(optarg != NULL);
+			local_address.service = xstrdup(optarg);
 			break;	
 		case 'q':
+			assert(optarg != NULL);
+			/* TODO: clean this code before release!!! */
 			parse_and_set_timeouts(optarg, attrs);
 			break;	
 		case 's':	
-			attrs->local_address.address = xstrdup(optarg);
+			assert(optarg != NULL);
+			local_address.address = xstrdup(optarg);
 			break;	
 		case 'u':	
-			attrs->type = UDP_SOCKET;
+			socket_type = UDP_SOCKET;
 			/* set remote buffer sizes and mtu's, iff they haven't
 			 * already been set */
 			if (remote_mtu == 0)
@@ -200,7 +208,8 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			set_flag(VERBOSE_MODE); 
 			break;
 		case 'w':
-			attrs->connect_timeout = safe_atoi(optarg);
+			assert(optarg != NULL);
+			connect_timeout = safe_atoi(optarg);
 			break;
 		case 'x':	
 			file_transfer = TRUE;
@@ -217,97 +226,121 @@ int parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	argc -= optind;
 
 	/* set mode flags */
-	set_flag((listen_mode)? LISTEN_MODE : CONNECT_MODE);
+	if (listen_mode == TRUE) {
+		set_flag(LISTEN_MODE);
+		unset_flag(CONNECT_MODE);
+	} else {
+		set_flag(CONNECT_MODE);
+		unset_flag(LISTEN_MODE);
+	}
 
 	/* setup file transfer depending on the mode */
 	if (file_transfer == TRUE) {
 		if (remote_buffer_size == 0)
 			remote_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
 		if (local_buffer_size == 0)
-			local_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
-		set_flag((listen_mode)? RECV_DATA_ONLY : SEND_DATA_ONLY);
-		unset_flag((listen_mode)? SEND_DATA_ONLY : RECV_DATA_ONLY);
-	}
-
-	/* check to make sure the user wasn't silly enough to set both
-	 * --recv-only and --send-only */
-	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
-	    is_flag_set(SEND_DATA_ONLY) == TRUE)
-	{
-		fatal("Cannot set both --recv-only and --send-only");
+			local_buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;		
+		if (listen_mode == TRUE) {
+			set_flag(RECV_DATA_ONLY);
+			unset_flag(SEND_DATA_ONLY);
+		} else {
+			set_flag(SEND_DATA_ONLY);
+			unset_flag(RECV_DATA_ONLY);
+		}
 	}
 
 	/* check nru - if it's too big data will never be received */
 	if (remote_nru > remote_buffer_size)
 		remote_nru = remote_buffer_size;
 
-	/* setup mtu, nru and buffer size if they were specified */
-	if (remote_mtu > 0)
-		ios_set_mtu(&(attrs->remote_stream), remote_mtu);
-	if (remote_nru > 0)
-		ios_set_nru(&(attrs->remote_stream), remote_nru);
-	if (remote_buffer_size > 0)
-		cb_resize(&(attrs->remote_buffer), remote_buffer_size);
-	if (local_buffer_size > 0)
-		cb_resize(&(attrs->local_buffer), local_buffer_size);
+	/* check to make sure the user wasn't silly enough to set both
+	 * --recv-only and --send-only */
+	if (is_flag_set(RECV_DATA_ONLY) == TRUE &&
+	    is_flag_set(SEND_DATA_ONLY) == TRUE) {
+		fatal("Cannot set both --recv-only and --send-only");
+	}
 
 	/* additional arguments are the remote address/service */
 	switch(argc) {
 	case 0:
-		attrs->remote_address.address = NULL;
-		attrs->remote_address.service = NULL;
+		remote_address.address = NULL;
+		remote_address.service = NULL;
 		break;
 	case 1:
-		attrs->remote_address.address = argv[0];
-		attrs->remote_address.service = NULL;
+		remote_address.address = argv[0];
+		remote_address.service = NULL;
 		break;
 	case 2:
-		attrs->remote_address.address = argv[0];
-		attrs->remote_address.service = argv[1];
+		remote_address.address = argv[0];
+		remote_address.service = argv[1];
 		break;
 	default:
 		print_usage(stderr);
 		exit(EXIT_FAILURE);
 	}
 
-	/* sanity check */
-	if (attrs->remote_address.address != NULL &&
-		strlen(attrs->remote_address.address) == 0) {
-		attrs->remote_address.address = NULL;
-	}
+	/* sanity checks - should be absolutely useless */
+	assert(remote_address.address == NULL ||
+	       strlen(remote_address.address) > 0);
+	assert(remote_address.service == NULL ||
+	       strlen(remote_address.service) > 0);
 
-	if (attrs->remote_address.service != NULL &&
-		strlen(attrs->remote_address.service) == 0) {
-		attrs->remote_address.service = NULL;
-	}
-
-	if (listen_mode) {	
-		if (attrs->local_address.service == NULL) {
+	if (listen_mode == TRUE) {
+		if (local_address.service == NULL) {
 			warn("in listen mode you must specify a port "
 			     "with the -p switch");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 
-		return LISTEN_MODE;
+		ret = LISTEN_MODE;
 	} else {
-		if (is_flag_set(DONT_REUSE_ADDR)) {
+		if (is_flag_set(DONT_REUSE_ADDR) == TRUE) {
 			warn("--no-reuseaddr option "
 			     "can be used only in listen mode");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 		
-		if (attrs->remote_address.address == NULL ||
-		    attrs->remote_address.service == NULL) {
+		if (remote_address.address == NULL ||
+		    remote_address.service == NULL) {
 			warn("you must specify the address/port couple "
 			     "of the remote endpoint");
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 
-		return CONNECT_MODE;
+		ret = CONNECT_MODE;
 	}
+
+	/* setup attrs */
+	ca_set_protocol(attrs, protocol);
+	ca_set_socket_type(attrs, socket_type);
+	ca_set_remote_addr(attrs, remote_address);
+	ca_set_local_addr(attrs, local_address);
+
+	/* setup connection timeout */
+	if (connect_timeout != -1) {
+		ca_set_connection_timeout(attrs, connect_timeout);
+	}
+	
+	/* keep remote open after half close */
+	if (half_close == TRUE) {
+		ca_supress_half_close_remote(attrs);
+		ca_set_hold_timeout_remote(attrs);
+	}
+	
+	/* setup mtu, nru and buffer size if they were specified */
+	if (remote_mtu > 0)
+		ca_set_MTU(attrs, remote_mtu);
+	if (remote_nru > 0)
+		ca_set_NRU(attrs, remote_nru);
+	if (remote_buffer_size > 0)
+		ca_resize_remote_buf(attrs, remote_buffer_size);
+	if (local_buffer_size > 0)
+		ca_resize_local_buf(attrs, local_buffer_size);
+
+	return ret;
 }
 
 
@@ -353,11 +386,12 @@ static void print_usage(FILE *fp)
 
 
 static void parse_and_set_timeouts(const char *str,
-		connection_attributes *attrs)
+                                   connection_attributes *attrs)
 {
 	char *s;
 
 	assert(str != NULL);
+	assert(attrs != NULL);
 
 	if ((s = strchr(str, ':')) != NULL) {
 		*s++ = '\0';
@@ -383,7 +417,10 @@ static void set_flag(unsigned long mask)
 	flags_mask = flags_mask | mask;
 }
 
+
+
 static void unset_flag(unsigned long mask)
 {
 	flags_mask = flags_mask & ~mask;
 }
+

@@ -81,6 +81,8 @@ int safe_atoi(const char *str);
 	} while (0)
 #endif
 
+#define	istimerexpired(tvp)		\
+	(((tvp)->tv_sec || (tvp)->tv_usec) ? FALSE : TRUE)
 
 #ifndef lint
 #define RCSID(X) static const char rcsid[] = X

@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.14 2002-12-30 22:35:46 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.15 2003-01-03 00:14:39 mauro Exp $");
 
 
 
@@ -51,6 +51,9 @@ static void cb_assert(const circ_buf *cb)
 
 void cb_init(circ_buf *cb, size_t size)
 {
+	assert(cb != NULL);
+	assert(size > 0);
+	
 	memset(cb, 0, sizeof(circ_buf));
 	
 	/* normalization: size must be a multiple of 16 */
@@ -68,8 +71,7 @@ void cb_init(circ_buf *cb, size_t size)
 
 void cb_destroy(circ_buf *cb)
 {
-	assert(cb != NULL);
-	assert(cb->buf != NULL);
+	cb_assert(cb);
 
 	free(cb->buf);
 	cb->buf = NULL;
@@ -109,6 +111,7 @@ ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes)
 	size_t len;
 
 	cb_assert(cb);
+	assert(fd >= 0);
 	
 	/* buffer is full, return an error condition */
 	if (cb_is_full(cb)) return -1;
@@ -168,7 +171,7 @@ ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes)
 
 
 ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
-	struct sockaddr *from, size_t *fromlen)
+                struct sockaddr *from, size_t *fromlen)
 {
 	ssize_t rr;
 	int count;
@@ -177,6 +180,7 @@ ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
 	size_t len;
 
 	cb_assert(cb);
+	assert(fd >= 0);
 
 	/* buffer is full, return an error condition */
 	if (cb_is_full(cb)) return -1;
@@ -214,10 +218,10 @@ ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
 		}
 	}		
 
-
+	/* setup msg structure */
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name    = (void *)from;
-	msg.msg_namelen = (from && fromlen)? *fromlen : 0;
+	msg.msg_namelen = (from != NULL && fromlen != 0)? *fromlen : 0;
 	msg.msg_iov     = iov;
 	msg.msg_iovlen  = count;
 
@@ -225,8 +229,10 @@ ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
 	do {
 		errno = 0;
 		rr = recvmsg(fd, &msg, 0);
+		
 		/* copy out updated namelen */
-		if (from && fromlen) *fromlen = msg.msg_namelen;
+		if (from != NULL && fromlen != 0) 
+			*fromlen = msg.msg_namelen;
 	} while (errno == EINTR);
 
 	/* if rr < 0 an error has occured,
@@ -251,8 +257,8 @@ ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
 	struct iovec iov[2];
 	const uint8_t *tmp;
 
-	assert(buf != NULL);
 	cb_assert(cb);
+	assert(buf != NULL);
 	
 	/* buffer is full, return an error condition */
 	if (cb_is_full(cb)) return -1;
@@ -318,6 +324,7 @@ ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
 	size_t len;
 	
 	cb_assert(cb);
+	assert(fd >= 0);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
@@ -377,7 +384,7 @@ ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
 
 
 ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
-	struct sockaddr *dest, size_t destlen)
+                struct sockaddr *dest, size_t destlen)
 {
 	ssize_t rr;
 	int count;
@@ -386,6 +393,9 @@ ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
 	size_t len;
 	
 	cb_assert(cb);
+	assert(fd >= 0);
+	assert(dest != NULL);
+	assert(destlen > 0);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
@@ -417,6 +427,7 @@ ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
 		count = 1;
 	}		
 	
+	/* setup msg structure */
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name    = (void *)dest;
 	msg.msg_namelen = destlen;
@@ -457,6 +468,7 @@ ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len)
 	struct iovec iov[2];
 
 	cb_assert(cb);
+	assert(buf != NULL);
 	
 	/* buffer is empty, return immediately */
 	if (cb_is_empty(cb)) return 0;
@@ -521,7 +533,8 @@ ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len)
 
 void cb_clear(circ_buf *cb)
 {
-	assert(cb);
+	cb_assert(cb);
+	
 	cb->ptr = cb->buf;
 	cb->data_size = 0;
 }

@@ -46,7 +46,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.14 2003-01-01 14:03:45 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.15 2003-01-03 00:14:39 mauro Exp $");
 
 
 
@@ -55,13 +55,12 @@ RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.14 2003-
 bool is_address_ipv4_mapped(const struct sockaddr *a)
 {
 	bool ret = FALSE;
+	const struct sockaddr_in6 *tmp = (const struct sockaddr_in6 *)a;
 	
 	assert(a != NULL);
 	
 	if ((a->sa_family == AF_INET6) && 
-	    IN6_IS_ADDR_V4MAPPED(
-	        &(((const struct sockaddr_in6 *)a)->sin6_addr)))
-	{
+	    IN6_IS_ADDR_V4MAPPED(&(tmp->sin6_addr))) {
 		ret = TRUE;
 	}
 			
@@ -89,10 +88,10 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		ap = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
 		memset(ap, 0, sizeof(struct sockaddr_in));
 		memcpy(&(((struct sockaddr_in *)ap)->sin_addr.s_addr),
-		    &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
-		    sizeof(struct in_addr));
+		       &(((const struct sockaddr_in6 *)a)->sin6_addr.s6_addr[12]),
+		       sizeof(struct in_addr));
 		((struct sockaddr_in *)ap)->sin_port =
-		    ((const struct sockaddr_in6 *)a)->sin6_port;
+			((const struct sockaddr_in6 *)a)->sin6_port;
 		aa = ap;
 	}
 
@@ -101,10 +100,10 @@ static bool sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 		bp = (struct sockaddr *)alloca(sizeof(struct sockaddr_in));
 		memset(bp, 0, sizeof(struct sockaddr_in));
 		memcpy(&(((struct sockaddr_in *)bp)->sin_addr.s_addr),
-		    &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
-		    sizeof(struct in_addr));
+		       &(((const struct sockaddr_in6 *)b)->sin6_addr.s6_addr[12]),
+		       sizeof(struct in_addr));
 		((struct sockaddr_in *)bp)->sin_port =
-		    ((const struct sockaddr_in6 *)b)->sin6_port;
+			((const struct sockaddr_in6 *)b)->sin6_port;
 		bb = bp;
 	}
 #endif
@@ -190,6 +189,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 
 	if (is_flag_set(NUMERIC_MODE) == TRUE)
 		hints.ai_flags |= AI_NUMERICHOST;
+	
 	hints.ai_flags |= AI_PASSIVE;
 	
 	err = getaddrinfo(addr->address, addr->service, &hints, &res);
@@ -201,7 +201,7 @@ bool is_allowed(const struct sockaddr *sa, const address *addr,
 #ifdef ENABLE_IPV6
 		if ((is_flag_set(STRICT_IPV6) == TRUE) &&
 		    (is_address_ipv4_mapped(ptr->ai_addr))) {
-			/* cannot accept address */
+			/* we cannot accept IPv4-mapped addresses */
 			continue;
 		}
 #endif

@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.26 2003-01-01 14:03:45 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.27 2003-01-03 00:14:39 mauro Exp $");
 
 
 void do_connect(connection_attributes *attrs)
@@ -102,8 +102,9 @@ void do_connect(connection_attributes *attrs)
 
 #ifdef ENABLE_IPV6
 		/* skip IPv4 mapped addresses returned from getaddrinfo,
-		 * for security reasons:
- http://playground.iijlab.net/i-d/draft-itojun-ipv6-transition-abuse-01.txt
+		 * for security reasons. see:
+		 * http://playground.iijlab.net/i-d/
+		 *       /draft-itojun-ipv6-transition-abuse-01.txt
  		 */
 		if (is_address_ipv4_mapped(ptr->ai_addr))
 			continue;
@@ -233,7 +234,7 @@ void do_connect(connection_attributes *attrs)
 
 		/* set connect timeout */
 		if (attrs->connect_timeout > 0) {
-			tv.tv_sec = attrs->connect_timeout;
+			tv.tv_sec = (time_t)attrs->connect_timeout;
 			tv.tv_usec = 0;
 			tvp = &tv;
 		}
@@ -243,6 +244,7 @@ void do_connect(connection_attributes *attrs)
 		
 		/* attempt the connection */
 		err = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
+		
 		if (err != 0 && errno == EINPROGRESS) {
 			/* connection is proceeding
 			 * it is complete (or failed) when select returns */
@@ -253,12 +255,13 @@ void do_connect(connection_attributes *attrs)
 
 			/* call select */
 			do {
-				err = select(
-					fd+1, NULL, &connect_fdset, NULL, tvp);
+				err = select(fd + 1, NULL, &connect_fdset, 
+					     NULL, tvp);
 			} while (err < 0 && errno == EINTR);
 
 			if (err < 0)
 				fatal("select error: %s", strerror(errno));
+			
 			if (err == 0) {
 				/* connection timed out */
 				if (is_flag_set(VERBOSE_MODE) == TRUE) {
@@ -279,12 +282,12 @@ void do_connect(connection_attributes *attrs)
 			if (err != 0)
 				errno = err;
 		}
+		
 		if (err != 0) {
 			/* connection failed */
 			if (verbose_mode == TRUE) {
-				warn("%s [%s] %s (%s): %s",
-				     hbuf_rev, hbuf_num,
-				     sbuf_num, sbuf_rev,
+				warn("cannot connect to %s [%s] %s (%s): %s",
+				     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev,
 				     strerror(errno));
 			}
 			close(fd);
@@ -364,7 +367,7 @@ void do_listen(connection_attributes *attrs)
 	numeric_mode    = is_flag_set(NUMERIC_MODE);
 	verbose_mode    = is_flag_set(VERBOSE_MODE);
 	dont_reuse_addr = is_flag_set(DONT_REUSE_ADDR);
-	disable_nagle = is_flag_set(DISABLE_NAGLE);
+	disable_nagle   = is_flag_set(DISABLE_NAGLE);
 	
 	/* initialize accept_fdset */
 	FD_ZERO(&accept_fdset);
@@ -427,8 +430,9 @@ void do_listen(connection_attributes *attrs)
 
 #ifdef ENABLE_IPV6
 		/* skip IPv4 mapped addresses returned from getaddrinfo,
-		 * for security reasons:
- http://playground.iijlab.net/i-d/draft-itojun-ipv6-transition-abuse-01.txt
+		 * for security reasons. see:
+		 * http://playground.iijlab.net/i-d/
+		 *       /draft-itojun-ipv6-transition-abuse-01.txt
  		 */
 		if (is_address_ipv4_mapped(ptr->ai_addr))
 			continue;
@@ -500,8 +504,7 @@ void do_listen(connection_attributes *attrs)
 			if (errno == EADDRINUSE &&
 			    ptr->ai_family == PF_INET &&
 			    set_ipv6_only == FALSE &&
-			    bound_ipv6_any == TRUE)
-			{
+			    bound_ipv6_any == TRUE) {
 				warn("listening on %s (%s) ...",
 				     hbuf_num, sbuf_num);
 				close(fd);
@@ -532,8 +535,7 @@ void do_listen(connection_attributes *attrs)
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
 		if (ptr->ai_family == PF_INET6 &&
 		    memcmp(&((struct sockaddr_in6*)(ptr->ai_addr))->sin6_addr,
-		           &in6addr_any, sizeof(struct in6_addr)) == 0)
-		{
+		           &in6addr_any, sizeof(struct in6_addr)) == 0) {
 			bound_ipv6_any = TRUE;
 		}
 #endif
@@ -565,7 +567,7 @@ void do_listen(connection_attributes *attrs)
 
 		/* setup timeout */
 		if (attrs->connect_timeout > 0) {
-			tv.tv_sec = attrs->connect_timeout;
+			tv.tv_sec = (time_t)attrs->connect_timeout;
 			tv.tv_usec = 0;
 			tvp = &tv;
 		}

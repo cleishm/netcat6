@@ -30,22 +30,22 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.13 2003-01-01 12:50:58 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.14 2003-01-03 00:14:39 mauro Exp $");
 
 
 
 void io_stream_init(io_stream *ios, const char* name,
-	circ_buf *inbuf, circ_buf *outbuf)
+                    circ_buf *inbuf, circ_buf *outbuf)
 {
 	assert(ios != NULL);
 	assert(inbuf != NULL);
 	assert(outbuf != NULL);
 
-	ios->fd_in = -1;
+	ios->fd_in  = -1;
 	ios->fd_out = -1;
 	ios->socktype = 0;  /* unknown */
 
-	ios->buf_in = inbuf;
+	ios->buf_in  = inbuf;
 	ios->buf_out = outbuf;
 
 	ios->mtu = 0; /* unlimited */
@@ -76,7 +76,6 @@ void ios_assign_socket(io_stream *ios, int fd, int socktype)
 	assert(ios != NULL);
 	assert(fd >= 0);
 
-	/* nonblock(fd); */
 	ios->fd_in  = fd;
 	ios->fd_out = fd;
 	ios->socktype = socktype;
@@ -96,9 +95,6 @@ void ios_assign_stdio(io_stream *ios)
 		fatal("error in duplicating stdout file descriptor: %s", 
 		      strerror(errno));
 
-	/* nonblock(ios->fd_in); */
-	/* nonblock(ios->fd_out); */
-
 	/* pretend stdio is a stream socket */
 	ios->socktype = SOCK_STREAM;
 }
@@ -113,6 +109,7 @@ int ios_schedule_read(io_stream *ios)
 	 * the buffer to satisfy the nru, then we can't read */
 	if ((ios->fd_in < 0) || space == 0 || space < ios->nru)
 		return -1;
+	
 	/* schedule a read from fdin */
 	return ios->fd_in;
 }
@@ -124,6 +121,7 @@ int ios_schedule_write(io_stream *ios)
 	/* if closed or there is no data in the buffer, then we can't write */
 	if ((ios->fd_out < 0) || cb_is_empty(ios->buf_out))
 		return -1;
+	
 	/* schedule a write to fdout */
 	return ios->fd_out;
 }
@@ -166,6 +164,8 @@ ssize_t ios_read(io_stream *ios)
 {
 	ssize_t rr;
 
+	assert(ios != NULL);
+	
 	/* should only be called if ios_schedule_read returned a true result */
 	assert(ios->fd_in >= 0);
 	assert(cb_space(ios->buf_in) >= ios->nru);
@@ -188,6 +188,8 @@ ssize_t ios_write(io_stream *ios)
 {
 	ssize_t rr;
 
+	assert(ios != NULL);
+	
 	/* should only be called if ios_schedule_write returned a true result */
 	assert(ios->fd_out >= 0);
 	assert(!cb_is_empty(ios->buf_out));

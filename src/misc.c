@@ -32,7 +32,7 @@
 #include <limits.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.11 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.12 2003-01-03 00:14:39 mauro Exp $");
 
 
 
@@ -87,7 +87,7 @@ void *xmalloc(size_t size)
 
 char *xstrdup(const char *str)
 {
-	register char *nstr = (char*)xmalloc(strlen(str));
+	register char *nstr = (char *)xmalloc(strlen(str));
 	/* we should use srtlcpy here instead of strcpy */
 	strcpy(nstr, str);
 	return nstr;

@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.24 2003-01-01 11:50:08 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.25 2003-01-03 00:14:39 mauro Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -110,25 +110,26 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 
 #ifndef NDEBUG
 		if (very_verbose_mode == TRUE) {
-			if (tvp1)
+			if (tvp1 != NULL)
 				warn("%s timer expires in %d.%06d",
 				     ios_name(ios1), tv1.tv_sec, tv1.tv_usec);
-			if (tvp2)
+			if (tvp2 != NULL)
 				warn("%s timer expires in %d.%06d",
 				     ios_name(ios2), tv2.tv_sec, tv2.tv_usec);
 		}
 #endif
 
 		/* stop loop if either ios has timed out */
-		if ((tvp1 && !timerisset(tvp1))||(tvp2 && !timerisset(tvp2))) {
+		if ((tvp1 != NULL && istimerexpired(tvp1) == TRUE) || 
+		    (tvp2 != NULL && istimerexpired(tvp2) == TRUE)) {
 			retval = -1;
 			break;
 		}
 
 		/* select smallest timeout for select */
-		if (tvp1 && tvp2)
-			tvp = timercmp(tvp1, tvp2, <)? tvp1 : tvp2;
-		else if (tvp1)
+		if (tvp1 != NULL && tvp2 != NULL)
+			tvp = timercmp(tvp1, tvp2, <) ? tvp1 : tvp2;
+		else if (tvp1 != NULL)
 			tvp = tvp1;
 		else
 			tvp = tvp2;  /* tvp2 may be NULL */

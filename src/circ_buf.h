@@ -53,11 +53,11 @@ void cb_resize(circ_buf *cb, size_t size);
 
 ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes);
 ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
-	struct sockaddr *from, size_t *fromlen);
+                struct sockaddr *from, size_t *fromlen);
 
 ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes);
 ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
-	struct sockaddr *dest, size_t destlen);
+                struct sockaddr *dest, size_t destlen);
 
 ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len);
 ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len);

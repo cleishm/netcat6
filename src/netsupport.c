@@ -29,12 +29,12 @@
 #include "misc.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.4 2002-12-30 22:35:47 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.5 2003-01-03 00:14:39 mauro Exp $");
 
 
 /* add a new fd/socktype pair to the list */
 bound_socket *add_bound_socket(bound_socket *list,
-                                             int fd, int socktype)
+                               int fd, int socktype)
 {
 	bound_socket *fdnew;
 	

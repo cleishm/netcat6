@@ -159,7 +159,7 @@ of the local endpoint to 5 would cause the connection to be closed 5 seconds
 after stdin is closed (eg. by using ^D to send EOF).  By default, the hold
 timeout is disabled for the local endpoint (essentially an 'infinite'
 timeout), and the hold timeout is set to 0 for the remote endpoint (an
-\'instant' timeout).  This means that nc6 closes it's connection immediately
+\'instant' timeout).  This means that nc6 closes its connection immediately
 when the read from the remote server is closed (also see "HALF CLOSE").
 .SH FILE TRANSFER
 netcat6 can be used to transfer files and data streams efficiently, using the

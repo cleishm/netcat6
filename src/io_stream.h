@@ -51,7 +51,7 @@ typedef struct io_stream_t
 
 
 void io_stream_init(io_stream *ios, const char* name,
-	circ_buf *inbuf, circ_buf *outbuf);
+                    circ_buf *inbuf, circ_buf *outbuf);
 void io_stream_destroy(io_stream *ios);
 
 void ios_assign_socket(io_stream *ios, int fd, int socktype);
@@ -68,7 +68,7 @@ void ios_assign_stdio(io_stream *ios);
 #define ios_suppress_half_close(IOS, B)	((IOS)->half_close_suppress = (B))
 
 /* sets the time (in sec) after read is shutdown that timeout occurs */
-#define ios_set_hold_timeout(IOS, T)  ((IOS)->hold_time = (T))
+#define ios_set_hold_timeout(IOS, T)	((IOS)->hold_time = (T))
 
 
 /* returns an fd if the stream should be scheduled for read, -1 otherwise */

@@ -43,6 +43,8 @@ typedef struct address_t
 	char *service;
 } address;
 
+#define address_init(AD)	((AD)->address = (AD)->service = NULL)
+
 typedef struct connection_attributes_t
 {
 	sock_proto proto;
@@ -53,9 +55,34 @@ typedef struct connection_attributes_t
 	circ_buf local_buffer;
 	io_stream remote_stream;
 	io_stream local_stream;
-	time_t connect_timeout;
+	int connect_timeout;
 } connection_attributes;
 
+#define ca_set_protocol(CA, PROTO)	((CA)->proto = (PROTO))
+#define ca_set_socket_type(CA, ST)	((CA)->type = (ST))
+#define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
+#define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
+
+#define ca_set_MTU(CA, MTU)	\
+	ios_set_mtu(&((CA)->remote_stream),(MTU))
+#define ca_set_NRU(CA, NRU)	\
+	ios_set_nru(&((CA)->remote_stream),(NRU))
+	
+#define ca_set_connection_timeout(CA, CT)	\
+	((CA)->connect_timeout = (CT))
+	
+#define ca_supress_half_close_remote(CA)	\
+	ios_suppress_half_close(&((CA)->remote_stream), FALSE)
+#define ca_supress_half_close_local(CA)	\
+	ios_suppress_half_close(&((CA)->local_stream), FALSE)
+	
+#define ca_set_hold_timeout_remote(CA)	\
+	ios_set_hold_timeout(&((CA)->remote_stream), -1)
+#define ca_set_hold_timeout_local(CA)	\
+	ios_set_hold_timeout(&((CA)->local_stream), -1)
+
+#define ca_resize_local_buf(CA, SIZE)	cb_resize(&((CA)->local_buffer),(SIZE))
+#define ca_resize_remote_buf(CA, SIZE)	cb_resize(&((CA)->remote_buffer),(SIZE))
 
 void connection_attributes_init(connection_attributes *attrs);
 void connection_attributes_destroy(connection_attributes *attrs);
