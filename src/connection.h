@@ -78,7 +78,7 @@ void ca_destroy(connection_attributes *attrs);
 #define ca_set_connection_timeout(CA, CT)	((CA)->connect_timeout = (CT))
 
 #define ca_remote_stream(CA)	(&((CA)->remote_stream))
-#define ca_local_stream(CA)	(&((CA)->remote_stream))
+#define ca_local_stream(CA)	(&((CA)->local_stream))
 	
 #define ca_suppress_half_close_remote(CA)	\
 	ios_suppress_half_close(&((CA)->remote_stream), FALSE)
