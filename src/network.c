@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.37 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.38 2003-01-18 23:24:32 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -63,7 +63,7 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
 	bool disable_nagle     = FALSE;
-	char buf[AI_STR_SIZE];
+	char name_buf[AI_STR_SIZE];
 
 	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
@@ -146,8 +146,9 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 		/* setup buf if we're in verbose mode */
 		if (verbose_mode == TRUE) 
-			getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, buf, 
-			             sizeof(buf), numeric_mode);
+			getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, 
+			               name_buf, sizeof(name_buf),
+				       numeric_mode);
 					
 		/* setup local source address and/or service */
 		if (local->address != NULL || local->service != NULL) {
@@ -170,7 +171,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				if (verbose_mode == TRUE) {
 					warn(_("bind to source addr/port "
 					     "failed when connecting to "
-					     "%s: %s"), buf, gai_strerror(err));
+					     "%s: %s"), name_buf,
+					     gai_strerror(err));
 				}
 				close(fd);
 				fd = -1;
@@ -195,7 +197,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 				if (verbose_mode == TRUE) {
 					warn(_("bind to source addr/port "
 					     "failed when connecting to "
-					     "%s: %s"), buf, strerror(errno));
+					     "%s: %s"), name_buf,
+					     strerror(errno));
 				}
 				freeaddrinfo(src_res);
 				close(fd);
@@ -217,14 +220,15 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 			/* connection failed */
 			if (verbose_mode == TRUE) 
 				warn(_("cannot connect to %s: %s"),
-				     buf, strerror(errno));
+				     name_buf, strerror(errno));
 			close(fd);
 			fd = -1;
 			continue;
 		case CONNECTION_TIMEOUT: 
 			/* connection failed */
 			if (verbose_mode == TRUE) 
-				warn(_("timeout while connecting to %s"), buf);
+				warn(_("timeout while connecting to %s"),
+				     name_buf);
 			close(fd);
 			fd = -1;
 			continue;
@@ -253,9 +257,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	}
 
 	/* let the user know the connection has been established */
-	if (verbose_mode == TRUE) {
-		warn(_("%s open"), buf);
-	}
+	if (verbose_mode == TRUE)
+		warn(_("%s open"), name_buf);
 
 	/* return the socktype */
 	if (rt_socktype != NULL)
@@ -335,11 +338,6 @@ void do_listen_continuous(const connection_attributes* attrs,
 	const address *remote, *local;
 	int nfd, i, fd, err, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
-	char hbuf_num[NI_MAXHOST + 1];
-	char sbuf_num[NI_MAXSERV + 1];
-	char c_hbuf_rev[NI_MAXHOST + 1];
-	char c_hbuf_num[NI_MAXHOST + 1];
-	char c_sbuf_num[NI_MAXSERV + 1];
 	bool numeric_mode      = FALSE;
 	bool verbose_mode      = FALSE;
 	bool dont_reuse_addr   = FALSE;
@@ -350,7 +348,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 #endif
 	struct bound_socket_t* bound_sockets = NULL;
 	fd_set accept_fdset;
-	char src_buf[AI_STR_SIZE];
+	char name_buf[AI_STR_SIZE];
 
 	/* make sure that the arguments are correct */
 	assert(attrs != NULL);
@@ -441,9 +439,6 @@ void do_listen_continuous(const connection_attributes* attrs,
 
 		if (skip_address(ptr) == TRUE) continue;
 		
-		getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, src_buf, 
-		             sizeof(src_buf), TRUE);
-
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (fd < 0) {
@@ -486,23 +481,29 @@ void do_listen_continuous(const connection_attributes* attrs,
 				warn(_("error with sockopt TCP_NODELAY"));
 		}
 
+		/* get the numeric name for this source address */
+		getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, name_buf, 
+		               sizeof(name_buf), TRUE);
+
 		/* bind to the local address */
 		err = bind(fd, ptr->ai_addr, ptr->ai_addrlen);
 		if (err != 0) {
 #ifdef ENABLE_IPV6
 			/* suppress ADDRINUSE error for systems that double
-			 * bind ipv6 and ipv4 */
+			 * bind ipv6 and ipv4 and pretend it succeeded */
 			if (errno == EADDRINUSE &&
 			    ptr->ai_family == PF_INET &&
 			    set_ipv6_only == FALSE &&
-			    bound_ipv6_any == TRUE) {
-				warn(_("listening on %s ..."), src_buf);
+			    bound_ipv6_any == TRUE)
+			{
+				if (verbose_mode == TRUE)
+					warn(_("listening on %s ..."),name_buf);
 				close(fd);
 				continue;
 			}
 #endif
 			warn(_("bind to source %s failed: %s"),
-			     src_buf, strerror(errno));
+			     name_buf, strerror(errno));
 			close(fd);
 			continue;
 		}
@@ -515,11 +516,11 @@ void do_listen_continuous(const connection_attributes* attrs,
 			err = listen(fd, 5);
 			if (err != 0)
 				fatal(_("cannot listen on %s: %s"),
-				      src_buf, strerror(errno));
+				      name_buf, strerror(errno));
 		}
 
 		if (verbose_mode == TRUE)
-			warn(_("listening on %s ..."), src_buf);
+			warn(_("listening on %s ..."), name_buf);
 
 #ifdef ENABLE_IPV6
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
@@ -552,6 +553,7 @@ void do_listen_continuous(const connection_attributes* attrs,
 		struct sockaddr_storage dest;
 		socklen_t destlen;
 		int ns, socktype;
+		char c_name_buf[AI_STR_SIZE];
 
 		/* make a copy of accept_fdset before passing to select */
 		memcpy(&tmp_ap_fdset, &accept_fdset, sizeof(fd_set));
@@ -622,40 +624,13 @@ void do_listen_continuous(const connection_attributes* attrs,
 				fatal(_("getsockname failed: %s"),
 				      strerror(errno));
 
-			/* get the numeric name for this source as a string */
-			err = getnameinfo((struct sockaddr *)&src, srclen,
-			                  hbuf_num, sizeof(hbuf_num), NULL, 0,
-			                  NI_NUMERICHOST | NI_NUMERICSERV);
+			/* get the numeric name for this source */
+			getnameinfo_ex((struct sockaddr *)&src, srclen,
+			               name_buf, sizeof(name_buf), TRUE);
 
-			/* this should never happen */
-			if (err != 0)
-				fatal(_("getnameinfo failed: %s"),
-				      gai_strerror(err));
-
-			/* get the numeric name for this client as a string */
-			err = getnameinfo((struct sockaddr *)&dest, destlen,
-			                  c_hbuf_num, sizeof(c_hbuf_num),
-					  c_sbuf_num, sizeof(c_sbuf_num),
-					  NI_NUMERICHOST | NI_NUMERICSERV);
-			if (err != 0)
-				fatal(_("getnameinfo failed: %s"),
-				      gai_strerror(err));
-
-			/* get the real name for this client as a string */
-			if (numeric_mode == FALSE) {
-				err = getnameinfo((struct sockaddr *)&dest,
-				                  destlen, c_hbuf_rev, 
-						  sizeof(c_hbuf_rev), 
-						  NULL, 0, 0);
-				if (err != 0) {
-					warn(_("inverse lookup failed "
-					     "for %s: %s"),
-				             c_hbuf_num, gai_strerror(err));
-					strcpy(c_hbuf_rev, c_hbuf_num);
-				}
-			} else {
-				strcpy(c_hbuf_rev, c_hbuf_num);
-			}
+			/* get the name for this client */
+			getnameinfo_ex((struct sockaddr *)&dest, destlen,
+			               c_name_buf, sizeof(c_name_buf), FALSE);
 		}
 
 		/* check if connections from this client are allowed */
@@ -676,9 +651,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 			}
 
 			if (verbose_mode == TRUE) {
-				warn(_("connect to %s (%s) from %s [%s] %s"),
-				     hbuf_num, sbuf_num,
-				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				warn(_("connect to %s from %s"),
+				     name_buf, c_name_buf);
 			}
 
 			callback(ns, socktype, cdata);
@@ -694,10 +668,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 			close(ns);
 
 			if (verbose_mode == TRUE) {
-				warn(_("refused connect "
-				     "to %s (%s) from %s [%s] %s"),
-				     hbuf_num, sbuf_num,
-				     c_hbuf_rev, c_hbuf_num, c_sbuf_num);
+				warn(_("refused connect to %s from %s"),
+				     name_buf, c_name_buf);
 			}
 		}
 	}
@@ -804,7 +776,6 @@ static void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 	if (err != 0)
 		fatal(_("getnameinfo failed: %s"), gai_strerror(err));
 
-	/* get the real name for this destination as a string */
 	if (numeric_mode == FALSE) {
 		/* get the real name for this destination as a string */
 		err = getnameinfo(sa, len, hbuf_rev, sizeof(hbuf_rev),
