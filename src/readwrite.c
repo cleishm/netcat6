@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.37 2003-01-21 11:26:13 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.38 2003-01-23 15:39:36 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -47,6 +47,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	fd_set read_fdset, write_fdset;
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
+	bool hold_timedout = FALSE;
 	int retval = 0;
 	
 	/* check function arguments */
@@ -101,24 +102,28 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (max_fd == -1)
 			break;
 
-		/* check timeouts */
-		tvp1 = ios_next_timeout(ios1, &tv1);
-		tvp2 = ios_next_timeout(ios2, &tv2);
+		if (!hold_timedout) {
+			/* check timeouts */
+			tvp1 = ios_next_timeout(ios1, &tv1);
+			tvp2 = ios_next_timeout(ios2, &tv2);
 
-		/* handle timeouts */
-		if (tvp1 != NULL && istimerexpired(tvp1) == TRUE) {
-			/* stop reading from the other endpoint as well */
-			ios_shutdown(ios2, SHUT_RD);
-			/* stop sending to this endpoint */
-			ios_shutdown(ios1, SHUT_WR);
-			continue;
-		}
-		if (tvp2 != NULL && istimerexpired(tvp2) == TRUE) {
-			/* stop reading from the other endpoint as well */
-			ios_shutdown(ios1, SHUT_RD);
-			/* stop sending to this endpoint */
-			ios_shutdown(ios2, SHUT_WR);
-			continue;
+			/* handle timeouts */
+			if (tvp1 != NULL && istimerexpired(tvp1) == TRUE) {
+				/* stop reading from the other endpoint */
+				ios_shutdown(ios2, SHUT_RD);
+				/* stop sending to this endpoint */
+				ios_shutdown(ios1, SHUT_WR);
+				hold_timedout = TRUE;
+				continue;
+			}
+			if (tvp2 != NULL && istimerexpired(tvp2) == TRUE) {
+				/* stop reading from the other endpoint */
+				ios_shutdown(ios1, SHUT_RD);
+				/* stop sending to this endpoint */
+				ios_shutdown(ios2, SHUT_WR);
+				hold_timedout = TRUE;
+				continue;
+			}
 		}
 
 		/* select smallest timeout for select */
