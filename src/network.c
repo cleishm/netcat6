@@ -35,13 +35,13 @@
 #include "netsupport.h"
 
 #include <limits.h>
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/sco.h>
 #include <bluetooth/l2cap.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.52 2004-01-21 10:10:19 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.53 2004-01-23 09:34:24 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -280,7 +280,7 @@ static int do_connect_ip(const connection_attributes *attrs, int *rt_socktype)
 
 
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 int do_connect_bluez(const connection_attributes *attrs, int *rt_socktype)
 {
 	const address *remote, *local;
@@ -364,7 +364,7 @@ int do_connect_bluez(const connection_attributes *attrs, int *rt_socktype)
 	
 	return fd;
 }
-#endif /* HAVE_BLUEZ */
+#endif /* ENABLE_BLUEZ */
 
 
 
@@ -373,11 +373,11 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
 	
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	if (ca_family(attrs) == PROTO_BLUEZ) 
 		return do_connect_bluez(attrs, rt_socktype);
 	else 
-#endif /* HAVE_BLUEZ */
+#endif /* ENABLE_BLUEZ */
 		return do_connect_ip(attrs, rt_socktype);
 	
 	/* never reached */
@@ -783,7 +783,7 @@ static void do_listen_continuous_ip(const connection_attributes* attrs,
 
 
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 static void do_listen_continuous_bluez(const connection_attributes* attrs,
                                        listen_callback callback, void* cdata, 
 				       int max_accept)
@@ -972,7 +972,7 @@ static void do_listen_continuous_bluez(const connection_attributes* attrs,
 	/* close the listening socket */
 	close(fd);
 }
-#endif /* HAVE_BLUEZ */
+#endif /* ENABLE_BLUEZ */
 
 
 
@@ -982,11 +982,11 @@ void do_listen_continuous(const connection_attributes* attrs,
 	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
 	
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	if (ca_family(attrs) == PROTO_BLUEZ) 
 		do_listen_continuous_bluez(attrs, callback, cdata, max_accept);
 	else 
-#endif /* HAVE_BLUEZ */
+#endif /* ENABLE_BLUEZ */
 		do_listen_continuous_ip(attrs, callback, cdata, max_accept);
 }
 
@@ -1183,11 +1183,11 @@ static void warn_socket_details(const connection_attributes *attrs,
 	
 	/* announce the socket in very verbose mode */
 	switch (socktype) {
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	case SOCK_SEQPACKET:
 		warning(_("using seqpacket socket"));
 		break;
-#endif /* HAVE_BLUEZ */
+#endif /* ENABLE_BLUEZ */
 	case SOCK_STREAM:
 		warning(_("using stream socket"));
 		break;

@@ -36,14 +36,14 @@
 #include <paths.h>
 #endif
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 #ifdef HAVE_STDINT_H
 #include <stdint.h> /* needed for uint8_t */
 #endif
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.24 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.25 2004-01-23 09:34:24 mauro Exp $");
 
 
 
@@ -231,7 +231,7 @@ int safe_atoi(const char *str)
 }
 #endif
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen)
 {
 	uint8_t b[6];

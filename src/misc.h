@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 #include <bluetooth/bluetooth.h>
 #endif
 
@@ -59,7 +59,7 @@ int safe_atoi(const char *str);
 #define safe_atoi atoi
 #endif
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen);
 #endif
 	

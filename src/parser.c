@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.60 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.61 2004-01-23 09:34:24 mauro Exp $");
 
 
 
@@ -100,7 +100,7 @@ static const struct option long_options[] = {
 	{"exec",                required_argument,  NULL, 'e'},
 #define OPT_CONTINUOUS		21
 	{"continuous",          no_argument,        NULL,  0 },
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 /* OPT_BLUETOOTH and OPT_SCO must be the last 2 entries in long_options */
 #define OPT_BLUETOOTH		22
 	{"bluetooth",           no_argument,        NULL, 'b'},
@@ -112,7 +112,7 @@ static const struct option long_options[] = {
 
 #define OPT_MAX		((sizeof(long_options) / sizeof(long_options[0])) - 1)
 
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 #define BLUEZ_OPTIONS	"b"
 #else
 #define BLUEZ_OPTIONS
@@ -208,7 +208,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			case OPT_CONTINUOUS:
 				ca_set_flag(attrs, CA_CONTINUOUS_ACCEPT);
 				break;
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 			case OPT_SCO:
 				protocol = SCO_PROTOCOL;
 				break;
@@ -225,7 +225,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			family = PROTO_IPv6;
 			ca_set_flag(attrs, CA_STRICT_IPV6);
 			break;
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 		case 'b':
 			family = PROTO_BLUEZ;
 			protocol = L2CAP_PROTOCOL;
@@ -370,7 +370,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			    protocol != TCP_PROTOCOL)
 				fatal("unknown/unsupported transport protocol selected");
 			break;
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 		case PROTO_BLUEZ:
 			if (protocol != SCO_PROTOCOL && 
 			    protocol != L2CAP_PROTOCOL)
@@ -382,7 +382,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	}
 	
 	if (listen_mode == TRUE) {
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 		/* it is ok not to specify a port with sco */
 		if (local_address.service == NULL && protocol != SCO_PROTOCOL) {
 #else
@@ -415,7 +415,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			exit(EXIT_FAILURE);
 		}
 		
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 		/* it is ok not to specify a port with sco */
 		if (remote_address.address == NULL || 
 		    (remote_address.service == NULL && protocol != SCO_PROTOCOL))
@@ -502,7 +502,7 @@ static void print_usage(FILE *fp)
 	fprintf(fp, _(
 " -4                     Use only IPv4\n"
 " -6                     Use only IPv6\n"));
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	fprintf(fp, _(
 " -b, --bluetooth        Use Bluetooth (L2CAP)\n"));
 #endif
@@ -526,7 +526,7 @@ static void print_usage(FILE *fp)
 " --rcvbuf-size          Kernel receive buffer size for network sockets\n"
 " --recv-only            Only receive data, don't transmit\n"
 " -s, --address=ADDRESS  Local source address\n"));
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	fprintf(fp, _(
 " --sco                  Use SCO over Bluetooth\n"));
 #endif
@@ -569,7 +569,7 @@ _("Configured with IPv6 support\n"));
 _("Configured without IPv6 support\n"));
 #endif
 	
-#ifdef HAVE_BLUEZ
+#ifdef ENABLE_BLUEZ
 	fprintf(fp,
 _("Configured with Bluetooth support\n"));
 #else
