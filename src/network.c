@@ -34,7 +34,7 @@
 #include "filter.h"
 #include "netsupport.h"
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.39 2003-01-19 10:31:03 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.40 2003-01-20 20:47:24 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -184,7 +184,8 @@ int do_connect(const connection_attributes *attrs, int *rt_socktype)
 
 			/* try binding to any of the addresses */
 			for (src_ptr = src_res; src_ptr != NULL;
-			     src_ptr = src_ptr->ai_next) {
+			     src_ptr = src_ptr->ai_next)
+			{
 				err = bind(fd, src_ptr->ai_addr,
 					   src_ptr->ai_addrlen);
 				if (err == 0) break;
@@ -526,7 +527,8 @@ void do_listen_continuous(const connection_attributes* attrs,
 		/* check if this was an IPv6 socket bound to IN6_ADDR_ANY */
 		if (ptr->ai_family == PF_INET6 &&
 		    memcmp(&((struct sockaddr_in6*)(ptr->ai_addr))->sin6_addr,
-		           &in6addr_any, sizeof(struct in6_addr)) == 0) {
+		           &in6addr_any, sizeof(struct in6_addr)) == 0)
+		{
 			bound_ipv6_any = TRUE;
 		}
 #endif

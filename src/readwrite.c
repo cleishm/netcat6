@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.34 2003-01-18 20:06:36 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.35 2003-01-20 20:47:24 chris Exp $");
 
 
 /* ios1 is the remote stream, ios2 the local one */
@@ -107,7 +107,8 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 
 		/* stop loop if either ios has timed out */
 		if ((tvp1 != NULL && istimerexpired(tvp1) == TRUE) || 
-		    (tvp2 != NULL && istimerexpired(tvp2) == TRUE)) {
+		    (tvp2 != NULL && istimerexpired(tvp2) == TRUE))
+		{
 			retval = -1;
 			break;
 		}
