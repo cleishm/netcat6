@@ -298,9 +298,7 @@ void do_listen(const address *remote, const address *local,
 	io_stream remote_stream, local_stream;
 	int nfd, i, fd, err, ns = -1, maxfd = -1;
 	struct addrinfo hints, *res = NULL, *ptr;
-	char hbuf_rev[NI_MAXHOST + 1];
 	char hbuf_num[NI_MAXHOST + 1];
-	char sbuf_rev[NI_MAXSERV + 1];
 	char sbuf_num[NI_MAXSERV + 1];
 	fd_set accept_fdset;
 
@@ -367,27 +365,6 @@ void do_listen(const address *remote, const address *local,
 		if (err != 0)
 			fatal("getnameinfo failed: %s", gai_strerror(err));
 
-		/* get the real name for this destination as a string */
-		if ((is_flag_set(NUMERIC_MODE) == FALSE) && 
-		    (is_flag_set(VERY_VERBOSE_MODE) == TRUE))
-		{
-			/* try reverse dns lookup */
-			err = getnameinfo(ptr->ai_addr, ptr->ai_addrlen,
-				          hbuf_rev, sizeof(hbuf_rev), sbuf_rev, 
-				          sizeof(sbuf_rev), 0);
-			if(err != 0)
-				warn("inverse lookup failed for %s: %s",
-				     hbuf_num, gai_strerror(err));
-		} else {
-			err = 1;
-		}
-
-		if (err != 0) {
-			/* just make the real name the numeric string */
-			strcpy(hbuf_rev, hbuf_num);
-			strcpy(sbuf_rev, sbuf_num);
-		}
-
 		/* create the socket */
 		fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if(fd < 0) fatal("cannot create the socket: %s", strerror(errno));
@@ -412,8 +389,8 @@ void do_listen(const address *remote, const address *local,
 		/* bind to the local address */
 		err = bind(fd, ptr->ai_addr, ptr->ai_addrlen);
 		if (err != 0) {
-			warn("bind to source %s [%s] %s (%s) failed: %s",
-			     hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
+			warn("bind to source %s (%s) failed: %s",
+			     hbuf_num, sbuf_num, strerror(errno));
 			close(fd);
 			continue;
 		}
@@ -425,13 +402,13 @@ void do_listen(const address *remote, const address *local,
 		if (ptr->ai_socktype == SOCK_STREAM) {
 			err = listen(fd, 5);
 			if (err != 0)
-				fatal("cannot listen on %s [%s] %s (%s): %s",
-				      hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
+				fatal("cannot listen on %s (%s): %s",
+				      hbuf_num, sbuf_num, strerror(errno));
 		}
 
 		if (is_flag_set(VERBOSE_MODE) == TRUE)
-			warn("listening on %s [%s] %s (%s) ...",
-			      hbuf_rev, hbuf_num, sbuf_num, sbuf_rev, strerror(errno));
+			warn("listening on %s (%s) ...",
+			      hbuf_num, sbuf_num, strerror(errno));
 
 		/* add fd to accept_fdset */
 		FD_SET(fd, &accept_fdset);
