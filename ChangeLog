@@ -1,3 +1,8 @@
+2003-06-04 Mauro Tortonesi <mauro _at_ deepspace6.net>
+
+ * Fixed CFLAGS handling problem. Thanks to Filippo Natali for
+   the patch and to the FreeBSD maintainers for reporting the bug.
+
 2003-05-11 Mauro Tortonesi <mauro _at_ deepspace6.net>
 
  * Released nc6 0.5
