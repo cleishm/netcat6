@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  network.c - common networking functions module - implementation
  * 
  *  nc6 - an advanced netcat clone
@@ -29,6 +30,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.14 2002-12-24 14:54:00 chris Exp $");
 
 
 /* Some systems (eg. linux) will bind to both ipv6 AND ipv4 when

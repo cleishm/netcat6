@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  main.c - main module
  * 
  *  nc6 - an advanced netcat clone
@@ -26,6 +27,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.6 2002-12-24 14:54:00 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;

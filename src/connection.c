@@ -1,5 +1,6 @@
-/*
- *  connection.h - connection description structures and functions - header
+/* vi:ts=4 sw=4
+ *
+ *  connection.c - connection description structures and functions - implementation
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2002 Mauro Tortonesi <mauro _at_ ferrara.linux.it>
@@ -26,6 +27,8 @@
 #include <string.h>
 #include <assert.h>
 #include <netinet/in.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.5 2002-12-24 14:54:00 chris Exp $");
 
 
 void connection_attributes_init(connection_attributes *attrs)

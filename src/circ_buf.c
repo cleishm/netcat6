@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  circ_buf.c - circular buffer module - implementation
  *  
  *  nc6 - an advanced netcat clone
@@ -27,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/uio.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.7 2002-12-24 14:54:00 chris Exp $");
 
 
 

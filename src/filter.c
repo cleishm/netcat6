@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  filter.c - incoming traffic validator module - implementation
  * 
  *  nc6 - an advanced netcat clone
@@ -30,6 +31,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/filter.c,v 1.9 2002-12-24 14:54:00 chris Exp $");
 
 
 

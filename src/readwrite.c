@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  readwrite.c - stream i/o reading/writing loop - implementation 
  * 
  *  nc6 - an advanced netcat clone
@@ -33,6 +34,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.14 2002-12-24 14:54:00 chris Exp $");
 
 /* buffer size is 8kb */
 static const size_t BUFFER_SIZE = 8192;

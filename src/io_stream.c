@@ -1,4 +1,5 @@
-/*
+/* vi:ts=4 sw=4
+ *
  *  io_stream.c - stream i/o wrapper - implementation 
  * 
  *  nc6 - an advanced netcat clone
@@ -29,6 +30,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.3 2002-12-24 14:54:00 chris Exp $");
 
 
 /* static void nonblock(int fd); */

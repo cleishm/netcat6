@@ -47,4 +47,10 @@ int safe_atoi(const char *str);
 #define safe_atoi atoi
 #endif
 
+#ifndef lint
+#define RCSID(X) static const char rcsid[] = X
+#else
+#define RCSID(X)
+#endif
+
 #endif /* MISC_H */
