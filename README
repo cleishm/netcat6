@@ -88,7 +88,13 @@ issue.
 MAILING LIST
 ------------
 
-TODO
+There is a mailing list for the discussion of netcat6 and other ipv6
+applications.  It is open to anyone to join, and new versions will be
+announced to this list.
+
+To join the mailing list see the webpage at http://lists.deepspace6.net/
+
+To send mail to the list, send it to ds6@deepspace6.net
 
 
 BUG REPORTS
@@ -119,7 +125,8 @@ $ cvs -d :pserver:anonymous@cvs.deepspace6.net:/ds6/cvs co nc6
 AVAILABILITY
 ------------
 
-TODO
+The main web site for netcat6 is http://www.deepspace6.net
+The ftp site is ftp://ftp.deepspace6.net/pub/sources/nc6/
 
 
 COPYRIGHT
