@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.11 2002-12-29 23:55:07 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.12 2002-12-30 14:02:01 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -108,8 +108,9 @@ int main(int argc, char **argv)
 		ios_shutdown(&(connection_attrs.remote_stream), SHUT_WR);
 		/* close the local stream for reading */
 		ios_shutdown(&(connection_attrs.local_stream), SHUT_RD);
-		/* don't stop because the read is closed */
+		/* disable all hold timeouts */
 		ios_set_hold_timeout(&(connection_attrs.local_stream), -1);
+		ios_set_hold_timeout(&(connection_attrs.remote_stream), -1);
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)
@@ -122,10 +123,11 @@ int main(int argc, char **argv)
 
 		/* close the remote stream for reading */
 		ios_shutdown(&(connection_attrs.remote_stream), SHUT_RD);
-		/* don't stop because the read is closed */
-		ios_set_hold_timeout(&(connection_attrs.remote_stream), -1);
 		/* close the local stream for writing */
 		ios_shutdown(&(connection_attrs.local_stream), SHUT_WR);
+		/* disable all hold timeouts */
+		ios_set_hold_timeout(&(connection_attrs.local_stream), -1);
+		ios_set_hold_timeout(&(connection_attrs.remote_stream), -1);
 
 #ifndef NDEBUG
 		if (is_flag_set(VERY_VERBOSE_MODE) == TRUE)

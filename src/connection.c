@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.9 2002-12-29 23:55:07 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.10 2002-12-30 14:02:01 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -57,8 +57,10 @@ void connection_attributes_init(connection_attributes *attrs)
 	io_stream_init(&(attrs->local_stream),
 		&(attrs->local_buffer), &(attrs->remote_buffer));
 
-	/* the local stream has an infinite hold timeout by default */
-	ios_set_hold_timeout(&(attrs->local_stream), -1);
+	/* the remote stream has an instant hold timeout by default,
+	 * which means that as soon as the remote read stream closes, the
+	 * entire connection will be torn down */
+	ios_set_hold_timeout(&(attrs->remote_stream), 0);
 
 	/* no connect timeout */
 	attrs->connect_timeout = -1;
