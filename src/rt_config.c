@@ -260,14 +260,22 @@ bool is_double_binding_sane(void)
 			if (err < 0) {
 				fprintf(stderr, "bind returned %d, (%s)\n", 
 				        err, strerror(errno));
-				if (errno == EADDRINUSE && i != 1) {
+				if (errno == EADDRINUSE) {
 					close_and_destroy_bound_sockets(list);
-					return FALSE;
+					list = NULL;
+					if (i != 1) {
+						return FALSE;
+					} else {
+						/* another program already 
+						 * was already bound to the 
+						 * port. try another port. */
+						++port;
+						continue;
+					}
 				}
 	                        fatal("cannot bind to the socket: %s", 
 				      strerror(errno));
 			}
-			
 			list = add_bound_socket(list, fd, ptr->ai_socktype);
 		}
 		
