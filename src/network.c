@@ -41,7 +41,7 @@
 #include <bluetooth/l2cap.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.53 2004-01-23 09:34:24 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.54 2005-05-19 03:01:55 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -1128,7 +1128,7 @@ static void set_sockopts(const connection_attributes *attrs,
 	assert(sockinfo != NULL);
 	
 	/* set the reuse address socket option */
-	if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
+	if (!ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 		on = 1;
 		/* in case of error, we will go on anyway... */
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
