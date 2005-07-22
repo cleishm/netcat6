@@ -228,25 +228,25 @@ netcat6 can be used to transfer files and data streams efficiently, using the
 For example, to transfer a file from machine 'foo.example.com' to machine
 \'bar.example.com', one would use the following technique.
 .P
-On 'foo', set up a listening nc6 on any local port:
+On 'bar', set up a listening nc6 on any local port:
 .RS
 
-foo$ nc6 -x -l -p 7676 > targetfile
+bar$ nc6 -x -l -p 7676 > targetfile
 
 .RE
-Then on 'bar', use nc6 to send the file to the listening nc6:
+Then on 'foo', use nc6 to send the file to the listening nc6:
 .RS
 
-bar$ nc6 -x foo.example.com 7676 < sourcefile
+foo$ nc6 -x bar.example.com 7676 < sourcefile
 
 .RE
 You can also use file transfer mode to pipe the output of programs over
 networks.  For example, you can use tar with nc6 to copy entire directories:
 .RS
 
-foo$ nc6 -x -l -p 7676 | tar xpzf -
+bar$ nc6 -x -l -p 7676 | tar xpzf -
 
-bar$ tar cpzf - /home | nc6 -x foo.example.com 7676
+foo$ tar cpzf - /home | nc6 -x bar.example.com 7676
 
 .RE
 The '-x' or '--transfer' option is just an alias for various other options
