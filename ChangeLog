@@ -1,6 +1,10 @@
-2004-08-02 Chris Leishman <chris@leishman.org>
+2005-07-22 Chris Leishman <chris@leishman.org>
 	
-	* Added sigchld patch from Natsakis Konstantinos.
+	* Fixed --transfer example in man page.
+
+2005-05-19 Chris Leishman <chris@leishman.org>
+	
+	* Corrected --no-reuseaddr handling (it was inverted).
 
 2004-04-19 Mauro Tortonesi <mauro@deepspace6.net>
 
