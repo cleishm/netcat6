@@ -2,8 +2,8 @@
  *  circ_buf.c - circular buffer module - implementation
  *  
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"
+#include "system.h"
 #include "circ_buf.h"
 #include "misc.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
@@ -29,19 +30,20 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.23 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.24 2005-08-18 04:13:12 chris Exp $");
 
 
 
 #ifndef NDEBUG
-static void cb_assert(const circ_buf *cb)
+static void cb_assert(const circ_buf_t *cb)
 {
 	if (cb == NULL ||
 	    cb->buf == NULL ||
 	    cb->ptr == NULL ||
 	    cb->buf_size < cb->data_size) 
-		fatal("internal error with circular buffers: please "
-		      "contact the authors of nc6 for bugfixing ;-)");
+	{
+		fatal_internal("circular buffer assertion failed");
+	}
 }
 #else
 #define cb_assert(CB)	do {} while(0)
@@ -49,12 +51,12 @@ static void cb_assert(const circ_buf *cb)
 
 
 
-void cb_init(circ_buf *cb, size_t size)
+void cb_init(circ_buf_t *cb, size_t size)
 {
 	assert(cb != NULL);
 	assert(size > 0);
 	
-	memset(cb, 0, sizeof(circ_buf));
+	memset(cb, 0, sizeof(circ_buf_t));
 	
 	cb->buf = (uint8_t *)xmalloc(size);
 	cb->ptr = cb->buf;
@@ -66,7 +68,7 @@ void cb_init(circ_buf *cb, size_t size)
 
 
 
-void cb_destroy(circ_buf *cb)
+void cb_destroy(circ_buf_t *cb)
 {
 	cb_assert(cb);
 
@@ -76,7 +78,7 @@ void cb_destroy(circ_buf *cb)
 
 
 
-void cb_resize(circ_buf *cb, size_t size)
+void cb_resize(circ_buf_t *cb, size_t size)
 {
 	uint8_t *new_buf;
 
@@ -100,7 +102,7 @@ void cb_resize(circ_buf *cb, size_t size)
 
 
 
-ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes)
+ssize_t cb_read(circ_buf_t *cb, int fd, size_t nbytes)
 {
 	ssize_t rr;
 	int count;
@@ -167,7 +169,7 @@ ssize_t cb_read(circ_buf *cb, int fd, size_t nbytes)
 
 
 
-ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
+ssize_t cb_recv(circ_buf_t *cb, int fd, size_t nbytes,
                 struct sockaddr *from, size_t *fromlen)
 {
 	ssize_t rr;
@@ -247,7 +249,7 @@ ssize_t cb_recv(circ_buf *cb, int fd, size_t nbytes,
 
 
 
-ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
+ssize_t cb_append(circ_buf_t *cb, const uint8_t *buf, size_t len)
 {
 	ssize_t rr;
 	int i, count;
@@ -313,7 +315,7 @@ ssize_t cb_append(circ_buf *cb, const uint8_t *buf, size_t len)
 
 
 
-ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
+ssize_t cb_write(circ_buf_t *cb, int fd, size_t nbytes)
 {
 	ssize_t rr;
 	int count;
@@ -380,7 +382,7 @@ ssize_t cb_write(circ_buf *cb, int fd, size_t nbytes)
 
 
 
-ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
+ssize_t cb_send(circ_buf_t *cb, int fd, size_t nbytes,
                 struct sockaddr *dest, size_t destlen)
 {
 	ssize_t rr;
@@ -456,7 +458,7 @@ ssize_t cb_send(circ_buf *cb, int fd, size_t nbytes,
 
 
 
-ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len)
+ssize_t cb_extract(circ_buf_t *cb, uint8_t *buf, size_t len)
 {
 	ssize_t rr;
 	int i, count;
@@ -526,7 +528,7 @@ ssize_t cb_extract(circ_buf *cb, uint8_t *buf, size_t len)
 
 
 
-void cb_clear(circ_buf *cb)
+void cb_clear(circ_buf_t *cb)
 {
 	cb_assert(cb);
 	

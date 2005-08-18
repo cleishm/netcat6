@@ -2,8 +2,8 @@
  *  misc.h - miscellaneous funcions module - header
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include "config.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -31,84 +30,24 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-#undef  MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#undef  MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
-#undef  XOR
-#define XOR(a,b) (((a)||(b)) && !((a)&&(b)))
-
-typedef enum { FALSE = 0, TRUE = 1 } bool;
-
 const char *get_program_name(void);
 
+void fatal_internal(const char *template, ...);
 void fatal(const char *template, ...);
 void warning(const char *template, ...);
 
 void *xmalloc(size_t size);
-char *xstrdup(const char* str);
+char *xstrdup(const char *str);
 
 void nonblock(int fd);
 
-int open3(char *cmd, int *in, int *out, int *err);
+int open3(const char *cmd, int *in, int *out, int *err);
 
-#ifdef HAVE_STRTOL
-int safe_atoi(const char *str);
-#else
-#define safe_atoi atoi
-#endif
+int safe_atoi(const char *str, int *result);
 
 #ifdef ENABLE_BLUEZ
+#define BA_MAXHOST 18
 int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen);
 #endif
-	
-/* operations on timevals - copied from BSD sys/time.h */
-#ifndef timerclear
-#define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
-#endif
-#ifndef timerisset
-#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
-#endif
-#ifndef timeradd
-#define timeradd(tvp, uvp, vvp)						\
-	do {								\
-		(vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;		\
-		(vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;	\
-		if ((vvp)->tv_usec >= 1000000) {			\
-			(vvp)->tv_sec++;				\
-			(vvp)->tv_usec -= 1000000;			\
-		}							\
-	} while (0)
-#endif
-#ifndef timersub
-#define	timersub(tvp, uvp, vvp)						\
-	do {								\
-		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;		\
-		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;	\
-		if ((vvp)->tv_usec < 0) {				\
-			(vvp)->tv_sec--;				\
-			(vvp)->tv_usec += 1000000;			\
-		}							\
-	} while (0)
-#endif
 
-#define	istimerexpired(tvp)		\
-	(((tvp)->tv_sec < 0) || ((tvp)->tv_sec == 0 && (tvp)->tv_usec <= 0))
-
-#ifndef lint
-#define RCSID(X) static const char rcsid[] = X
-#else
-#define RCSID(X)
-#endif
-
-#if ENABLE_NLS
-#include <libintl.h>
-#define _(String) gettext(String)
-#define N_(String) (String)
-#else
-#define _(String) (String)
-#define N_(String) (String)
-#endif
-
-#endif /* MISC_H */
+#endif/*MISC_H*/

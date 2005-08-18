@@ -2,8 +2,8 @@
  *  connection.h - connection description structures and functions - header
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,46 +26,36 @@
 #include <netdb.h>
 #include <sys/time.h>
 
-typedef enum sock_family_t {
+
+typedef enum sock_family {
 	PROTO_UNSPECIFIED,
 	PROTO_IPv6,
 	PROTO_IPv4,
 	PROTO_BLUEZ
-} sock_family;
+} sock_family_t;
 
-typedef enum sock_protocol_t {
+typedef enum sock_protocol {
 	TCP_PROTOCOL,
 	UDP_PROTOCOL,
 	SCO_PROTOCOL,
 	L2CAP_PROTOCOL
-} sock_protocol;
+} sock_protocol_t;
 
-typedef struct address_t
+typedef struct address
 {
 	char *address;
 	char *service;
-} address;
+} address_t;
 
 #define address_init(AD)	((AD)->address = (AD)->service = NULL)
 
 
-#define CA_NUMERIC_MODE		0x000001
-#define CA_STRICT_IPV6		0x000002
-#define CA_DONT_REUSE_ADDR	0x000004
-#define CA_LISTEN_MODE		0x000008
-#define CA_CONNECT_MODE		0x000010
-#define CA_RECV_DATA_ONLY	0x000020
-#define CA_SEND_DATA_ONLY	0x000040
-#define CA_DISABLE_NAGLE	0x000080
-#define CA_CONTINUOUS_ACCEPT	0x000100
-
-
-typedef struct connection_attributes_t
+typedef struct connection_attributes
 {
-	sock_family   family;
-	sock_protocol protocol;
-	address remote_address;
-	address local_address;
+	sock_family_t family;
+	sock_protocol_t protocol;
+	address_t remote_address;
+	address_t local_address;
 	int flags;
 	size_t buffer_size;
 	size_t remote_mtu;
@@ -78,22 +68,37 @@ typedef struct connection_attributes_t
 	int remote_hold_timeout;
 	bool remote_half_close_suppress;
 	bool local_half_close_suppress;
-	char* local_exec;
-} connection_attributes;
+	char *local_exec;
+} connection_attributes_t;
 
+/* CA flags */
+#define CA_NUMERIC_MODE		0x000001
+#define CA_STRICT_IPV6		0x000002
+#define CA_DONT_REUSE_ADDR	0x000004
+#define CA_LISTEN_MODE		0x000008
+#define CA_CONNECT_MODE		0x000010
+#define CA_RECV_DATA_ONLY	0x000020
+#define CA_SEND_DATA_ONLY	0x000040
+#define CA_DISABLE_NAGLE	0x000080
+#define CA_CONTINUOUS_ACCEPT	0x000100
 
-void ca_init(connection_attributes *attrs);
-void ca_destroy(connection_attributes *attrs);
+void ca_init(connection_attributes_t *attrs);
+void ca_destroy(connection_attributes_t *attrs);
 
 #define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
 #define ca_family(CA)			((CA)->family)
 #define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
 #define ca_protocol(CA)			((CA)->protocol)
 
-#define ca_remote_address(CA)	((const address*)&((CA)->remote_address))
-#define ca_local_address(CA)	((const address*)&((CA)->local_address))
+#define ca_remote_address(CA)	((const address_t *)&((CA)->remote_address))
+#define ca_local_address(CA)	((const address_t *)&((CA)->local_address))
 #define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
 #define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
+
+#define ca_connect_func(CA)		((CA)->connect)
+#define ca_set_connect_func(CA, FUNC)	((CA)->connect = (FUNC))
+#define ca_listen_func(CA)		((CA)->listen)
+#define ca_set_listen_func(CA, FUNC)	((CA)->listen = (FUNC))
 
 #define ca_is_flag_set(CA, FLG)		((CA)->flags & (FLG))
 #define ca_set_flag(CA, FLG)		((CA)->flags |=  (FLG))
@@ -136,10 +141,11 @@ void ca_destroy(connection_attributes *attrs);
 #define ca_set_local_half_close_suppress(CA, B)	\
 	((CA)->local_half_close_suppress = (B))
 
-#define ca_local_exec(CA)		(((CA)->local_exec))
-void ca_set_local_exec(connection_attributes *attrs, const char* exec);
+#define ca_local_exec(CA)		(const char*)(((CA)->local_exec))
+void ca_set_local_exec(connection_attributes_t *attrs, const char *exec);
 	
 /* fill out an addrinfo structure with parameters from the ca */
-void ca_to_addrinfo(struct addrinfo *ainfo, const connection_attributes *attrs);
+void ca_to_addrinfo(struct addrinfo *ainfo,
+		const connection_attributes_t *attrs);
 
-#endif /* CONNECTION_H */
+#endif/*CONNECTION_H*/

@@ -2,8 +2,8 @@
  *  io_stream.c - stream i/o wrapper - implementation 
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,10 +19,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"
+#include "system.h"
 #include "io_stream.h"
 #include "misc.h"
 #include "parser.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -31,18 +32,20 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.29 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.30 2005-08-18 04:13:12 chris Exp $");
+
 
 
 #ifndef NDEBUG
-static void ios_assert(const io_stream *ios)
+static void ios_assert(const io_stream_t *ios)
 {
 	if (ios == NULL ||
 	    ios->name == NULL ||
 	    ios->buf_in == NULL ||
 	    ios->buf_out == NULL)
-		fatal("internal error with I/O streams: please"
-		      "contact the authors of nc6 for bugfixing ;-)");
+	{
+		fatal_internal("I/O stream assertion failed");
+	}
 }
 #else
 #define ios_assert(IOS) do {} while(0)
@@ -50,9 +53,8 @@ static void ios_assert(const io_stream *ios)
 
 
 
-void ios_init_socket(io_stream *ios, const char* name,
-		     int fd, int socktype,
-                     circ_buf *inbuf, circ_buf *outbuf)
+void ios_init_socket(io_stream_t *ios, const char *name, int fd, int socktype,
+		circ_buf_t *inbuf, circ_buf_t *outbuf)
 {
 	/* check arguments */
 	assert(ios != NULL);
@@ -66,8 +68,8 @@ void ios_init_socket(io_stream *ios, const char* name,
 
 
 
-void ios_init_stdio(io_stream *ios, const char* name,
-		    circ_buf *inbuf, circ_buf *outbuf)
+void ios_init_stdio(io_stream_t *ios, const char *name,
+		circ_buf_t *inbuf, circ_buf_t *outbuf)
 {
 	int fd_in, fd_out;
 
@@ -78,11 +80,11 @@ void ios_init_stdio(io_stream *ios, const char* name,
 	assert(outbuf != NULL);
 	
 	if ((fd_in  = dup(STDIN_FILENO)) < 0) 
-		fatal(_("error in duplicating stdin file descriptor: %s"), 
+		fatal("error duplicating stdin file descriptor: %s",
 		      strerror(errno));
 	
 	if ((fd_out = dup(STDOUT_FILENO)) < 0) 
-		fatal(_("error in duplicating stdout file descriptor: %s"), 
+		fatal("error duplicating stdout file descriptor: %s",
 		      strerror(errno));
 
 	/* pretend stdio is a stream socket */
@@ -91,9 +93,9 @@ void ios_init_stdio(io_stream *ios, const char* name,
 
 
 
-void ios_init(io_stream *ios, const char* name,
+void ios_init(io_stream_t *ios, const char *name,
               int fd_in, int fd_out, int socktype,
-              circ_buf *inbuf, circ_buf *outbuf)
+              circ_buf_t *inbuf, circ_buf_t *outbuf)
 {
 	/* check arguments */
 	assert(ios    != NULL);
@@ -115,7 +117,7 @@ void ios_init(io_stream *ios, const char* name,
 	ios->mtu = 0; /* unlimited */
 	ios->nru = 0; /* unlimited */
 
-	ios->half_close_suppress = FALSE;
+	ios->half_close_suppress = false;
 
 	ios->idle_timeout = -1;  /* infinite  */
 	gettimeofday(&(ios->last_active), NULL);
@@ -130,7 +132,7 @@ void ios_init(io_stream *ios, const char* name,
 
 
 
-void io_stream_destroy(io_stream *ios)
+void io_stream_destroy(io_stream_t *ios)
 {
 	/* check argument */
 	ios_assert(ios);
@@ -141,7 +143,7 @@ void io_stream_destroy(io_stream *ios)
 
 
 
-int ios_schedule_read(io_stream *ios)
+int ios_schedule_read(io_stream_t *ios)
 {
 	size_t space;
 
@@ -161,7 +163,7 @@ int ios_schedule_read(io_stream *ios)
 
 
 
-int ios_schedule_write(io_stream *ios)
+int ios_schedule_write(io_stream_t *ios)
 {
 	/* check argument */
 	ios_assert(ios);
@@ -176,10 +178,10 @@ int ios_schedule_write(io_stream *ios)
 
 
 
-struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
+struct timeval *ios_next_timeout(io_stream_t *ios, struct timeval *tv)
 {
 	struct timeval now;
-	struct timeval* tvp = NULL;
+	struct timeval *tvp = NULL;
 
 	/* check arguments */
 	ios_assert(ios);
@@ -213,9 +215,10 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 			/* instant timeout */
 			/* set flag */
 			ios->flags |= IOS_HOLD_TIMEDOUT;
-			timerclear(tv);
+			timerclear(&hold_tv);
 		} else {
 			/* calculate the offset from now until expiry */
+			/* now may already be set from calculating idle above */
 			if (tvp == NULL)
 				gettimeofday(&now, NULL);
 			timersub(&(ios->read_eof), &now, &hold_tv);
@@ -249,7 +252,7 @@ struct timeval* ios_next_timeout(io_stream *ios, struct timeval *tv)
 
 
 
-ssize_t ios_read(io_stream *ios)
+ssize_t ios_read(io_stream_t *ios)
 {
 	ssize_t rr;
 
@@ -305,7 +308,7 @@ ssize_t ios_read(io_stream *ios)
 
 
 
-ssize_t ios_write(io_stream *ios)
+ssize_t ios_write(io_stream_t *ios)
 {
 	ssize_t rr;
 
@@ -356,7 +359,7 @@ ssize_t ios_write(io_stream *ios)
 
 
 
-void ios_write_eof(io_stream* ios)
+void ios_write_eof(io_stream_t *ios)
 {
 	/* check argument */
 	ios_assert(ios);
@@ -369,7 +372,7 @@ void ios_write_eof(io_stream* ios)
 
 
 
-void ios_shutdown(io_stream* ios, int how)
+void ios_shutdown(io_stream_t *ios, int how)
 {
 	/* check argument */
 	ios_assert(ios);

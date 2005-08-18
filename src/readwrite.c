@@ -2,8 +2,8 @@
  *  readwrite.c - stream i/o reading/writing loop - implementation 
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,11 +19,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"
+#include "system.h"
 #include "readwrite.h"
 #include "misc.h"
 #include "circ_buf.h"
 #include "parser.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -35,11 +36,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.41 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.42 2005-08-18 04:13:13 chris Exp $");
+
 
 
 /* ios1 is the remote stream, ios2 the local one */
-int readwrite(io_stream *ios1, io_stream *ios2)
+int readwrite(io_stream_t *ios1, io_stream_t *ios2)
 {
 	int rr, max_fd = -1;
 	int ios1_read_fd, ios1_write_fd;
@@ -47,7 +49,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 	fd_set read_fdset, write_fdset;
 	struct timeval tv1, tv2;
 	struct timeval *tvp1, *tvp2, *tvp;
-	bool timedout1 = FALSE, timedout2 = FALSE;
+	bool timedout1 = false, timedout2 = false;
 	int retval = 0;
 	
 	/* check function arguments */
@@ -118,7 +120,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				ios_shutdown(ios2, SHUT_RD);
 				/* stop sending to this endpoint */
 				ios_shutdown(ios1, SHUT_WR);
-				timedout1 = TRUE;
+				timedout1 = true;
 				continue;
 			}
 		}
@@ -136,7 +138,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 				ios_shutdown(ios1, SHUT_RD);
 				/* stop sending to this endpoint */
 				ios_shutdown(ios2, SHUT_WR);
-				timedout2 = TRUE;
+				timedout2 = true;
 				continue;
 			}
 		}
@@ -159,7 +161,7 @@ int readwrite(io_stream *ios1, io_stream *ios2)
 		if (rr < 0) {
 			if (errno == EINTR) 
 				continue;
-			fatal(_("select error: %s"), strerror(errno));
+			fatal("select error: %s", strerror(errno));
 		}
 		
 		if (ios1_read_fd >= 0 && FD_ISSET(ios1_read_fd, &read_fdset)) {
