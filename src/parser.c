@@ -2,8 +2,8 @@
  *  parser.c - argument parser & dispatcher module - implementation 
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,10 +19,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"  
+#include "system.h"  
 #include "parser.h"  
 #include "misc.h"  
 #include "network.h"  
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.62 2004-02-10 08:46:21 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.63 2005-08-18 04:09:39 chris Exp $");
 
 
 
@@ -41,6 +42,8 @@ RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.62 2004-
 static const size_t DEFAULT_UDP_MTU = 8192;
 /* default UDP NRU is the maximum allowed MTU of 64k */
 static const size_t DEFAULT_UDP_NRU = 65536;
+/* default BLUETOOTH MTU is 672b */
+static const size_t DEFAULT_BLUETOOTH_MTU = 672;
 /* default UDP buffer size is 128k */
 static const size_t DEFAULT_UDP_BUFFER_SIZE = 131072;
 /* default buffer size for file transfers is 64k */
@@ -100,47 +103,40 @@ static const struct option long_options[] = {
 	{"exec",                required_argument,  NULL, 'e'},
 #define OPT_CONTINUOUS		21
 	{"continuous",          no_argument,        NULL,  0 },
-#ifdef ENABLE_BLUEZ
-/* OPT_BLUETOOTH and OPT_SCO must be the last 2 entries in long_options */
 #define OPT_BLUETOOTH		22
 	{"bluetooth",           no_argument,        NULL, 'b'},
 #define OPT_SCO			23
 	{"sco",			no_argument,        NULL,  0 },
-#endif
 	{0, 0, 0, 0}
 };
 
 #define OPT_MAX		((sizeof(long_options) / sizeof(long_options[0])) - 1)
 
-#ifdef ENABLE_BLUEZ
-#define BLUEZ_OPTIONS	"b"
-#else
-#define BLUEZ_OPTIONS
-#endif
 
 static int parse_int_pair(const char *str, int *first, int *second);
 static void print_usage(FILE *fp);
 static void print_version(FILE *fp);
 
 
-void parse_arguments(int argc, char **argv, connection_attributes *attrs)
+
+void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 {
 	int c;
 	int option_index = 0;
 
 	/* configurable parameters and default values */
-	sock_family family = PROTO_UNSPECIFIED;
-	sock_protocol protocol = TCP_PROTOCOL;
-	address local_address, remote_address;
-	bool listen_mode = FALSE;
-	bool file_transfer = FALSE;
-	bool half_close = FALSE;
+	sock_family_t family = PROTO_UNSPECIFIED;
+	sock_protocol_t protocol = PROTO_UNSPECIFIED;
+	address_t local_address, remote_address;
+	bool listen_mode = false;
+	bool file_transfer = false;
+	bool half_close = false;
 	int connect_timeout = -1;
 	int idle_timeout = -1;
-	bool set_local_hold_timeout = FALSE;
-	int local_hold_timeout;
-	bool set_remote_hold_timeout = FALSE;
-	int remote_hold_timeout;
+	bool set_local_hold_timeout = false;
+	int local_hold_timeout = 0;
+	bool set_remote_hold_timeout = false;
+	int remote_hold_timeout = 0;
 	size_t remote_mtu = 0;
 	size_t remote_nru = 0;
 	size_t buffer_size = 0;
@@ -161,7 +157,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46e:hlnp:q:s:uvw:x" BLUEZ_OPTIONS,
+	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:x",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
@@ -178,18 +174,22 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				break;
 			case OPT_BUFFER_SIZE:
 				assert(optarg != NULL);
-				buffer_size = safe_atoi(optarg);
+				if (safe_atoi(optarg, (int *)&buffer_size))
+					fatal(_("invalid argument to "
+					      "--buffer-size"));
 				break;
 			case OPT_MTU:
 				assert(optarg != NULL);
-				remote_mtu = safe_atoi(optarg);
+				if (safe_atoi(optarg, (int *)&remote_mtu))
+					fatal(_("invalid argument to --mtu"));
 				break;
 			case OPT_NRU:
 				assert(optarg != NULL);
-				remote_nru = safe_atoi(optarg);
+				if (safe_atoi(optarg, (int *)&remote_nru))
+					fatal(_("invalid argument to --nru"));
 				break;
 			case OPT_HALF_CLOSE:
-				half_close = TRUE;
+				half_close = true;
 				break;
 			case OPT_DISABLE_NAGLE:
 				ca_set_flag(attrs, CA_DISABLE_NAGLE);
@@ -199,23 +199,26 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 				break;
 			case OPT_SNDBUF_SIZE:
 				assert(optarg != NULL);
-				sndbuf_size = safe_atoi(optarg);
+				if (safe_atoi(optarg, (int *)&sndbuf_size))
+					fatal(_("invalid argument to "
+					      "--sndbuf-size"));
 				break;
 			case OPT_RCVBUF_SIZE:
 				assert(optarg != NULL);
-				rcvbuf_size = safe_atoi(optarg);
+				if (safe_atoi(optarg, (int *)&rcvbuf_size))
+					fatal(_("invalid argument to "
+					      "--rcvbuf-size"));
 				break;
 			case OPT_CONTINUOUS:
 				ca_set_flag(attrs, CA_CONTINUOUS_ACCEPT);
 				break;
-#ifdef ENABLE_BLUEZ
 			case OPT_SCO:
 				protocol = SCO_PROTOCOL;
 				break;
-#endif
 			default:
-				fatal(_("getopt returned unexpected long "
-				      "option offset index %d\n"), option_index);
+				fatal_internal(
+				      "getopt returned unexpected long "
+				      "option offset index %d\n", option_index);
 			}
 			break;
 		case '4':
@@ -225,15 +228,9 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			family = PROTO_IPv6;
 			ca_set_flag(attrs, CA_STRICT_IPV6);
 			break;
-#ifdef ENABLE_BLUEZ
 		case 'b':
 			family = PROTO_BLUEZ;
-			protocol = L2CAP_PROTOCOL;
-			/* use standard bluetooth mtu */
-			if (remote_mtu == 0)
-				remote_mtu = 672;
 			break;
-#endif
 		case 'e':
 			assert(optarg != NULL);
 			ca_set_local_exec(attrs, optarg);
@@ -242,7 +239,7 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			print_usage(stdout);
 			exit(EXIT_SUCCESS);
 		case 'l':
-			listen_mode = TRUE;
+			listen_mode = true;
 			break;
 		case 'n':	
 			ca_set_flag(attrs, CA_NUMERIC_MODE);
@@ -256,8 +253,10 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			switch (parse_int_pair(optarg, &local_hold_timeout,
 			                       &remote_hold_timeout))
 			{
-			case 2: set_remote_hold_timeout = TRUE;
-			case 1: set_local_hold_timeout = TRUE;
+			case 2: set_remote_hold_timeout = true; /* continue */
+			case 1: set_local_hold_timeout = true; break;
+			default:
+				fatal(_("invalid argument to -q"));
 			};
 			break;	
 		case 's':	
@@ -266,7 +265,8 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			break;	
 		case 't':
 			assert(optarg != NULL);
-			idle_timeout = safe_atoi(optarg);
+			if (safe_atoi(optarg, &idle_timeout))
+				fatal(_("invalid argument to -t"));
 			break;
 		case 'u':	
 			protocol = UDP_PROTOCOL;
@@ -284,55 +284,23 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 			break;
 		case 'w':
 			assert(optarg != NULL);
-			connect_timeout = safe_atoi(optarg);
+			if (safe_atoi(optarg, &connect_timeout))
+				fatal(_("invalid argument to -w"));
 			break;
 		case 'x':	
-			file_transfer = TRUE;
+			file_transfer = true;
 			break;
 		case '?':
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
 		default:	
-			fatal(_("getopt returned unexpected character 0%o\n"), c);
+			fatal_internal(
+			      "getopt returned unexpected character 0%o\n", c);
 		}
 	}
 	
 	argv += optind;
 	argc -= optind;
-
-	/* set mode flags */
-	if (listen_mode == TRUE) {
-		ca_set_flag(attrs, CA_LISTEN_MODE);
-		ca_clear_flag(attrs, CA_CONNECT_MODE);
-	} else {
-		ca_set_flag(attrs, CA_CONNECT_MODE);
-		ca_clear_flag(attrs, CA_LISTEN_MODE);
-	}
-
-	/* setup file transfer depending on the mode */
-	if (file_transfer == TRUE) {
-		if (buffer_size == 0)
-			buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
-		if (listen_mode == TRUE) {
-			ca_set_flag(attrs, CA_RECV_DATA_ONLY);
-			ca_clear_flag(attrs, CA_SEND_DATA_ONLY);
-		} else {
-			ca_set_flag(attrs, CA_SEND_DATA_ONLY);
-			ca_clear_flag(attrs, CA_RECV_DATA_ONLY);
-		}
-	}
-
-	/* check nru - if it's too big data will never be received */
-	if (remote_nru > buffer_size)
-		remote_nru = buffer_size;
-
-	/* check to make sure the user wasn't silly enough to set both
-	 * --recv-only and --send-only */
-	if (ca_is_flag_set(attrs, CA_RECV_DATA_ONLY) &&
-	    ca_is_flag_set(attrs, CA_SEND_DATA_ONLY))
-	{
-		fatal(_("Cannot set both --recv-only and --send-only"));
-	}
 
 	/* additional arguments are the remote address/service */
 	switch (argc) {
@@ -353,6 +321,50 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		exit(EXIT_FAILURE);
 	}
 
+	/* set default protocols */
+	if (protocol == PROTO_UNSPECIFIED) {
+		switch (family) {
+		case PROTO_BLUEZ:
+			protocol = L2CAP_PROTOCOL;
+			break;
+		default:
+			protocol = TCP_PROTOCOL;
+			break;
+		}
+	}
+
+	/* set remote buffer sizes and mtu's,
+	 * iff they haven't already been set */
+	if (protocol == UDP_PROTOCOL) {
+		if (remote_mtu == 0)
+			remote_mtu = DEFAULT_UDP_MTU;
+		if (remote_nru == 0)
+			remote_nru = DEFAULT_UDP_NRU;
+		if (buffer_size == 0)
+			buffer_size = DEFAULT_UDP_BUFFER_SIZE;
+	}
+	if (family == PROTO_BLUEZ) {
+		/* use standard bluetooth mtu */
+		if (remote_mtu == 0)
+			remote_mtu = DEFAULT_BLUETOOTH_MTU;
+	}
+
+	/* check protocol and family combinations are valid */
+	if (protocol == UDP_PROTOCOL && family == PROTO_BLUEZ)
+		fatal(_("cannot specify UDP protocol and bluetooth"));
+	if (protocol == SCO_PROTOCOL && family != PROTO_BLUEZ)
+		fatal(_("--sco requires --bluetooth (-b)"));
+
+	/* check compiled options */
+#ifndef ENABLE_BLUEZ
+	if (family == PROTO_BLUEZ)
+		fatal(_("system does not support bluetooth"));
+#endif
+#ifndef ENABLE_IPV6
+	if (family == PROTO_IPv6)
+		fatal(_("system does not support IPv6"));
+#endif
+
 	/* sanity checks */
 	if (remote_address.address != NULL && 
 	    strlen(remote_address.address) == 0)
@@ -364,73 +376,95 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 	{
 		remote_address.service = NULL;
 	}
-	
+
 	switch (family) {
-		case PROTO_UNSPECIFIED:
-		case PROTO_IPv4:
-		case PROTO_IPv6:
-			if (protocol != UDP_PROTOCOL && 
-			    protocol != TCP_PROTOCOL)
-				fatal("unknown/unsupported transport protocol selected");
-			break;
-#ifdef ENABLE_BLUEZ
-		case PROTO_BLUEZ:
-			if (protocol != SCO_PROTOCOL && 
-			    protocol != L2CAP_PROTOCOL)
-				fatal("unknown/unsupported bluez protocol selected");
-			break;
-#endif
-		default:
-			fatal("unknown/unsupported transport protocol selected");
+	case PROTO_UNSPECIFIED:
+	case PROTO_IPv4:
+	case PROTO_IPv6:
+		if (protocol != UDP_PROTOCOL && protocol != TCP_PROTOCOL)
+			fatal_internal("unknown/unsupported transport "
+			               "protocol %d", protocol);
+		break;
+	case PROTO_BLUEZ:
+		if (protocol != SCO_PROTOCOL && protocol != L2CAP_PROTOCOL)
+			fatal_internal("unknown/unsupported bluetooth "
+			               "protocol %d", protocol);
+		break;
+	default:
+		fatal_internal("invalid protocol family %d", family);
 	}
-	
-	if (listen_mode == TRUE) {
-#ifdef ENABLE_BLUEZ
-		/* it is ok not to specify a port with sco */
+
+	/* set mode flags */
+	if (listen_mode == true) {
+		ca_set_flag(attrs, CA_LISTEN_MODE);
+		ca_clear_flag(attrs, CA_CONNECT_MODE);
+	} else {
+		ca_set_flag(attrs, CA_CONNECT_MODE);
+		ca_clear_flag(attrs, CA_LISTEN_MODE);
+	}
+
+	/* setup file transfer depending on the mode */
+	if (file_transfer == true) {
+		if (buffer_size == 0)
+			buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
+		if (listen_mode == true) {
+			ca_set_flag(attrs, CA_RECV_DATA_ONLY);
+			ca_clear_flag(attrs, CA_SEND_DATA_ONLY);
+		} else {
+			ca_set_flag(attrs, CA_SEND_DATA_ONLY);
+			ca_clear_flag(attrs, CA_RECV_DATA_ONLY);
+		}
+	}
+
+	/* check nru - if it's too big data will never be received */
+	if (remote_nru > buffer_size)
+		remote_nru = buffer_size;
+
+	/* check to make sure the user didn't set both
+	 * --recv-only and --send-only */
+	if (ca_is_flag_set(attrs, CA_RECV_DATA_ONLY) &&
+	    ca_is_flag_set(attrs, CA_SEND_DATA_ONLY))
+	{
+		fatal(_("cannot set both --recv-only and --send-only"));
+	}
+
+	/* check ports have not been specified with --sco */
+	if (protocol == SCO_PROTOCOL) {
+		if (remote_address.service != NULL)
+			fatal(_("--sco does not support remote port"));
+		if (local_address.service != NULL)
+			fatal(_("--sco does not support local port (-p)"));
+	}
+
+	/* check mode specific option availability and interactions */
+	if (listen_mode == true) {
+		/* check port has been specified (except with sco) */
 		if (local_address.service == NULL && protocol != SCO_PROTOCOL) {
-#else
-		if (local_address.service == NULL) {
-#endif
-			warning(_("in listen mode you must specify a port "
-			          "with the -p switch"));
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
+			fatal(_("in listen mode you must specify a port "
+			      "with the -p switch"));
 		}
 		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT) &&
 		    ca_local_exec(attrs) == NULL)
 		{
-			warning(_("--continuous option "
-			       "must be used with --exec"));
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
+			fatal(_("--continuous option "
+			      "must be used with --exec"));
 		}
 	} else {
+		/* check port has been specified (except with sco) */
+		if (remote_address.address == NULL || 
+		    (remote_address.service == NULL &&
+		    protocol != SCO_PROTOCOL))
+		{
+			fatal(_("you must specify the address/port couple "
+			      "of the remote endpoint"));
+		}
 		if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
-			warning(_("--no-reuseaddr option "
-			       "can be used only in listen mode"));
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
+			fatal(_("--no-reuseaddr option "
+			      "can be used only in listen mode"));
 		}
 		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)) {
-			warning(_("--continuous option "
-			       "can be used only in listen mode"));
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
-		}
-		
-#ifdef ENABLE_BLUEZ
-		/* it is ok not to specify a port with sco */
-		if (remote_address.address == NULL || 
-		    (remote_address.service == NULL && protocol != SCO_PROTOCOL))
-#else
-		if (remote_address.address == NULL || 
-		    remote_address.service == NULL)
-#endif
-		{
-			warning(_("you must specify the address/port couple "
-			       "of the remote endpoint"));
-			print_usage(stderr);
-			exit(EXIT_FAILURE);
+			fatal(_("--continuous option "
+			      "can be used only in listen mode"));
 		}
 	}
 
@@ -449,16 +483,16 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 		ca_set_idle_timeout(attrs, idle_timeout);
 	
 	/* setup half close mode */
-	if (half_close == TRUE) {
+	if (half_close == true) {
 		/* keep remote open after half close */
-		ca_set_remote_half_close_suppress(attrs, FALSE);
+		ca_set_remote_half_close_suppress(attrs, false);
 		ca_set_remote_hold_timeout(attrs, -1);
 	}
 
 	/* setup hold timeout */
-	if (set_remote_hold_timeout == TRUE)
+	if (set_remote_hold_timeout == true)
 		ca_set_remote_hold_timeout(attrs, remote_hold_timeout);
-	if (set_local_hold_timeout == TRUE)
+	if (set_local_hold_timeout == true)
 		ca_set_local_hold_timeout(attrs, local_hold_timeout);
 	
 	/* setup mtu, nru, and buffer sizes if they were specified */
@@ -478,14 +512,14 @@ void parse_arguments(int argc, char **argv, connection_attributes *attrs)
 
 bool verbose_mode()
 {
-	return ((_verbosity_level >= VERBOSE_MODE) ? TRUE : FALSE);
+	return ((_verbosity_level >= VERBOSE_MODE) ? true : false);
 }
 
 
 
 bool very_verbose_mode()
 {
-	return ((_verbosity_level >= VERY_VERBOSE_MODE) ? TRUE : FALSE);
+	return ((_verbosity_level >= VERY_VERBOSE_MODE) ? true : false);
 }
 
 
@@ -502,49 +536,59 @@ static void print_usage(FILE *fp)
 "\t%s -l -p port [-s addr] [options...] [hostname] [port]\n\n"
 "Recognized options are:\n"), program_name, program_name);
 	
-	fprintf(fp, _(
-" -4                     Use only IPv4\n"
-" -6                     Use only IPv6\n"));
-#ifdef ENABLE_BLUEZ
-	fprintf(fp, _(
-" -b, --bluetooth        Use Bluetooth (L2CAP)\n"));
-#endif
-	fprintf(fp, _(
-" --buffer-size=BYTES    Set buffer size\n"
-" --continuous           Continuously accept connections\n"
-"                        (only in listen mode with --exec)\n"
-" --disable-nagle        Disable nagle algorithm for TCP connections\n"
-" -e, --exec=CMD         Exec command after connect\n"
-" --half-close           Handle network half-closes correctly\n"
-" -h, --help             Display help\n"
-" -l, --listen           Listen mode, for inbound connects\n"
-" --mtu=BYTES            Set MTU for network connection transmits\n"
-" -n                     Numeric-only IP addresses, no DNS\n" 
-" --no-reuseaddr         Disable SO_REUSEADDR socket option\n"
-"                        (only in listen mode)\n"
-" --nru=BYTES            Set NRU for network connection receives\n"
-" -p, --port=PORT        Local source port\n"
-" -q, --hold-timeout=SEC1[:SEC2]\n"
-"                        Set hold timeout(s) for local [and remote]\n"
-" --rcvbuf-size          Kernel receive buffer size for network sockets\n"
-" --recv-only            Only receive data, don't transmit\n"
-" -s, --address=ADDRESS  Local source address\n"));
-#ifdef ENABLE_BLUEZ
-	fprintf(fp, _(
-" --sco                  Use SCO over Bluetooth\n"));
-#endif
-	fprintf(fp, _(
-" --send-only            Only transmit data, don't receive\n"
-" --sndbuf-size          Kernel send buffer size for network sockets\n"
-" -t, --idle-timeout=SECONDS\n"
-"                        Idle connection timeout\n"
-" -u, --udp              Require use of UDP\n"
-" -v                     Increase program verbosity\n"
-"                        (call twice for max verbosity)\n"
-" --version              Display nc6 version information\n"
-" -w, --timeout=SECONDS  Timeout for connects/accepts\n"
-" -x, --transfer         File transfer mode\n"
-"\n"));
+	fprintf(fp, " -4                     %s\n", _("Use only IPv4"));
+	fprintf(fp, " -6                     %s\n", _("Use only IPv6"));
+	fprintf(fp, " -b, --bluetooth        %s\n",
+	              _("Use Bluetooth (defaults to L2CAP protocol)"));
+	fprintf(fp, " --buffer-size=BYTES    %s\n", _("Set buffer size"));
+	fprintf(fp, " --continuous           %s\n",
+	              _("Continuously accept connections\n"
+"                        (only in listen mode with --exec)"));
+	fprintf(fp, " --disable-nagle        %s\n",
+                      _("Disable nagle algorithm for TCP connections"));
+	fprintf(fp, " -e, --exec=CMD         %s\n",
+	              _("Exec command after connect"));
+	fprintf(fp, " --half-close           %s\n",
+	              _("Handle network half-closes correctly"));
+	fprintf(fp, " -h, --help             %s\n", _("Display help"));
+	fprintf(fp, " -l, --listen           %s\n",
+	              _("Listen mode, for inbound connects"));
+	fprintf(fp, " --mtu=BYTES            %s\n",
+	              _("Set MTU for network connection transmits"));
+	fprintf(fp, " -n                     %s\n",
+	              _("Numeric-only IP addresses, no DNS"));
+	fprintf(fp, " --no-reuseaddr         %s\n",
+	              _("Disable SO_REUSEADDR socket option\n"
+"                        (only in listen mode)\n"));
+	fprintf(fp, " --nru=BYTES            %s\n",
+	              _("Set NRU for network connection receives"));
+	fprintf(fp, " -p, --port=PORT        %s\n", _("Local port"));
+	fprintf(fp, " -q, --hold-timeout=SEC1[:SEC2]\n"
+"                        %s\n",
+                      _("Set hold timeout(s) for local [and remote]"));
+	fprintf(fp, " --rcvbuf-size          %s\n",
+	              _("Kernel receive buffer size for network sockets"));
+	fprintf(fp, " --recv-only            %s\n",
+	              _("Only receive data, don't transmit"));
+	fprintf(fp, " -s, --address=ADDRESS  %s\n", _("Local source address"));
+	fprintf(fp, " --sco                  %s\n",
+	              _("Use SCO over Bluetooth"));
+	fprintf(fp, " --send-only            %s\n",
+	              _("Only transmit data, don't receive"));
+	fprintf(fp, " --sndbuf-size          %s\n",
+	              _("Kernel send buffer size for network sockets"));
+	fprintf(fp, " -t, --idle-timeout=SECONDS\n"
+"                        %s\n", _("Idle connection timeout"));
+	fprintf(fp, " -u, --udp              %s\n", _("Require use of UDP"));
+	fprintf(fp, " -v                     %s\n",
+	              _("Increase program verbosity\n"
+"                        (call twice for max verbosity)"));
+	fprintf(fp, " --version              %s\n",
+	              _("Display nc6 version information"));
+	fprintf(fp, " -w, --timeout=SECONDS  %s\n",
+	              _("Timeout for connects/accepts"));
+	fprintf(fp, " -x, --transfer         %s\n", _("File transfer mode"));
+	fprintf(fp, "\n");
 }
 
 
@@ -553,9 +597,9 @@ static void print_version(FILE *fp)
 {
 	assert(fp != NULL);
 	
-	fprintf(fp, _(
+	fprintf(fp,
 "%s version %s\n"
-"Copyright (C) 2001-2004\n"), PACKAGE, VERSION);
+"Copyright (C) 2001-2005\n", PACKAGE, VERSION);
 
 	fprintf(fp, 
 	"\tMauro Tortonesi\n"
@@ -574,10 +618,10 @@ _("Configured without IPv6 support\n"));
 	
 #ifdef ENABLE_BLUEZ
 	fprintf(fp,
-_("Configured with Bluetooth support\n"));
+_("Configured with Bluetooth (bluez) support\n"));
 #else
 	fprintf(fp,
-_("Configured without Bluetooth support\n"));
+_("Configured without Bluetooth (bluez) support\n"));
 #endif
 }
 
@@ -592,13 +636,21 @@ static int parse_int_pair(const char *str, int *first, int *second)
 
 	if ((s = strchr(str, ':')) != NULL) {
 		*s++ = '\0';
-		if (second != NULL)
-			*second = (s[0] == '-')? -1 : safe_atoi(s);
+		if (second != NULL) {
+			if (s[0] == '-')
+				*second = -1;
+			else if (safe_atoi(s, second))
+				return -1;
+		}
 		count = 2;
 	}
 
-	if (first != NULL)
-		*first = (str[0] == '-')? -1 : safe_atoi(str);
+	if (first != NULL) {
+		if (str[0] == '-')
+			*first = -1;
+		else if (safe_atoi(str, first))
+			return -1;
+	}
 	
 	return count;
 }
