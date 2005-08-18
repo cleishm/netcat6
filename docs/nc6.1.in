@@ -67,6 +67,10 @@ Forces the use of IPv4.
 .I \-6
 Forces the use of IPv6 and inhibits the use IPV4-mapped addresses.
 .TP 13
+.I \-b, --bluetooth
+With this option set, netcat6 will use bluetooth to establish connections.
+By default the L2CAP protocol will be used (also see '--sco').
+.TP 13
 .I \--buffer-size=BYTES
 Set the buffer size for the local and remote endpoints.
 netcat6 does all reads into these buffers, so they should be large enough
@@ -141,6 +145,10 @@ Only receive data, don't transmit.  This also disables any hold timeouts.
 .TP 13
 .I \-s, --address=ADDRESS
 Sets the source address for the local endpoint of the connection.
+.TP 13
+.I \--sco
+With this option set, netcat6 with use SCO over bluetooth
+(note that '-b' or '--bluetooth' must also be specified).
 .TP 13
 .I \--send-only
 Only send data, don't receive.  This also disables any hold timeouts.
