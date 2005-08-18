@@ -46,6 +46,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
+AC_HEADER_STDBOOL
 AC_CHECK_TYPE(ssize_t, int)
 TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
@@ -90,6 +91,7 @@ fi
 if test "X$bluez" = "Xyes"; then
   AC_DEFINE([ENABLE_BLUEZ], 1, [Define if Bluetooth support is enabled.])
 fi
+AM_CONDITIONAL(BLUEZ, test "X$bluez" = "Xyes")
 
 
 dnl Configure IPv6 support
