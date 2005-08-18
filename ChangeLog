@@ -1,3 +1,22 @@
+2005-08-18 Chris Leishman <chris@leishman.org>
+
+	* Moved afindep and bluez network code to separate modules with very
+	  generic interfaces and refactored to create functions for common
+	  code.  The bluez code now uses a similar approach to afindep.
+	* Reworking of warnings and other messages to simplify and reduce the
+	  number of strings for translation.
+	* Made parameter checking more resilient and now always includes
+	  arguments for optional components (such as bluetooth), but now gives
+	  an appropriate error if used.
+	* Updated man page with bluetooth options.
+	* Created a system.h header for system specific defines, which
+	  includes autoconfs config.h.
+	* Changed boolean types to use stdbool.h (where available)
+	* Fixed typedefs to use *_t for the typedef symbol, not the original
+	  struct name.
+	* Extensive code cleanup to prepare for a release.
+	* Updated copyright notices for 2005.
+
 2005-07-22 Chris Leishman <chris@leishman.org>
 	
 	* Fixed --transfer example in man page.
