@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: ds6-devel@deepspace6.net\n"
-"POT-Creation-Date: 2004-04-19 15:59+0200\n"
+"POT-Creation-Date: 2005-08-18 11:47+1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,393 +16,306 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/connection.c:94
-msgid "internal error: system does not support ipv6"
-msgstr ""
-
-#: src/connection.c:104
-msgid "internal error: unknown socket domain"
-msgstr ""
-
-#: src/connection.c:125
-msgid "internal error: unknown socket type"
-msgstr ""
-
-#: src/filter.c:219
-#, c-format
-msgid "getaddrinfo error: %s"
-msgstr ""
-
-#: src/io_stream.c:81
-#, c-format
-msgid "error in duplicating stdin file descriptor: %s"
-msgstr ""
-
-#: src/io_stream.c:85
-#, c-format
-msgid "error in duplicating stdout file descriptor: %s"
-msgstr ""
-
-#: src/io_stream.c:201
-#, c-format
-msgid "%s idle timed out"
-msgstr ""
-
-#: src/io_stream.c:228
-#, c-format
-msgid "%s hold timed out"
-msgstr ""
-
-#: src/io_stream.c:282
-#, c-format
-msgid "read eof from %s"
-msgstr ""
-
-#: src/io_stream.c:300
-#, c-format
-msgid "error reading from %s: %s"
-msgstr ""
-
-#: src/io_stream.c:348
-#, c-format
-msgid "received SIGPIPE on %s"
-msgstr ""
-
-#: src/io_stream.c:350
-#, c-format
-msgid "error writing to %s: %s"
-msgstr ""
-
-#: src/io_stream.c:388
-#, c-format
-msgid "closed %s"
-msgstr ""
-
-#: src/io_stream.c:400
-#, c-format
-msgid "shutdown %s for read"
-msgstr ""
-
-#: src/io_stream.c:406
-#, c-format
-msgid "closed %s for read"
-msgstr ""
-
-#: src/io_stream.c:421
-#, c-format
-msgid "shutdown %s for write"
-msgstr ""
-
-#: src/io_stream.c:427
-#, c-format
-msgid "closed %s for write"
-msgstr ""
-
-#: src/main.c:136
-msgid "internal error: unknown connection mode"
-msgstr ""
-
-#: src/main.c:160
-#, c-format
-msgid "fork failed: %s"
-msgstr ""
-
-#: src/main.c:220
-#, c-format
-msgid "using buffer size of %d"
-msgstr ""
-
-#: src/main.c:222
-#, c-format
-msgid "using remote receive nru of %d"
-msgstr ""
-
-#: src/main.c:225
-#, c-format
-msgid "using remote send mtu of %d"
-msgstr ""
-
-#: src/main.c:255
-#, c-format
-msgid "Executing '%s'"
-msgstr ""
-
-#: src/main.c:257
-#, c-format
-msgid "Failed to exec '%s': %s"
-msgstr ""
-
-#: src/main.c:311
-msgid "receiving from remote only, transmit disabled"
-msgstr ""
-
-#: src/main.c:327
-msgid "transmitting to remote only, receive disabled"
-msgstr ""
-
-#: src/main.c:335
-#, c-format
-msgid "connection closed (sent %d, rcvd %d)"
-msgstr ""
-
-#: src/misc.c:92
-msgid "virtual memory exhausted"
-msgstr ""
-
-#: src/misc.c:113
-#, c-format
-msgid "error reading file descriptor flags: %s"
-msgstr ""
-
-#: src/misc.c:119
-msgid "error setting flag O_NONBLOCK on file descriptor"
-msgstr ""
-
-#: src/misc.c:181 src/misc.c:186 src/misc.c:191
-#, c-format
-msgid "dup2 failed: %s"
-msgstr ""
-
-#: src/misc.c:196
-#, c-format
-msgid "execv failed: %s"
-msgstr ""
-
-#: src/misc.c:226
-msgid "error parsing integer: out of range"
-msgstr ""
-
-#: src/misc.c:228
-msgid "error parsing integer from string"
-msgstr ""
-
-#: src/network.c:108
+#: src/afindep.c:77
 #, c-format
 msgid "forward host lookup failed for remote endpoint %s: %s"
 msgstr ""
 
-#: src/network.c:130
-#, c-format
-msgid "socket creation failed: %s"
-msgstr ""
-
-#: src/network.c:141 src/network.c:573
-msgid "error with sockopt IPV6_V6ONLY"
-msgstr ""
-
-#: src/network.c:173 src/network.c:200
+#: src/afindep.c:143 src/afindep.c:170
 #, c-format
 msgid "bind to source addr/port failed when connecting to %s: %s"
 msgstr ""
 
-#: src/network.c:225 src/network.c:355
-#, c-format
-msgid "cannot connect to %s: %s"
-msgstr ""
-
-#: src/network.c:233 src/network.c:359
+#: src/afindep.c:197 src/bluez.c:104
 #, c-format
 msgid "timeout while connecting to %s"
 msgstr ""
 
-#: src/network.c:255
-msgid "forward lookup returned no usable socket types"
+#: src/afindep.c:202 src/bluez.c:109
+#, c-format
+msgid "cannot connect to %s: %s"
 msgstr ""
 
-#: src/network.c:258
+#: src/afindep.c:217
+msgid "forward lookup returned no useful socket types"
+msgstr ""
+
+#: src/afindep.c:220
 #, c-format
 msgid "unable to connect to address %s, service %s"
 msgstr ""
 
-#: src/network.c:265
+#: src/afindep.c:229
 #, c-format
 msgid "%s open"
 msgstr ""
 
-#: src/network.c:429 src/network.c:671 src/network.c:904 src/readwrite.c:162
-#, c-format
-msgid "select error: %s"
-msgstr ""
-
-#: src/network.c:439
-#, c-format
-msgid "getsockopt error: %s"
-msgstr ""
-
-#: src/network.c:504
+#: src/afindep.c:274
 #, c-format
 msgid "forward host lookup failed for local endpoint %s (%s): %s"
 msgstr ""
 
-#: src/network.c:506
+#: src/afindep.c:276
 msgid "[unspecified]"
 msgstr ""
 
-#: src/network.c:562 src/network.c:861
-#, c-format
-msgid "cannot create the socket: %s"
-msgstr ""
-
-#: src/network.c:598 src/network.c:617 src/network.c:875
+#: src/afindep.c:373 src/afindep.c:396 src/bluez.c:182
 #, c-format
 msgid "listening on %s ..."
 msgstr ""
 
-#: src/network.c:603 src/network.c:865
+#: src/afindep.c:379 src/bluez.c:171
 #, c-format
 msgid "bind to source %s failed: %s"
 msgstr ""
 
-#: src/network.c:612 src/network.c:870
+#: src/afindep.c:388 src/bluez.c:177
 #, c-format
 msgid "cannot listen on %s: %s"
 msgstr ""
 
-#: src/network.c:642
+#: src/afindep.c:421
 msgid "failed to bind to any local addr/port"
 msgstr ""
 
-#: src/network.c:667 src/network.c:900
+#: src/afindep.c:451 src/bluez.c:210
 msgid "connection timed out"
 msgstr ""
 
-#: src/network.c:692 src/network.c:912
+#: src/afindep.c:536
 #, c-format
-msgid "accept failed: %s"
+msgid "connect failed on datagram socket: %s"
 msgstr ""
 
-#: src/network.c:701
-#, c-format
-msgid "recvfrom failed: %s"
-msgstr ""
-
-#: src/network.c:706
-#, c-format
-msgid "dup failed: %s"
-msgstr ""
-
-#: src/network.c:717 src/network.c:922
-#, c-format
-msgid "getsockname failed: %s"
-msgstr ""
-
-#: src/network.c:742
-#, c-format
-msgid "cannot failed on datagram socket: %s"
-msgstr ""
-
-#: src/network.c:748 src/network.c:950
+#: src/afindep.c:545
 #, c-format
 msgid "connect to %s from %s"
 msgstr ""
 
-#: src/network.c:769 src/network.c:966
+#: src/afindep.c:562
 #, c-format
 msgid "refused connect to %s from %s"
 msgstr ""
 
-#: src/network.c:1098
-#, c-format
-msgid "getnameinfo failed: %s"
-msgstr ""
-
-#: src/network.c:1108
+#: src/afindep.c:698
 #, c-format
 msgid "inverse lookup failed for %s: %s"
 msgstr ""
 
-#: src/network.c:1137
+#: src/bluez.c:239
 #, c-format
-msgid "error with setsockopt SO_REUSEADDR: %s"
+msgid "connect from %s"
 msgstr ""
 
-#: src/network.c:1150
+#: src/bluez.c:250
 #, c-format
-msgid "error with setsockopt TCP_NODELAY: %s"
+msgid "refused connect from %s"
 msgstr ""
 
-#: src/network.c:1159
+#: src/bluez.c:287
+msgid "invalid l2cap psm (service name)"
+msgstr ""
+
+#: src/io_stream.c:203
 #, c-format
-msgid "error with setsockopt SO_SNDBUF: %s"
+msgid "%s idle timed out"
 msgstr ""
 
-#: src/network.c:1168
+#: src/io_stream.c:231
 #, c-format
-msgid "error with setsockopt SO_RCVBUF: %s"
+msgid "%s hold timed out"
 msgstr ""
 
-#: src/network.c:1188
-msgid "using seqpacket socket"
+#: src/io_stream.c:285
+#, c-format
+msgid "read eof from %s"
 msgstr ""
 
-#: src/network.c:1192
+#: src/io_stream.c:303
+#, c-format
+msgid "error reading from %s: %s"
+msgstr ""
+
+#: src/io_stream.c:351
+#, c-format
+msgid "received SIGPIPE on %s"
+msgstr ""
+
+#: src/io_stream.c:353
+#, c-format
+msgid "error writing to %s: %s"
+msgstr ""
+
+#: src/io_stream.c:391
+#, c-format
+msgid "closed %s"
+msgstr ""
+
+#: src/io_stream.c:403
+#, c-format
+msgid "shutdown %s for read"
+msgstr ""
+
+#: src/io_stream.c:409
+#, c-format
+msgid "closed %s for read"
+msgstr ""
+
+#: src/io_stream.c:424
+#, c-format
+msgid "shutdown %s for write"
+msgstr ""
+
+#: src/io_stream.c:430
+#, c-format
+msgid "closed %s for write"
+msgstr ""
+
+#: src/main.c:213
+#, c-format
+msgid "using buffer size of %d"
+msgstr ""
+
+#: src/main.c:215
+#, c-format
+msgid "using remote receive nru of %d"
+msgstr ""
+
+#: src/main.c:218
+#, c-format
+msgid "using remote send mtu of %d"
+msgstr ""
+
+#: src/main.c:248
+#, c-format
+msgid "executing '%s'"
+msgstr ""
+
+#: src/main.c:250
+#, c-format
+msgid "failed to exec '%s': %s"
+msgstr ""
+
+#: src/main.c:304
+msgid "receiving from remote only, transmit disabled"
+msgstr ""
+
+#: src/main.c:320
+msgid "transmitting to remote only, receive disabled"
+msgstr ""
+
+#: src/main.c:328
+#, c-format
+msgid "connection closed (sent %d, rcvd %d)"
+msgstr ""
+
+#: src/misc.c:113
+msgid "virtual memory exhausted"
+msgstr ""
+
+#: src/network.c:294
 msgid "using stream socket"
 msgstr ""
 
-#: src/network.c:1195
+#: src/network.c:297
 msgid "using datagram socket"
 msgstr ""
 
-#: src/network.c:1198
-#, c-format
-msgid "internal error: unsupported socket type %d"
+#: src/network.c:300
+msgid "using seqpacket socket"
 msgstr ""
 
-#: src/network.c:1205
-#, c-format
-msgid "error with getsockopt SO_SNDBUF: %s"
-msgstr ""
-
-#: src/network.c:1208
+#: src/network.c:313
 #, c-format
 msgid "using socket sndbuf size of %d"
 msgstr ""
 
-#: src/network.c:1215
-#, c-format
-msgid "error with getsockopt SO_RCVBUF: %s"
-msgstr ""
-
-#: src/network.c:1218
+#: src/network.c:323
 #, c-format
 msgid "using socket rcvbuf size of %d"
 msgstr ""
 
-#: src/parser.c:217
-#, c-format
-msgid "getopt returned unexpected long option offset index %d\n"
+#: src/parser.c:178
+msgid "invalid argument to --buffer-size"
 msgstr ""
 
-#: src/parser.c:296
-#, c-format
-msgid "getopt returned unexpected character 0%o\n"
+#: src/parser.c:184
+msgid "invalid argument to --mtu"
 msgstr ""
 
-#: src/parser.c:334
-msgid "Cannot set both --recv-only and --send-only"
+#: src/parser.c:189
+msgid "invalid argument to --nru"
 msgstr ""
 
-#: src/parser.c:394
+#: src/parser.c:203
+msgid "invalid argument to --sndbuf-size"
+msgstr ""
+
+#: src/parser.c:209
+msgid "invalid argument to --rcvbuf-size"
+msgstr ""
+
+#: src/parser.c:259
+msgid "invalid argument to -q"
+msgstr ""
+
+#: src/parser.c:269
+msgid "invalid argument to -t"
+msgstr ""
+
+#: src/parser.c:288
+msgid "invalid argument to -w"
+msgstr ""
+
+#: src/parser.c:354
+msgid "cannot specify UDP protocol and bluetooth"
+msgstr ""
+
+#: src/parser.c:356
+msgid "--sco requires --bluetooth (-b)"
+msgstr ""
+
+#: src/parser.c:361
+msgid "system does not support bluetooth"
+msgstr ""
+
+#: src/parser.c:365
+msgid "system does not support IPv6"
+msgstr ""
+
+#: src/parser.c:428
+msgid "cannot set both --recv-only and --send-only"
+msgstr ""
+
+#: src/parser.c:434
+msgid "--sco does not support remote port"
+msgstr ""
+
+#: src/parser.c:436
+msgid "--sco does not support local port (-p)"
+msgstr ""
+
+#: src/parser.c:443
 msgid "in listen mode you must specify a port with the -p switch"
 msgstr ""
 
-#: src/parser.c:402
+#: src/parser.c:449
 msgid "--continuous option must be used with --exec"
 msgstr ""
 
-#: src/parser.c:409
-msgid "--no-reuseaddr option can be used only in listen mode"
-msgstr ""
-
-#: src/parser.c:415
-msgid "--continuous option can be used only in listen mode"
-msgstr ""
-
-#: src/parser.c:430
+#: src/parser.c:458
 msgid "you must specify the address/port couple of the remote endpoint"
 msgstr ""
 
-#: src/parser.c:500
+#: src/parser.c:462
+msgid "--no-reuseaddr option can be used only in listen mode"
+msgstr ""
+
+#: src/parser.c:466
+msgid "--continuous option can be used only in listen mode"
+msgstr ""
+
+#: src/parser.c:534
 #, c-format
 msgid ""
 "Usage:\n"
@@ -412,88 +325,142 @@ msgid ""
 "Recognized options are:\n"
 msgstr ""
 
-#: src/parser.c:506
-#, c-format
+#: src/parser.c:539
+msgid "Use only IPv4"
+msgstr ""
+
+#: src/parser.c:540
+msgid "Use only IPv6"
+msgstr ""
+
+#: src/parser.c:542
+msgid "Use Bluetooth (defaults to L2CAP protocol)"
+msgstr ""
+
+#: src/parser.c:543
+msgid "Set buffer size"
+msgstr ""
+
+#: src/parser.c:545
 msgid ""
-" -4                     Use only IPv4\n"
-" -6                     Use only IPv6\n"
+"Continuously accept connections\n"
+"                        (only in listen mode with --exec)"
 msgstr ""
 
-#: src/parser.c:510
-#, c-format
-msgid " -b, --bluetooth        Use Bluetooth (L2CAP)\n"
+#: src/parser.c:548
+msgid "Disable nagle algorithm for TCP connections"
 msgstr ""
 
-#: src/parser.c:513
-#, c-format
-msgid ""
-" --buffer-size=BYTES    Set buffer size\n"
-" --continuous           Continuously accept connections\n"
-"                        (only in listen mode with --exec)\n"
-" --disable-nagle        Disable nagle algorithm for TCP connections\n"
-" -e, --exec=CMD         Exec command after connect\n"
-" --half-close           Handle network half-closes correctly\n"
-" -h, --help             Display help\n"
-" -l, --listen           Listen mode, for inbound connects\n"
-" --mtu=BYTES            Set MTU for network connection transmits\n"
-" -n                     Numeric-only IP addresses, no DNS\n"
-" --no-reuseaddr         Disable SO_REUSEADDR socket option\n"
-"                        (only in listen mode)\n"
-" --nru=BYTES            Set NRU for network connection receives\n"
-" -p, --port=PORT        Local source port\n"
-" -q, --hold-timeout=SEC1[:SEC2]\n"
-"                        Set hold timeout(s) for local [and remote]\n"
-" --rcvbuf-size          Kernel receive buffer size for network sockets\n"
-" --recv-only            Only receive data, don't transmit\n"
-" -s, --address=ADDRESS  Local source address\n"
+#: src/parser.c:550
+msgid "Exec command after connect"
 msgstr ""
 
-#: src/parser.c:534
-#, c-format
-msgid " --sco                  Use SCO over Bluetooth\n"
+#: src/parser.c:552
+msgid "Handle network half-closes correctly"
 msgstr ""
 
-#: src/parser.c:537
-#, c-format
-msgid ""
-" --send-only            Only transmit data, don't receive\n"
-" --sndbuf-size          Kernel send buffer size for network sockets\n"
-" -t, --idle-timeout=SECONDS\n"
-"                        Idle connection timeout\n"
-" -u, --udp              Require use of UDP\n"
-" -v                     Increase program verbosity\n"
-"                        (call twice for max verbosity)\n"
-" --version              Display nc6 version information\n"
-" -w, --timeout=SECONDS  Timeout for connects/accepts\n"
-" -x, --transfer         File transfer mode\n"
-"\n"
+#: src/parser.c:553
+msgid "Display help"
+msgstr ""
+
+#: src/parser.c:555
+msgid "Listen mode, for inbound connects"
 msgstr ""
 
 #: src/parser.c:557
-#, c-format
-msgid ""
-"%s version %s\n"
-"Copyright (C) 2001-2004\n"
+msgid "Set MTU for network connection transmits"
 msgstr ""
 
-#: src/parser.c:569
+#: src/parser.c:559
+msgid "Numeric-only IP addresses, no DNS"
+msgstr ""
+
+#: src/parser.c:561
+msgid ""
+"Disable SO_REUSEADDR socket option\n"
+"                        (only in listen mode)\n"
+msgstr ""
+
+#: src/parser.c:564
+msgid "Set NRU for network connection receives"
+msgstr ""
+
+#: src/parser.c:565
+msgid "Local port"
+msgstr ""
+
+#: src/parser.c:568
+msgid "Set hold timeout(s) for local [and remote]"
+msgstr ""
+
+#: src/parser.c:570
+msgid "Kernel receive buffer size for network sockets"
+msgstr ""
+
+#: src/parser.c:572
+msgid "Only receive data, don't transmit"
+msgstr ""
+
+#: src/parser.c:573
+msgid "Local source address"
+msgstr ""
+
+#: src/parser.c:575
+msgid "Use SCO over Bluetooth"
+msgstr ""
+
+#: src/parser.c:577
+msgid "Only transmit data, don't receive"
+msgstr ""
+
+#: src/parser.c:579
+msgid "Kernel send buffer size for network sockets"
+msgstr ""
+
+#: src/parser.c:581
+msgid "Idle connection timeout"
+msgstr ""
+
+#: src/parser.c:582
+msgid "Require use of UDP"
+msgstr ""
+
+#: src/parser.c:584
+msgid ""
+"Increase program verbosity\n"
+"                        (call twice for max verbosity)"
+msgstr ""
+
+#: src/parser.c:587
+msgid "Display nc6 version information"
+msgstr ""
+
+#: src/parser.c:589
+msgid "Timeout for connects/accepts"
+msgstr ""
+
+#: src/parser.c:590
+msgid "File transfer mode"
+msgstr ""
+
+#: src/parser.c:613
 #, c-format
 msgid "Configured with IPv6 support\n"
 msgstr ""
 
-#: src/parser.c:572
+#: src/parser.c:616
 #, c-format
 msgid "Configured without IPv6 support\n"
 msgstr ""
 
-#: src/parser.c:577
+#: src/parser.c:621
 #, c-format
-msgid "Configured with Bluetooth support\n"
+msgid "Configured with Bluetooth (bluez) support\n"
 msgstr ""
 
-#: src/parser.c:580
+#: src/parser.c:624
 #, c-format
-msgid "Configured without Bluetooth support\n"
+msgid "Configured without Bluetooth (bluez) support\n"
 msgstr ""
 
 #: contrib/getopt.c:693
