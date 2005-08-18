@@ -15,6 +15,7 @@
 	* Fixed typedefs to use *_t for the typedef symbol, not the original
 	  struct name.
 	* Extensive code cleanup to prepare for a release.
+	* Add -X and --rev-transfer options (reverse transfer).
 	* Updated copyright notices for 2005.
 
 2005-07-22 Chris Leishman <chris@leishman.org>

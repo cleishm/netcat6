@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: ds6-devel@deepspace6.net\n"
-"POT-Creation-Date: 2005-08-18 11:47+1000\n"
+"POT-Creation-Date: 2005-08-18 14:40+1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -235,87 +235,91 @@ msgstr ""
 msgid "using socket rcvbuf size of %d"
 msgstr ""
 
-#: src/parser.c:178
+#: src/parser.c:181
 msgid "invalid argument to --buffer-size"
 msgstr ""
 
-#: src/parser.c:184
+#: src/parser.c:187
 msgid "invalid argument to --mtu"
 msgstr ""
 
-#: src/parser.c:189
+#: src/parser.c:192
 msgid "invalid argument to --nru"
 msgstr ""
 
-#: src/parser.c:203
+#: src/parser.c:206
 msgid "invalid argument to --sndbuf-size"
 msgstr ""
 
-#: src/parser.c:209
+#: src/parser.c:212
 msgid "invalid argument to --rcvbuf-size"
 msgstr ""
 
-#: src/parser.c:259
+#: src/parser.c:262
 msgid "invalid argument to -q"
 msgstr ""
 
-#: src/parser.c:269
+#: src/parser.c:272
 msgid "invalid argument to -t"
 msgstr ""
 
-#: src/parser.c:288
+#: src/parser.c:291
 msgid "invalid argument to -w"
 msgstr ""
 
-#: src/parser.c:354
+#: src/parser.c:344
 msgid "cannot specify UDP protocol and bluetooth"
 msgstr ""
 
-#: src/parser.c:356
+#: src/parser.c:346
 msgid "--sco requires --bluetooth (-b)"
 msgstr ""
 
-#: src/parser.c:361
+#: src/parser.c:351
 msgid "system does not support bluetooth"
 msgstr ""
 
-#: src/parser.c:365
+#: src/parser.c:355
 msgid "system does not support IPv6"
 msgstr ""
 
-#: src/parser.c:428
+#: src/parser.c:399
+msgid "cannot set both --transfer (-x) and --rev-transfer (-X)"
+msgstr ""
+
+#: src/parser.c:425
 msgid "cannot set both --recv-only and --send-only"
 msgstr ""
 
-#: src/parser.c:434
+#: src/parser.c:431
 msgid "--sco does not support remote port"
 msgstr ""
 
-#: src/parser.c:436
+#: src/parser.c:433
 msgid "--sco does not support local port (-p)"
 msgstr ""
 
-#: src/parser.c:443
+#: src/parser.c:440
 msgid "in listen mode you must specify a port with the -p switch"
 msgstr ""
 
-#: src/parser.c:449
+#: src/parser.c:446
 msgid "--continuous option must be used with --exec"
 msgstr ""
 
-#: src/parser.c:458
+#: src/parser.c:455
 msgid "you must specify the address/port couple of the remote endpoint"
 msgstr ""
 
-#: src/parser.c:462
+#: src/parser.c:459
 msgid "--no-reuseaddr option can be used only in listen mode"
 msgstr ""
 
-#: src/parser.c:466
+#: src/parser.c:463
 msgid "--continuous option can be used only in listen mode"
 msgstr ""
 
-#: src/parser.c:534
+#: src/parser.c:547
 #, c-format
 msgid ""
 "Usage:\n"
@@ -325,140 +329,144 @@ msgid ""
 "Recognized options are:\n"
 msgstr ""
 
-#: src/parser.c:539
+#: src/parser.c:552
 msgid "Use only IPv4"
 msgstr ""
 
-#: src/parser.c:540
+#: src/parser.c:553
 msgid "Use only IPv6"
 msgstr ""
 
-#: src/parser.c:542
+#: src/parser.c:555
 msgid "Use Bluetooth (defaults to L2CAP protocol)"
 msgstr ""
 
-#: src/parser.c:543
+#: src/parser.c:556
 msgid "Set buffer size"
 msgstr ""
 
-#: src/parser.c:545
+#: src/parser.c:558
 msgid ""
 "Continuously accept connections\n"
 "                        (only in listen mode with --exec)"
 msgstr ""
 
-#: src/parser.c:548
+#: src/parser.c:561
 msgid "Disable nagle algorithm for TCP connections"
 msgstr ""
 
-#: src/parser.c:550
+#: src/parser.c:563
 msgid "Exec command after connect"
 msgstr ""
 
-#: src/parser.c:552
+#: src/parser.c:565
 msgid "Handle network half-closes correctly"
 msgstr ""
 
-#: src/parser.c:553
+#: src/parser.c:566
 msgid "Display help"
 msgstr ""
 
-#: src/parser.c:555
+#: src/parser.c:568
 msgid "Listen mode, for inbound connects"
 msgstr ""
 
-#: src/parser.c:557
+#: src/parser.c:570
 msgid "Set MTU for network connection transmits"
 msgstr ""
 
-#: src/parser.c:559
+#: src/parser.c:572
 msgid "Numeric-only IP addresses, no DNS"
 msgstr ""
 
-#: src/parser.c:561
+#: src/parser.c:574
 msgid ""
 "Disable SO_REUSEADDR socket option\n"
 "                        (only in listen mode)\n"
 msgstr ""
 
-#: src/parser.c:564
+#: src/parser.c:577
 msgid "Set NRU for network connection receives"
 msgstr ""
 
-#: src/parser.c:565
+#: src/parser.c:578
 msgid "Local port"
 msgstr ""
 
-#: src/parser.c:568
+#: src/parser.c:581
 msgid "Set hold timeout(s) for local [and remote]"
 msgstr ""
 
-#: src/parser.c:570
+#: src/parser.c:583
 msgid "Kernel receive buffer size for network sockets"
 msgstr ""
 
-#: src/parser.c:572
+#: src/parser.c:585
 msgid "Only receive data, don't transmit"
 msgstr ""
 
-#: src/parser.c:573
+#: src/parser.c:586
 msgid "Local source address"
 msgstr ""
 
-#: src/parser.c:575
+#: src/parser.c:588
 msgid "Use SCO over Bluetooth"
 msgstr ""
 
-#: src/parser.c:577
+#: src/parser.c:590
 msgid "Only transmit data, don't receive"
 msgstr ""
 
-#: src/parser.c:579
+#: src/parser.c:592
 msgid "Kernel send buffer size for network sockets"
 msgstr ""
 
-#: src/parser.c:581
+#: src/parser.c:594
 msgid "Idle connection timeout"
 msgstr ""
 
-#: src/parser.c:582
+#: src/parser.c:595
 msgid "Require use of UDP"
 msgstr ""
 
-#: src/parser.c:584
+#: src/parser.c:597
 msgid ""
 "Increase program verbosity\n"
 "                        (call twice for max verbosity)"
 msgstr ""
 
-#: src/parser.c:587
+#: src/parser.c:600
 msgid "Display nc6 version information"
 msgstr ""
 
-#: src/parser.c:589
+#: src/parser.c:602
 msgid "Timeout for connects/accepts"
 msgstr ""
 
-#: src/parser.c:590
+#: src/parser.c:603
 msgid "File transfer mode"
 msgstr ""
 
-#: src/parser.c:613
+#: src/parser.c:605
+msgid "File transfer mode (reverse direction)"
+msgstr ""
+
+#: src/parser.c:628
 #, c-format
 msgid "Configured with IPv6 support\n"
 msgstr ""
 
-#: src/parser.c:616
+#: src/parser.c:631
 #, c-format
 msgid "Configured without IPv6 support\n"
 msgstr ""
 
-#: src/parser.c:621
+#: src/parser.c:636
 #, c-format
 msgid "Configured with Bluetooth (bluez) support\n"
 msgstr ""
 
-#: src/parser.c:624
+#: src/parser.c:639
 #, c-format
 msgid "Configured without Bluetooth (bluez) support\n"
 msgstr ""

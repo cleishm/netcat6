@@ -174,6 +174,11 @@ Timeout for network connects and accepts (see "TIMEOUTS").
 File transfer mode (see "FILE TRANSFER").  If listen mode is
 specified, this is equivalent to "--recv-only --buffer-size=65536" otherwise
 it is equivalent to "--send-only --buffer-size=65536".
+.I \-X, --rev-transfer
+Reverse file transfer mode (see "FILE TRANSFER").  This transfers in the
+opposite direction to normal transfer.  If listen mode is specified, this is
+equivalent to "--send-only --buffer-size=65536" otherwise it is equivalent to
+"--recv-only --buffer-size=65536".
 .SH UDP
 UDP support in netcat6 works very well in both connect and in listen mode.
 When using UDP in listen mode netcat6 accepts UDP packets from any source that
@@ -231,7 +236,8 @@ In half close mode (see "HALF CLOSE") all hold timeouts are disabled by
 default.
 .SH FILE TRANSFER
 netcat6 can be used to transfer files and data streams efficiently, using the
-\'-x' or '--transfer' command line option.
+\'-x' or '--transfer' command line option (or the '-X' and '--rev-transfer'
+equivalents for transfer in the opposite direction).
 .P
 For example, to transfer a file from machine 'foo.example.com' to machine
 \'bar.example.com', one would use the following technique.
@@ -262,10 +268,10 @@ which set the direction of transfer and increase the buffer sizes used.  In
 listen mode, it is equivalent to "--recv-only --buffer-size=65536" otherwise
 it is equivalent to "--send-only --buffer-size=65536".
 .P
-File transfer mode assumes the file will be sent TO the netcat6 process that
-is in listen mode, FROM the netcat6 process that is connecting to it.  It
-won't work the other way around, but you can make it do so by specifying the
-equivalent options instead of using '-x'.
+The normal file transfer mode options assume the file will be sent TO the
+netcat6 process that is in listen mode, FROM the netcat6 process that is
+connecting to it.  To transfer the other way use the -X or --rev-transfer
+options.
 .SH HALF CLOSE
 Stream based data transfers, such as TCP, have 2 separate streams - the
 receive and the transmit stream.  Contrary to common belief, the streams can

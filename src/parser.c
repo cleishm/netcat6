@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.63 2005-08-18 04:09:39 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.64 2005-08-18 04:56:12 chris Exp $");
 
 
 
@@ -79,38 +79,40 @@ static const struct option long_options[] = {
 	{"idle-timeout",        required_argument,  NULL, 't'},
 #define OPT_TRANSFER		9
 	{"transfer",            no_argument,        NULL, 'x'},
-#define OPT_RECV_ONLY		10
+#define OPT_REV_TRANSFER	10
+	{"rev-transfer",        no_argument,        NULL, 'X'},
+#define OPT_RECV_ONLY		11
 	{"recv-only",           no_argument,        NULL,  0 },
-#define OPT_SEND_ONLY		11
+#define OPT_SEND_ONLY		12
 	{"send-only",           no_argument,        NULL,  0 },
-#define OPT_BUFFER_SIZE		12
+#define OPT_BUFFER_SIZE		13
 	{"buffer-size",         required_argument,  NULL,  0 },
-#define OPT_MTU			13
+#define OPT_MTU			14
 	{"mtu",                 required_argument,  NULL,  0 },
-#define OPT_NRU			14
+#define OPT_NRU			15
 	{"nru",                 required_argument,  NULL,  0 },
-#define OPT_HALF_CLOSE		15
+#define OPT_HALF_CLOSE		16
 	{"half-close",          no_argument,        NULL,  0 },
-#define OPT_DISABLE_NAGLE	16
+#define OPT_DISABLE_NAGLE	17
 	{"disable-nagle",       no_argument,        NULL,  0 },
-#define OPT_NO_REUSEADDR	17
+#define OPT_NO_REUSEADDR	18
 	{"no-reuseaddr",        no_argument,        NULL,  0 },
-#define OPT_SNDBUF_SIZE		18
+#define OPT_SNDBUF_SIZE		19
 	{"sndbuf-size",         required_argument,  NULL,  0 },
-#define OPT_RCVBUF_SIZE		19
+#define OPT_RCVBUF_SIZE		20
 	{"rcvbuf-size",         required_argument,  NULL,  0 },
-#define OPT_EXEC		20
+#define OPT_EXEC		21
 	{"exec",                required_argument,  NULL, 'e'},
-#define OPT_CONTINUOUS		21
+#define OPT_CONTINUOUS		22
 	{"continuous",          no_argument,        NULL,  0 },
-#define OPT_BLUETOOTH		22
+#define OPT_BLUETOOTH		23
 	{"bluetooth",           no_argument,        NULL, 'b'},
-#define OPT_SCO			23
+#define OPT_SCO			24
 	{"sco",			no_argument,        NULL,  0 },
+#define OPT_MAX			25
 	{0, 0, 0, 0}
 };
 
-#define OPT_MAX		((sizeof(long_options) / sizeof(long_options[0])) - 1)
 
 
 static int parse_int_pair(const char *str, int *first, int *second);
@@ -130,6 +132,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	address_t local_address, remote_address;
 	bool listen_mode = false;
 	bool file_transfer = false;
+	bool rev_file_transfer = false;
 	bool half_close = false;
 	int connect_timeout = -1;
 	int idle_timeout = -1;
@@ -157,7 +160,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:x",
+	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:xX",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
@@ -290,6 +293,9 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 		case 'x':	
 			file_transfer = true;
 			break;
+		case 'X':	
+			rev_file_transfer = true;
+			break;
 		case '?':
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -331,22 +337,6 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 			protocol = TCP_PROTOCOL;
 			break;
 		}
-	}
-
-	/* set remote buffer sizes and mtu's,
-	 * iff they haven't already been set */
-	if (protocol == UDP_PROTOCOL) {
-		if (remote_mtu == 0)
-			remote_mtu = DEFAULT_UDP_MTU;
-		if (remote_nru == 0)
-			remote_nru = DEFAULT_UDP_NRU;
-		if (buffer_size == 0)
-			buffer_size = DEFAULT_UDP_BUFFER_SIZE;
-	}
-	if (family == PROTO_BLUEZ) {
-		/* use standard bluetooth mtu */
-		if (remote_mtu == 0)
-			remote_mtu = DEFAULT_BLUETOOTH_MTU;
 	}
 
 	/* check protocol and family combinations are valid */
@@ -403,11 +393,18 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 		ca_clear_flag(attrs, CA_LISTEN_MODE);
 	}
 
+	/* check to make sure the user didn't set both
+	 * --transfer and --rev-transfer */
+	if (file_transfer == true && rev_file_transfer == true) {
+		fatal(_("cannot set both --transfer (-x) "
+		      "and --rev-transfer (-X)"));
+	}
+
 	/* setup file transfer depending on the mode */
-	if (file_transfer == true) {
+	if (file_transfer == true || rev_file_transfer == true) {
 		if (buffer_size == 0)
 			buffer_size = DEFAULT_FILE_TRANSFER_BUFFER_SIZE;
-		if (listen_mode == true) {
+		if (XOR(rev_file_transfer == true, listen_mode == true)) {
 			ca_set_flag(attrs, CA_RECV_DATA_ONLY);
 			ca_clear_flag(attrs, CA_SEND_DATA_ONLY);
 		} else {
@@ -466,6 +463,22 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 			fatal(_("--continuous option "
 			      "can be used only in listen mode"));
 		}
+	}
+
+	/* set remote buffer sizes and mtu's,
+	 * iff they haven't already been set */
+	if (protocol == UDP_PROTOCOL) {
+		if (remote_mtu == 0)
+			remote_mtu = DEFAULT_UDP_MTU;
+		if (remote_nru == 0)
+			remote_nru = DEFAULT_UDP_NRU;
+		if (buffer_size == 0)
+			buffer_size = DEFAULT_UDP_BUFFER_SIZE;
+	}
+	if (family == PROTO_BLUEZ) {
+		/* use standard bluetooth mtu */
+		if (remote_mtu == 0)
+			remote_mtu = DEFAULT_BLUETOOTH_MTU;
 	}
 
 	/* setup attrs */
@@ -588,6 +601,8 @@ static void print_usage(FILE *fp)
 	fprintf(fp, " -w, --timeout=SECONDS  %s\n",
 	              _("Timeout for connects/accepts"));
 	fprintf(fp, " -x, --transfer         %s\n", _("File transfer mode"));
+	fprintf(fp, " -X, --rev-transfer     %s\n",
+	              _("File transfer mode (reverse direction)"));
 	fprintf(fp, "\n");
 }
 
