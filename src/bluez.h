@@ -1,5 +1,5 @@
 /*
- *  network.h - common networking functions module - header
+ *  bluez.h - bluetooth networking functions module - header
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
@@ -19,16 +19,23 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef BLUEZ_H
+#define BLUEZ_H
 
-#include "connection.h"
+#include "afindep.h"
 
-typedef void (*established_callback_t)(const connection_attributes_t *attrs,
-		int fd, int socktype, void *cdata);
+/* establish a connection and return a new fd and socktype */
+int bluez_connect(const struct addrinfo *hints,
+		const char *remote_address, const char *remote_service,
+		set_sockopt_handler_t set_sockopt_handler, void *hdata,
+		time_t timeout, int *socktype);
 
-/* establish outgoing connections and issue callbacks */
-int net_establish(const connection_attributes_t *attrs,
-		established_callback_t callback, void *cdata);
+/* listen for connects and issue callbacks */
+int bluez_listener(const struct addrinfo *hints,
+		const char *local_address, const char *local_service,
+		const char *remote_address, const char *remote_service,
+		set_sockopt_handler_t set_sockopt_handler, void *hdata,
+		listen_callback_t callback, void *cdata,
+		time_t timeout, int max_accept);
 
-#endif/*NETWORK_H*/
+#endif/*BLUEZ_H*/

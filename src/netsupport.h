@@ -2,8 +2,8 @@
  *  netsupport.h - networking support module - header
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,22 +22,50 @@
 #ifndef NETSUPPORT_H
 #define NETSUPPORT_H
 
-#include <netdb.h>
+#include <sys/socket.h>
+#include <stdbool.h>
 
-typedef struct bound_socket_t {
-	int fd;
-	int socktype;
-	struct bound_socket_t *next;
-} bound_socket;
+/* issue the 'connect' call with a timeout.  Returns 0 on success and -1 on
+ * failure (with errno set appropriately) */
+int connect_with_timeout(int fd, const struct sockaddr *sa,
+		socklen_t salen, int timeout);
 
-bound_socket *add_bound_socket(bound_socket *list,
-                               int fd, int socktype);
-int find_bound_socket(const bound_socket *list, int fd);
-void destroy_bound_sockets(bound_socket *list);
-void close_and_destroy_bound_sockets(bound_socket *list);
-#ifdef ENABLE_IPV6
-struct addrinfo* order_ipv6_first(struct addrinfo *ai);
-#endif
+
+/* On some systems, getaddrinfo will return results that can't actually be
+ * used - resulting in a failure when trying to create the socket.
+ * This function checks for all the different error codes that indicate this
+ * situation */
 bool unsupported_sock_error(int err);
 
-#endif /* NETSUPPORT_H */
+
+#ifdef ENABLE_IPV6
+/* returns true if a represents an ipv4-mapped address */
+bool is_address_ipv4_mapped(const struct sockaddr *a);
+#endif
+
+
+/* compare two sockaddr structs to see if they represent the same address */
+bool sockaddr_compare(const struct sockaddr *a, socklen_t a_len,
+		const struct sockaddr *b, socklen_t b_len);
+
+
+typedef struct bound_socket {
+	int fd;
+	int socktype;
+	struct bound_socket *next;
+} bound_socket_t;
+
+/* add a new fd/socktype pair to the list */
+bound_socket_t *add_bound_socket(bound_socket_t *list, int fd, int socktype);
+
+/* get the socketype for a given fd in a list */
+int get_bound_socket_type(const bound_socket_t *list, int fd);
+
+/* free a bound socket list */
+void free_bound_sockets(bound_socket_t *list);
+
+/* close all bound sockets in a list and free the list */
+void close_and_free_bound_sockets(bound_socket_t *list);
+
+
+#endif/*NETSUPPORT_H*/

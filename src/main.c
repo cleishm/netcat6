@@ -2,8 +2,8 @@
  *  main.c - main module
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,65 +19,55 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"
+#include "system.h"
+#include "misc.h"
 #include "connection.h"
 #include "io_stream.h"
 #include "parser.h"
 #include "network.h"
 #include "readwrite.h"
-#include <sys/types.h>
-#include <sys/wait.h>
+
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <assert.h>
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.38 2004-08-01 23:05:00 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.39 2005-08-18 04:05:58 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
 
 
-/* callback type for establish_connection */
-typedef int (*established_callback)(const connection_attributes *attrs,
-                                    int fd, int socktype);
-
-/* cdata argument for continous listen callbacks */
-typedef struct accept_callback_data_t {
-	const connection_attributes *attrs;
-	established_callback callback;
-} accept_callback_data;
-
-
-
 /* function prototypes */
-static int establish_connection(const connection_attributes *attrs,
-                                established_callback callback);
-static void accept_callback(int fd, int socktype, void *cdata);
-static int connection_main(const connection_attributes *attrs,
-                           int fd, int socktype);
-static void setup_local_stream(const connection_attributes *attrs,
-                               io_stream* local,
-                               circ_buf* remote_buffer, circ_buf* local_buffer);
-static void setup_remote_stream(const connection_attributes *attrs,
-                                int fd, int socktype, io_stream* remote,
-                                circ_buf* remote_buffer,circ_buf* local_buffer);
-static int run_transfer(const connection_attributes* attrs,
-                        io_stream *remote_stream, io_stream *local_stream);
+static int establish_connections(const connection_attributes_t *attrs);
+static void established_callback(const connection_attributes_t *attrs,
+		int fd, int socktype, void *cdata);
+static int connection_main(const connection_attributes_t *attrs,
+		int fd, int socktype);
+static void setup_local_stream(const connection_attributes_t *attrs,
+                io_stream_t *local, circ_buf_t *remote_buffer,
+                circ_buf_t *local_buffer);
+static void setup_remote_stream(const connection_attributes_t *attrs,
+                int fd, int socktype, io_stream_t *remote,
+                circ_buf_t *remote_buffer, circ_buf_t *local_buffer);
+static int run_transfer(const connection_attributes_t *attrs,
+                io_stream_t *remote_stream, io_stream_t *local_stream);
 static void i18n_init(void);
-
 static void sigchld_handler(int signum);
+
 
 
 int main(int argc, char **argv)
 {
-	connection_attributes connection_attrs;
+	connection_attributes_t connection_attrs;
 	char *ptr;
 	int retval;
 
@@ -103,8 +93,8 @@ int main(int argc, char **argv)
 	/* set flags and fill out the addresses and connection attributes */
 	parse_arguments(argc, argv, &connection_attrs);
 
-	/* establish the connection, and call down to connection_main */
-	retval = establish_connection(&connection_attrs, connection_main);
+	/* establish the connections */
+	retval = establish_connections(&connection_attrs);
 
 	/* cleanup */
 	ca_destroy(&connection_attrs);
@@ -114,79 +104,76 @@ int main(int argc, char **argv)
 
 
 
-static int establish_connection(const connection_attributes *attrs,
-                                established_callback callback)
+static int establish_connections(const connection_attributes_t *attrs)
 {
-	int fd = 0, socktype;
+	int err, result = 0;
 
-	assert(attrs != NULL);
-	assert(callback != NULL);
+	/* establish connection and callback when connected */
+	err = net_establish(attrs, established_callback, &result);
+	if (err)
+		return err;
 
-	/* establish remote connection */
-	if (ca_is_flag_set(attrs, CA_LISTEN_MODE)) {
+	/* if only a single connection was established, result will
+	 * contain any error code from that connection handler */
+	return result;
+}
 
-		if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)) {
-			accept_callback_data cdata;
-			cdata.attrs = attrs;
-			cdata.callback = callback;
 
-			do_listen_continuous(attrs, accept_callback, &cdata,-1);
-			/* not reached */
-			exit(EXIT_FAILURE);
+
+static void established_callback(const connection_attributes_t *attrs,
+		int fd, int socktype, void *cdata)
+{
+	/* a connection has been established */
+	int do_fork = 0;
+	int result;
+
+	/* check if multiple connections will be established,
+	 * in which case a child should be forked to handle this connection */
+	if (ca_is_flag_set(attrs, CA_LISTEN_MODE) &&
+	    ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT))
+	{
+		do_fork = 1;
+	}
+
+	if (do_fork) {
+		/* fork and let the parent return immediately */
+		int pid;
+		int size;
+		char *new_name;
+
+		pid = fork();
+		if (pid < 0) {
+			fatal("fork failed: %s", strerror(errno));
+		} else if (pid > 0) {
+			/* parent */
+			return;
 		}
 
-		fd = do_listen(attrs, &socktype);
-	} else if (ca_is_flag_set(attrs, CA_CONNECT_MODE)) {
-		fd = do_connect(attrs, &socktype);
-	} else {
-		fatal(_("internal error: unknown connection mode"));
-		/* not reached - but stops warnings about uninitialized fd */
-		while (0) { fd = -1; }
+		/* setup program_name */
+		size = strlen(program_name) + 10;
+		new_name = (char *) xmalloc(size * sizeof(char));
+		snprintf(new_name, size, "%s[%d]", program_name, (int)getpid());
+		program_name = new_name;
 	}
 
-	assert(fd >= 0);
-	assert(socktype >= 0);
+	/* invoke main connection handler */
+	result = connection_main(attrs, fd, socktype);
 
-	return callback(attrs, fd, socktype);
+	/* if this is a forked child, then exit with an error code */
+	if (do_fork)
+		exit((result)? EXIT_FAILURE : EXIT_SUCCESS);
+
+	/* otherwise write the result code to the cdata before returning */
+	*((int *)cdata) = result;
 }
 
 
 
-static void accept_callback(int fd, int socktype, void *cdata)
+static int connection_main(const connection_attributes_t *attrs,
+		int fd, int socktype)
 {
-	int pid;
-	int size;
-	char *new_name;
-	accept_callback_data* adata = (accept_callback_data*)cdata;
-	int retval;
-
-	/* fork and let the parent return */
-	pid = fork();
-	if (pid < 0) {
-		fatal(_("fork failed: %s"), strerror(errno));
-	} else if (pid > 0) {
-		/* parent */
-		return;
-	}
-
-	/* setup program_name */
-	size = strlen(program_name) + 10;
-	new_name = (char*) xmalloc(size * sizeof(char));
-	snprintf(new_name, size, "%s[%d]", program_name, (int)getpid());
-	program_name = new_name;
-	
-	/* issue callback */
-	retval = adata->callback(adata->attrs, fd, socktype);
-	exit((retval)? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-
-
-static int connection_main(const connection_attributes *attrs,
-                           int fd, int socktype)
-{
-	circ_buf remote_buffer, local_buffer;
-	io_stream remote_stream, local_stream;
+	circ_buf_t remote_buffer, local_buffer;
+	io_stream_t remote_stream, local_stream;
 	int retval;
 
 	assert(attrs != NULL);
@@ -246,11 +233,11 @@ static int connection_main(const connection_attributes *attrs,
 
 
 
-static void setup_local_stream(const connection_attributes *attrs,
-                               io_stream* stream,
-                               circ_buf* remote_buffer, circ_buf* local_buffer)
+static void setup_local_stream(const connection_attributes_t *attrs,
+		io_stream_t *stream, circ_buf_t *remote_buffer,
+		circ_buf_t *local_buffer)
 {
-	char* cmd;
+	const char *cmd;
 	assert(attrs != NULL);
 	assert(stream != NULL);
 
@@ -258,9 +245,9 @@ static void setup_local_stream(const connection_attributes *attrs,
 	if (cmd != NULL) {
 		int in, out;
 		if (very_verbose_mode())
-			warning(_("Executing '%s'"), cmd);
+			warning(_("executing '%s'"), cmd);
 		if (open3(cmd, &in, &out, NULL) < 0) {
-			fatal(_("Failed to exec '%s': %s"),
+			fatal(_("failed to exec '%s': %s"),
 			      cmd, strerror(errno));
 		}
 		ios_init(stream, "local", out, in, SOCK_STREAM,
@@ -273,9 +260,9 @@ static void setup_local_stream(const connection_attributes *attrs,
 
 
 
-static void setup_remote_stream(const connection_attributes *attrs,
-                                int fd, int socktype, io_stream* stream,
-                                circ_buf* remote_buffer, circ_buf* local_buffer)
+static void setup_remote_stream(const connection_attributes_t *attrs,
+		int fd, int socktype, io_stream_t *stream,
+		circ_buf_t *remote_buffer, circ_buf_t *local_buffer)
 {
 	/* suppress unused attrs warning */
 	while (0&&attrs);
@@ -290,8 +277,8 @@ static void setup_remote_stream(const connection_attributes *attrs,
 
 
 
-static int run_transfer(const connection_attributes* attrs,
-                        io_stream *remote_stream, io_stream *local_stream)
+static int run_transfer(const connection_attributes_t *attrs,
+		io_stream_t *remote_stream, io_stream_t *local_stream)
 {
 	int retval;
 
@@ -356,6 +343,8 @@ const char *get_program_name(void)
 	return program_name;
 }
 
+
+
 static void i18n_init(void)
 {
 #ifdef ENABLE_NLS
@@ -368,7 +357,9 @@ static void i18n_init(void)
 #endif /* ENABLE_NLS */
 }
 
-/* Cleanup any child processes created via --exec */
+
+
+/* cleanup any child processes created via --exec */
 static void sigchld_handler(int signum)
 {
 	/* suppress unused attrs warning */

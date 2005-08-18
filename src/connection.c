@@ -2,8 +2,8 @@
  *  connection.c - connection description structures and functions - implementation
  * 
  *  nc6 - an advanced netcat clone
- *  Copyright (C) 2001-2004 Mauro Tortonesi <mauro _at_ deepspace6.net>
- *  Copyright (C) 2002-2004 Chris Leishman <chris _at_ leishman.org>
+ *  Copyright (C) 2001-2005 Mauro Tortonesi <mauro _at_ deepspace6.net>
+ *  Copyright (C) 2002-2005 Chris Leishman <chris _at_ leishman.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#include "config.h"
+#include "system.h"
 #include "misc.h"
 #include "connection.h"
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -29,18 +30,19 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.30 2004-01-20 10:35:12 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.31 2005-08-18 04:05:58 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
 
 
-void ca_init(connection_attributes *attrs)
+
+void ca_init(connection_attributes_t *attrs)
 {
 	assert(attrs != NULL);
 
-	attrs->family    = PROTO_UNSPECIFIED;
-	attrs->protocol  = TCP_PROTOCOL;
+	attrs->family = PROTO_UNSPECIFIED;
+	attrs->protocol = TCP_PROTOCOL;
 
 	address_init(&(attrs->remote_address));
 	address_init(&(attrs->local_address));
@@ -53,17 +55,17 @@ void ca_init(connection_attributes *attrs)
 	attrs->sndbuf_size = 0;
 	attrs->rcvbuf_size = 0;
 	attrs->connect_timeout = -1;
-	attrs->idle_timeout    = -1;
-	attrs->local_hold_timeout  = -1;
+	attrs->idle_timeout = -1;
+	attrs->local_hold_timeout = -1;
 	attrs->remote_hold_timeout = 0;
-	attrs->remote_half_close_suppress = TRUE;
-	attrs->local_half_close_suppress  = FALSE;
+	attrs->remote_half_close_suppress = true;
+	attrs->local_half_close_suppress = false;
 	attrs->local_exec = NULL;
 }
 
 
 
-void ca_destroy(connection_attributes *attrs)
+void ca_destroy(connection_attributes_t *attrs)
 {
 	assert(attrs != NULL);
 	ca_set_local_exec(attrs, NULL);
@@ -71,7 +73,7 @@ void ca_destroy(connection_attributes *attrs)
 
 
 
-void ca_set_local_exec(connection_attributes *attrs, const char *exec)
+void ca_set_local_exec(connection_attributes_t *attrs, const char *exec)
 {
 	if (attrs->local_exec)
 		free(attrs->local_exec);
@@ -81,47 +83,68 @@ void ca_set_local_exec(connection_attributes *attrs, const char *exec)
 
 
 void ca_to_addrinfo(struct addrinfo *ainfo,
-                    const connection_attributes *attrs)
+		const connection_attributes_t *attrs)
 {
 	assert(ainfo != NULL);
 	assert(attrs != NULL);
 
 	switch (attrs->family) {
-		case PROTO_IPv6:
+	case PROTO_UNSPECIFIED:
+		ainfo->ai_family = PF_UNSPEC;
+		break;
+	case PROTO_IPv6:
 #ifdef ENABLE_IPV6
-			ainfo->ai_family = PF_INET6;
+		ainfo->ai_family = PF_INET6;
 #else
-			fatal(_("internal error: system does not support ipv6"));
+		fatal_internal("unavailable IPv6 support required");
 #endif
-			break;
-		case PROTO_IPv4:
-			ainfo->ai_family = PF_INET;
-			break;
-		case PROTO_UNSPECIFIED:
-			ainfo->ai_family = PF_UNSPEC;
-			break;
-		default:
-			fatal(_("internal error: unknown socket domain"));
+		break;
+	case PROTO_IPv4:
+		ainfo->ai_family = PF_INET;
+		break;
+	case PROTO_BLUEZ:
+#ifdef ENABLE_BLUEZ
+		ainfo->ai_family = PF_BLUETOOTH;
+#else
+		fatal_internal("unavailable bluez support required");
+#endif
+		break;
+	default:
+		fatal_internal("unknown socket domain");
 	}
 	
 	switch (attrs->protocol) {
-		case UDP_PROTOCOL:
-			ainfo->ai_protocol = IPPROTO_UDP;
-			/* strictly speaking, this should not be required
-			 * since UDP implies a DGRAM type socket.  However, on
-			 * some systems getaddrinfo fails if we set
-			 * IPPROTO_UDP and don't set this */
-			ainfo->ai_socktype = SOCK_DGRAM;
-			break;
-		case TCP_PROTOCOL:
-			ainfo->ai_protocol = IPPROTO_TCP;
-			/* strictly speaking, this should not be required
-			 * since TCP implies a STREAM type socket.  However,
-			 * on some systems getaddrinfo fails if we set
-			 * IPPROTO_TCP and don't set this */
-			ainfo->ai_socktype = SOCK_STREAM;
-			break;
-		default:
-			fatal(_("internal error: unknown socket type"));
+	case UDP_PROTOCOL:
+		ainfo->ai_protocol = IPPROTO_UDP;
+		/* strictly speaking, this should not be required since UDP
+		 * implies a DGRAM type socket.  However, on some systems
+		 * getaddrinfo fails if we set IPPROTO_UDP and don't set this */
+		ainfo->ai_socktype = SOCK_DGRAM;
+		break;
+	case TCP_PROTOCOL:
+		ainfo->ai_protocol = IPPROTO_TCP;
+		/* strictly speaking, this should not be required since TCP
+		 * implies a STREAM type socket.  However, on some systems
+		 * getaddrinfo fails if we set IPPROTO_TCP and don't set this */
+		ainfo->ai_socktype = SOCK_STREAM;
+		break;
+	case SCO_PROTOCOL:
+#ifdef ENABLE_BLUEZ
+		ainfo->ai_protocol = BTPROTO_SCO;
+		ainfo->ai_socktype = SOCK_SEQPACKET;
+#else
+		fatal_internal("unavailable bluez support required");
+#endif
+		break;
+	case L2CAP_PROTOCOL:
+#ifdef ENABLE_BLUEZ
+		ainfo->ai_protocol = BTPROTO_L2CAP;
+		ainfo->ai_socktype = SOCK_SEQPACKET;
+#else
+		fatal_internal("unavailable bluez support required");
+#endif
+		break;
+	default:
+		fatal_internal("unknown socket type");
 	}
 }
