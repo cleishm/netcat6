@@ -52,6 +52,7 @@ TYPE_SOCKLEN_T
 TYPE_STRUCT_SOCKADDR_STORAGE(,
   [AC_MSG_ERROR([Your system does not support 'struct sockaddr_storage', which is needed to compile nc6])])
 DEFINED_SOMAXCONN(,AC_DEFINE([SOMAXCONN], 5, [Default backlog parameter for listen(2).]))
+DEFINED_WAIT_ANY(,AC_DEFINE([WAIT_ANY], (pid_t)0, [Parameter for waitpid(2) to wait for any processes.]))
 
 dnl Configure Bluez support
 bluez=
