@@ -34,7 +34,8 @@ localedir=$(datadir)/locale
 
 nc6_LDADD = $(nc6_bluez) $(top_builddir)/contrib/libnc6contrib.a @LIBINTL@
 
-AM_CPPFLAGS = -I$(top_srcdir)/contrib -I$(top_srcdir)/intl -DLOCALEDIR=\"$(localedir)\"
+# note: must use ../intl instead of absolute path
+AM_CPPFLAGS = -I$(top_srcdir)/contrib -I../intl -DLOCALEDIR=\"$(localedir)\"
 AM_CFLAGS = @CFLAGS@ @NC6_CFLAGS@
 
 MAINTAINERCLEANFILES 	= Makefile.in stamp-h.in
