@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.64 2005-08-18 04:56:12 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.65 2005-08-20 17:44:29 chris Exp $");
 
 
 
@@ -140,11 +140,11 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	int local_hold_timeout = 0;
 	bool set_remote_hold_timeout = false;
 	int remote_hold_timeout = 0;
-	size_t remote_mtu = 0;
-	size_t remote_nru = 0;
-	size_t buffer_size = 0;
-	size_t sndbuf_size = 0;
-	size_t rcvbuf_size = 0;
+	int remote_mtu = 0;
+	int remote_nru = 0;
+	int buffer_size = 0;
+	int sndbuf_size = 0;
+	int rcvbuf_size = 0;
 
 	/* check arguments */
 	assert(argc > 0);
@@ -177,18 +177,18 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 				break;
 			case OPT_BUFFER_SIZE:
 				assert(optarg != NULL);
-				if (safe_atoi(optarg, (int *)&buffer_size))
+				if (safe_atoi(optarg, &buffer_size))
 					fatal(_("invalid argument to "
 					      "--buffer-size"));
 				break;
 			case OPT_MTU:
 				assert(optarg != NULL);
-				if (safe_atoi(optarg, (int *)&remote_mtu))
+				if (safe_atoi(optarg, &remote_mtu))
 					fatal(_("invalid argument to --mtu"));
 				break;
 			case OPT_NRU:
 				assert(optarg != NULL);
-				if (safe_atoi(optarg, (int *)&remote_nru))
+				if (safe_atoi(optarg, &remote_nru))
 					fatal(_("invalid argument to --nru"));
 				break;
 			case OPT_HALF_CLOSE:
@@ -202,13 +202,13 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 				break;
 			case OPT_SNDBUF_SIZE:
 				assert(optarg != NULL);
-				if (safe_atoi(optarg, (int *)&sndbuf_size))
+				if (safe_atoi(optarg, &sndbuf_size))
 					fatal(_("invalid argument to "
 					      "--sndbuf-size"));
 				break;
 			case OPT_RCVBUF_SIZE:
 				assert(optarg != NULL);
-				if (safe_atoi(optarg, (int *)&rcvbuf_size))
+				if (safe_atoi(optarg, &rcvbuf_size))
 					fatal(_("invalid argument to "
 					      "--rcvbuf-size"));
 				break;
