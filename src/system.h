@@ -58,6 +58,7 @@ typedef unsigned char _Bool;
 
 
 /* operations on timevals - copied from BSD sys/time.h */
+#include <sys/time.h>
 #ifndef timerclear
 #define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
 #endif
