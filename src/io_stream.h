@@ -24,7 +24,6 @@
 
 #include "circ_buf.h"
 #include <sys/time.h>
-#include <stdbool.h>
 
 typedef struct io_stream
 {

@@ -23,7 +23,6 @@
 #define NETSUPPORT_H
 
 #include <sys/socket.h>
-#include <stdbool.h>
 
 /* issue the 'connect' call with a timeout.  Returns 0 on success and -1 on
  * failure (with errno set appropriately) */

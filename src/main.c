@@ -40,7 +40,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.39 2005-08-18 04:05:58 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.40 2005-08-20 14:50:58 chris Exp $");
 
 /* program name */
 static char *program_name  = NULL;
@@ -362,10 +362,11 @@ static void i18n_init(void)
 /* cleanup any child processes created via --exec */
 static void sigchld_handler(int signum)
 {
+	int pid;
+
 	/* suppress unused attrs warning */
 	while (0&&signum);
 	assert(signum == SIGCHLD);
-	int pid;
 
 	do {
 		int status;

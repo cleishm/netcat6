@@ -31,10 +31,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.1 2005-08-18 04:05:58 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.2 2005-08-20 14:50:57 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */

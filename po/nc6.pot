@@ -1,5 +1,5 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Mauro Tortonesi
+# Copyright (C) YEAR Mauro Tortonesi, Chris Leishman, Simone Piunno, Filippo Natali
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: ds6-devel@deepspace6.net\n"
-"POT-Creation-Date: 2005-08-18 14:40+1000\n"
+"POT-Creation-Date: 2005-08-21 00:44+1000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,88 +16,88 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/afindep.c:77
+#: src/afindep.c:78
 #, c-format
 msgid "forward host lookup failed for remote endpoint %s: %s"
 msgstr ""
 
-#: src/afindep.c:143 src/afindep.c:170
+#: src/afindep.c:144 src/afindep.c:171
 #, c-format
 msgid "bind to source addr/port failed when connecting to %s: %s"
 msgstr ""
 
-#: src/afindep.c:197 src/bluez.c:104
+#: src/afindep.c:198 src/bluez.c:104
 #, c-format
 msgid "timeout while connecting to %s"
 msgstr ""
 
-#: src/afindep.c:202 src/bluez.c:109
+#: src/afindep.c:203 src/bluez.c:109
 #, c-format
 msgid "cannot connect to %s: %s"
 msgstr ""
 
-#: src/afindep.c:217
+#: src/afindep.c:218
 msgid "forward lookup returned no useful socket types"
 msgstr ""
 
-#: src/afindep.c:220
+#: src/afindep.c:221
 #, c-format
 msgid "unable to connect to address %s, service %s"
 msgstr ""
 
-#: src/afindep.c:229
+#: src/afindep.c:230
 #, c-format
 msgid "%s open"
 msgstr ""
 
-#: src/afindep.c:274
+#: src/afindep.c:275
 #, c-format
 msgid "forward host lookup failed for local endpoint %s (%s): %s"
 msgstr ""
 
-#: src/afindep.c:276
+#: src/afindep.c:277
 msgid "[unspecified]"
 msgstr ""
 
-#: src/afindep.c:373 src/afindep.c:396 src/bluez.c:182
+#: src/afindep.c:374 src/afindep.c:397 src/bluez.c:182
 #, c-format
 msgid "listening on %s ..."
 msgstr ""
 
-#: src/afindep.c:379 src/bluez.c:171
+#: src/afindep.c:380 src/bluez.c:171
 #, c-format
 msgid "bind to source %s failed: %s"
 msgstr ""
 
-#: src/afindep.c:388 src/bluez.c:177
+#: src/afindep.c:389 src/bluez.c:177
 #, c-format
 msgid "cannot listen on %s: %s"
 msgstr ""
 
-#: src/afindep.c:421
+#: src/afindep.c:422
 msgid "failed to bind to any local addr/port"
 msgstr ""
 
-#: src/afindep.c:451 src/bluez.c:210
+#: src/afindep.c:452 src/bluez.c:210
 msgid "connection timed out"
 msgstr ""
 
-#: src/afindep.c:536
+#: src/afindep.c:537
 #, c-format
 msgid "connect failed on datagram socket: %s"
 msgstr ""
 
-#: src/afindep.c:545
+#: src/afindep.c:546
 #, c-format
 msgid "connect to %s from %s"
 msgstr ""
 
-#: src/afindep.c:562
+#: src/afindep.c:563
 #, c-format
 msgid "refused connect to %s from %s"
 msgstr ""
 
-#: src/afindep.c:698
+#: src/afindep.c:699
 #, c-format
 msgid "inverse lookup failed for %s: %s"
 msgstr ""
