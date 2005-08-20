@@ -44,7 +44,7 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.26 2005-08-18 04:13:13 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.27 2005-08-20 14:59:23 chris Exp $");
 
 
 
@@ -249,7 +249,7 @@ int safe_atoi(const char *str, int *result)
 		return -1;
 	}
 	if (errno == ERANGE || lresult > INT_MAX || lresult < INT_MIN) {
-		errno == ERANGE;
+		errno = ERANGE;
 		return -1;
 	}
 #else
