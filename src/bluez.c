@@ -37,7 +37,7 @@
 #include <bluetooth/sco.h>
 #include <bluetooth/l2cap.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.1 2005-08-18 04:05:58 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.2 2006-01-13 12:29:09 mauro Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -273,7 +273,8 @@ static int getbluezaddr(const char *address, const char *service,
 		
 		*salen = sizeof(struct sockaddr_sco);
 		((struct sockaddr_sco *)sa)->sco_family = AF_BLUETOOTH;
-		str2ba(address, &((struct sockaddr_sco *)sa)->sco_bdaddr);
+		if (address)
+			str2ba(address, &((struct sockaddr_sco *)sa)->sco_bdaddr);
 		break;
 	
 	case BTPROTO_L2CAP:
@@ -281,7 +282,8 @@ static int getbluezaddr(const char *address, const char *service,
 		
 		*salen = sizeof(struct sockaddr_l2);
 		((struct sockaddr_l2 *)sa)->l2_family = AF_BLUETOOTH;
-		str2ba(address, &((struct sockaddr_l2 *)sa)->l2_bdaddr);
+		if (address)
+			str2ba(address, &((struct sockaddr_l2 *)sa)->l2_bdaddr);
 		
 	        if (safe_atoi(service, &psm) || psm < 0 || psm > USHRT_MAX) {
 			warning(_("invalid l2cap psm (service name)"));
