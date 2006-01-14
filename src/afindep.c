@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.2 2005-08-20 14:50:57 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.3 2006-01-14 08:35:08 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */

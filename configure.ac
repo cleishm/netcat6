@@ -2,13 +2,10 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(nc6, 0.5-cvs, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
-AM_INIT_AUTOMAKE(1.6)        dnl Automake 1.6 or better is required
+AM_GNU_GETTEXT_VERSION(0.14.1)
+AM_INIT_AUTOMAKE(1.6)           dnl Automake 1.6 or better is required
 AM_CONFIG_HEADER(config.h)
-AC_PREREQ(2.52)              dnl Autoconf 2.52 or better is required
-
-
-dnl Languages supported
-ALL_LINGUAS="it"
+AC_PREREQ(2.52)                 dnl Autoconf 2.52 or better is required
 
 
 dnl Checks for programs.
@@ -224,6 +221,5 @@ fi
 
 AC_SUBST(NC6_CFLAGS)
 AC_SUBST(ac_aux_dir)
-AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile  config/Makefile \
-	intl/Makefile po/Makefile.in nc6.spec docs/nc6.1])
+AC_CONFIG_FILES([Makefile docs/Makefile src/Makefile contrib/Makefile config/Makefile intl/Makefile po/Makefile.in nc6.spec docs/nc6.1])
 AC_OUTPUT

@@ -6,6 +6,7 @@
 #! /bin/sh
 
 set -x
+autopoint
 aclocal -I config $@
 autoheader
 automake --add-missing --copy

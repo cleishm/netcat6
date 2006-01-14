@@ -37,7 +37,7 @@
 #include <bluetooth/sco.h>
 #include <bluetooth/l2cap.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.2 2006-01-13 12:29:09 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.3 2006-01-14 08:35:08 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -133,7 +133,7 @@ int bluez_listener(const struct addrinfo *hints,
 
 	/* make sure arguments are valid and preconditions are respected */
 	assert(hints != NULL);
-	assert(local_address == NULL || strlen(local_address)  > 0);
+	assert(local_address == NULL || strlen(local_address) > 0);
 	assert(remote_address == NULL || strlen(remote_address) > 0);
 	assert(callback != NULL);
 
