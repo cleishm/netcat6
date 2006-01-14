@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(nc6, 0.5-cvs, [ds6-devel@deepspace6.net])
+AC_INIT(nc6, 1.0, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_GNU_GETTEXT_VERSION(0.14.1)
