@@ -1,8 +1,14 @@
+2006-01-20 Chris Leishman <chris@leishman.org>
+
+	* Fixed a bug in listen (missing AI_PASSIVE flag)
+	* Updated NEWS
+	* Updated copyright notices for 2006.
+	* Released nc6 1.0
+
 2006-01-14 Chris Leishman <chris@leishman.org>
 
 	* Converted to use autopoint for i18n source
 	  (merged from autopoint_test branch)
-	* Released nc6 1.0
 
 2006-01-14 Mauro Tortonesi <mauro@deepspace6.net>
 
