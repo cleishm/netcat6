@@ -1,3 +1,18 @@
+1.0
+
+Many new changes, and much more polished - so we're calling this our 1.0
+release.  The most interesting new feature is bluetooth support using the
+linux bluez library.  This required a bit of code restructure, but we think
+the result is pretty nice.
+
+
+0.5
+
+This release fixes a bug in --half-close and added a couple of new options:
+
+1) --exec : for setting a command to be executed
+2) --continuous : for continuously acception connections to be handled by --exec
+
 
 0.4
 
@@ -59,6 +74,7 @@ This is a simple rewrite of netcat with advanced handling of internal
 buffers. It supports only TCP.
 
 
+					    Chris Leishman
+					    <chris _at_ leishman.org>
 					    Mauro Tortonesi
 					    <mauro _at_ deepspace6.net>
-					    
