@@ -36,7 +36,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.56 2006-01-14 08:35:08 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.57 2006-01-19 21:47:55 chris Exp $");
 
 
 /* cddata argument for the listen callback proxy */
@@ -156,6 +156,7 @@ static int net_listen(const connection_attributes_t *attrs,
 	/* setup getaddrinfo hints */
 	memset(&hints, 0, sizeof(hints));
 	ca_to_addrinfo(&hints, attrs);
+	hints.ai_flags = AI_PASSIVE;
 #ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
 	hints.ai_flags |= AI_ADDRCONFIG;
 #endif
