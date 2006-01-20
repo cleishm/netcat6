@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(nc6, 1.0-cvs, [ds6-devel@deepspace6.net])
+AC_INIT(nc6, 1.0, [ds6-devel@deepspace6.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_GNU_GETTEXT_VERSION(0.14.1)
@@ -19,6 +19,9 @@ AC_PROG_INSTALL
 dnl default CFLAGS to use for nc6 source
 NC6_CFLAGS=""
 
+
+dnl add option for maintainer mode
+AM_MAINTAINER_MODE
 
 dnl internationalization macros
 AM_GNU_GETTEXT
