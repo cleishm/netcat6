@@ -23,6 +23,7 @@
 #include "network.h"
 #include "connection.h"
 #include "afindep.h"
+#include "parser.h"
 #ifdef ENABLE_BLUEZ
 #include "bluez.h"
 #endif/*ENABLE_BLUEZ*/
@@ -36,7 +37,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.59 2006-08-16 09:51:28 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.60 2006-08-16 09:56:11 mauro Exp $");
 
 
 /* cddata argument for the listen callback proxy */
