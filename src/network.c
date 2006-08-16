@@ -36,7 +36,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.58 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.59 2006-08-16 09:51:28 mauro Exp $");
 
 
 /* cddata argument for the listen callback proxy */
@@ -216,7 +216,8 @@ static void callback_proxy(int fd, int socktype, void *cdata)
 
 	attrs = proxy_data->attrs;
 
-	warn_socket_details(attrs, fd, socktype);
+	if (verbose_mode())
+		warn_socket_details(attrs, fd, socktype);
 
 	proxy_data->callback(attrs, fd, socktype, proxy_data->cdata);
 }

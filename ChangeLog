@@ -1,3 +1,8 @@
+2006-08-16 Mauro Tortonesi <mauro@deepspace6.net>
+
+	* Don't call warn_socket_details from callback_proxy unless verbose
+	mode is on. Bug reported by David Malone <dwmalone@maths.tcd.ie>.
+
 2006-01-20 Chris Leishman <chris@leishman.org>
 
 	* Fixed a bug in listen (missing AI_PASSIVE flag)
