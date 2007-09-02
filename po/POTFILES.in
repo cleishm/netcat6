@@ -10,6 +10,7 @@ src/netsupport.c
 src/network.c
 src/parser.c
 src/readwrite.c
+src/iucv.c
 
 # Contib files
 contrib/getopt.c

@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.67 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.67.2.1 2007-09-02 13:32:44 chris Exp $");
 
 
 
@@ -160,7 +160,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:xX",
+	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:xXy",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
@@ -296,6 +296,9 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 		case 'X':	
 			rev_file_transfer = true;
 			break;
+		case 'y':
+			family = PROTO_IUCV;
+			break;
 		case '?':
 			print_usage(stderr);
 			exit(EXIT_FAILURE);
@@ -342,6 +345,8 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	/* check protocol and family combinations are valid */
 	if (protocol == UDP_PROTOCOL && family == PROTO_BLUEZ)
 		fatal(_("cannot specify UDP protocol and bluetooth"));
+	if (protocol == UDP_PROTOCOL && family == PROTO_IUCV)
+		fatal(_("cannot specify UDP protocol and iucv"));
 	if (protocol == SCO_PROTOCOL && family != PROTO_BLUEZ)
 		fatal(_("--sco requires --bluetooth (-b)"));
 
@@ -349,6 +354,10 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 #ifndef ENABLE_BLUEZ
 	if (family == PROTO_BLUEZ)
 		fatal(_("system does not support bluetooth"));
+#endif
+#ifndef ENABLE_IUCV
+	if (family == PROTO_IUCV)
+		fatal(_("system does not support iucv"));
 #endif
 #ifndef ENABLE_IPV6
 	if (family == PROTO_IPv6)
@@ -371,6 +380,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	case PROTO_UNSPECIFIED:
 	case PROTO_IPv4:
 	case PROTO_IPv6:
+	case PROTO_IUCV:
 		if (protocol != UDP_PROTOCOL && protocol != TCP_PROTOCOL)
 			fatal_internal("unknown/unsupported transport "
 			               "protocol %d", protocol);
@@ -603,6 +613,8 @@ static void print_usage(FILE *fp)
 	fprintf(fp, " -x, --transfer         %s\n", _("File transfer mode"));
 	fprintf(fp, " -X, --rev-transfer     %s\n",
 	              _("File transfer mode (reverse direction)"));
+	fprintf(fp, " -y, --iucv             %s\n",
+	              _("Use IUCV (s390 Linux only)"));
 	fprintf(fp, "\n");
 }
 
@@ -637,6 +649,14 @@ _("Configured with Bluetooth (bluez) support\n"));
 #else
 	fprintf(fp,
 _("Configured without Bluetooth (bluez) support\n"));
+#endif
+	
+#ifdef ENABLE_IUCV
+	fprintf(fp,
+_("Configured with IUCV (s390 Inter-User Communications Vehicle) support\n"));
+#else
+	fprintf(fp,
+_("Configured without IUCV (s390 Inter-User Communications Vehicle) support\n"));
 #endif
 }
 

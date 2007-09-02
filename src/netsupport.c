@@ -22,6 +22,7 @@
 #include "system.h"
 #include "misc.h"
 #include "netsupport.h"
+#include "iucv.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -44,7 +45,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.14 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.14.2.1 2007-09-02 13:32:44 chris Exp $");
 
 
 
@@ -245,6 +246,37 @@ bool sockaddr_compare(const struct sockaddr *a, socklen_t a_len,
 		/* just compare the sockaddr structures directly */
 		return ((a_len == b_len) && memcmp(a, b, a_len) == 0)?
 			true : false;
+	}
+#endif
+	
+#ifdef ENABLE_IUCV
+	if (a->sa_family == AF_IUCV) {
+		const struct sockaddr_iucv *sa =
+			(const struct sockaddr_iucv *)a;
+		const struct sockaddr_iucv *sb =
+			(const struct sockaddr_iucv *)b;
+		const char empty[IUCV_MAXNAME] = "        ";
+
+		/* compare userid part
+		 * either may be empty, resulting in a good match */
+		if (memcmp(sa->siucv_userid, empty, IUCV_MAXNAME) &&
+		    memcmp(sb->siucv_userid, empty, IUCV_MAXNAME) &&
+		    strncasecmp(sa->siucv_userid, sb->siucv_userid,
+				IUCV_MAXNAME))
+		{
+			return false;
+		}
+
+		/* compare name part
+		 * either may be empty, resulting in a good match */
+		if (memcmp(sa->siucv_name, empty, IUCV_MAXNAME) &&
+		    memcmp(sb->siucv_name, empty, IUCV_MAXNAME) &&
+		    strncasecmp(sa->siucv_name, sb->siucv_name, IUCV_MAXNAME))
+		{
+			return false;
+		}
+
+		return true;
 	}
 #endif
 	

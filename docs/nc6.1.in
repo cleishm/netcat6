@@ -179,6 +179,10 @@ Reverse file transfer mode (see "FILE TRANSFER").  This transfers in the
 opposite direction to normal transfer.  If listen mode is specified, this is
 equivalent to "--send-only --buffer-size=65536" otherwise it is equivalent to
 "--recv-only --buffer-size=65536".
+.TP 13
+.I \-y, --iucv
+With this option set, netcat6 will use iucv (s390 Linux only) to establish
+connections.
 .SH UDP
 UDP support in netcat6 works very well in both connect and in listen mode.
 When using UDP in listen mode netcat6 accepts UDP packets from any source that

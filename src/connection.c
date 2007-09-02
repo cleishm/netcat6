@@ -22,6 +22,7 @@
 #include "system.h"
 #include "misc.h"
 #include "connection.h"
+#include "iucv.h"
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -30,7 +31,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.33 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.33.2.1 2007-09-02 13:32:44 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;
@@ -107,6 +108,12 @@ void ca_to_addrinfo(struct addrinfo *ainfo,
 		ainfo->ai_family = PF_BLUETOOTH;
 #else
 		fatal_internal("unavailable bluez support required");
+#endif
+	case PROTO_IUCV:
+#ifdef ENABLE_IUCV
+		ainfo->ai_family = PF_IUCV;
+#else
+		fatal_internal("unavailable iucv support required");
 #endif
 		break;
 	default:

@@ -27,6 +27,9 @@
 #ifdef ENABLE_BLUEZ
 #include "bluez.h"
 #endif/*ENABLE_BLUEZ*/
+#ifdef ENABLE_IUCV
+#include "iucv.h"
+#endif/*ENABLE_IUCV*/
 
 #include <assert.h>
 #include <stdlib.h>
@@ -37,7 +40,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.60 2006-08-16 09:56:11 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.60.2.1 2007-09-02 13:32:44 chris Exp $");
 
 
 /* cddata argument for the listen callback proxy */
@@ -122,6 +125,15 @@ static int net_connect(const connection_attributes_t *attrs,
 				timeout, &socktype);
 		break;
 #endif/*ENABLE_BLUEZ*/
+#ifdef ENABLE_IUCV
+	case PROTO_IUCV:
+		fd = iucv_connect(&hints,
+				  remote->address, remote->service,
+				  local->address, local->service,
+				  set_sockopt_handler, &attrs,
+				  timeout, &socktype);
+		break;
+#endif/*ENABLE_IUCV*/
 	default:
 		fd = afindep_connect(&hints,
 				remote->address, remote->service,
@@ -190,6 +202,15 @@ static int net_listen(const connection_attributes_t *attrs,
 				callback_proxy, &proxy_data,
 				timeout, max_accept);
 #endif/*ENABLE_BLUEZ*/
+#ifdef ENABLE_IUCV
+	case PROTO_IUCV:
+		return iucv_listener(&hints,
+				     local->address, local->service,
+				     remote->address, remote->service,
+				     set_sockopt_handler, &attrs,
+				     callback_proxy, &proxy_data,
+				     timeout, max_accept);
+#endif/*ENABLE_IUCV*/
 	default:
 		return afindep_listener(&hints,
 				local->address, local->service,

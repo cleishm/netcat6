@@ -26,12 +26,12 @@
 #include <netdb.h>
 #include <sys/time.h>
 
-
 typedef enum sock_family {
 	PROTO_UNSPECIFIED,
 	PROTO_IPv6,
 	PROTO_IPv4,
-	PROTO_BLUEZ
+	PROTO_BLUEZ,
+	PROTO_IUCV
 } sock_family_t;
 
 typedef enum sock_protocol {

@@ -94,6 +94,35 @@ if test "X$bluez" = "Xyes"; then
 fi
 AM_CONDITIONAL(BLUEZ, test "X$bluez" = "Xyes")
 
+dnl Configure IUCV support
+iucv=
+AC_ARG_ENABLE(iucv,
+  AC_HELP_STRING(
+    [--enable-iucv],[enable IUCV support (only on s390 Linux)]),
+  [case "${enable_iucv}" in
+  no)
+    AC_MSG_NOTICE([Disabling IUCV at user request])
+    iucv=no
+    ;;
+  *)
+    iucv=yes
+    ;;
+  esac],
+  [iucv=yes]
+)
+
+dnl Check for IUCV protocol support (AF_IUCV, etc)
+if test "X$iucv" = "Xyes"; then
+  PROTO_IUCV(,[
+    AC_MSG_NOTICE([Disabling IUCV support: AF_IUCV protocol family is required])
+    iucv=no
+  ])
+fi
+
+if test "X$iucv" = "Xyes"; then
+  AC_DEFINE([ENABLE_IUCV], 1, [Define if IUCV support is enabled.])
+fi
+AM_CONDITIONAL(IUCV, test "X$iucv" = "Xyes")
 
 dnl Configure IPv6 support
 ipv6=
