@@ -1,3 +1,7 @@
+2008-06-19 Chris Leishman <chris@leishman.org>
+
+	* Added missing t option to getopt. Bug reported by Kirill Timofeev.
+
 2006-08-16 Mauro Tortonesi <mauro@deepspace6.net>
 
 	* Don't call warn_socket_details from callback_proxy unless verbose

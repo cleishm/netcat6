@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.67 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.68 2008-06-19 04:41:03 chris Exp $");
 
 
 
@@ -160,7 +160,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 	_verbosity_level = 0;
 
 	/* option recognition loop */
-	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:uvw:xX",
+	while ((c = getopt_long(argc, argv, "46be:hlnp:q:s:t:uvw:xX",
 	                        long_options, &option_index)) >= 0)
 	{
  		switch (c) {
