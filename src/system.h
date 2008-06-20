@@ -110,4 +110,10 @@ typedef unsigned char _Bool;
 #define N_(String) (String)
 #endif
 
+
+/* prevent use of gets, sprintf, etc */
+#define gets __USE_gets_INSTEAD__
+#define sprintf __USE_snprintf_INSTEAD__
+
+
 #endif/*SYSTEM_H*/

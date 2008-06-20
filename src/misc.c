@@ -44,7 +44,7 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.29 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.29.2.1 2008-06-20 06:54:56 chris Exp $");
 
 
 
@@ -119,8 +119,7 @@ void *xmalloc(size_t size)
 
 char *xstrdup(const char *str)
 {
-	register char *nstr = (char *)xmalloc(strlen(str));
-	/* we should use srtlcpy here instead of strcpy */
+	register char *nstr = (char *)xmalloc(strlen(str)+1);
 	strcpy(nstr, str);
 	return nstr;
 }
