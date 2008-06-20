@@ -39,6 +39,11 @@ void warning(const char *template, ...);
 void *xmalloc(size_t size);
 char *xstrdup(const char *str);
 
+/* version of strlcpy that can handle a non-NULL terminated src  */
+void strlcpy_trunc(char *dst, const char *src, size_t size);
+/* bounded strlen */
+size_t strnlen(const char *str, size_t maxlen);
+
 void nonblock(int fd);
 
 int open3(const char *cmd, int *in, int *out, int *err);

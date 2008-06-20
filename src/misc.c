@@ -44,7 +44,7 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.30 2008-06-20 06:48:46 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.31 2008-06-20 07:59:40 chris Exp $");
 
 
 
@@ -122,6 +122,27 @@ char *xstrdup(const char *str)
 	register char *nstr = (char *)xmalloc(strlen(str)+1);
 	strcpy(nstr, str);
 	return nstr;
+}
+
+
+
+/* version of strlcpy that can handle a non-NULL terminated src  */
+void strlcpy_trunc(char *dst, const char *src, size_t size)
+{
+	register size_t len = strnlen(src, size-1);
+	memcpy(dst, src, len);
+	dst[len] = '\0';
+}
+
+
+
+/* bounded strlen */
+size_t strnlen(const char *str, size_t maxlen) {
+	register size_t len;
+	/* bounded strlen */
+	for (len = 0; len < maxlen && str[len] != '\0'; ++len)
+		/* no body */;
+	return len;
 }
 
 

@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.5 2008-06-20 04:15:50 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.6 2008-06-20 07:59:40 chris Exp $");
 
 
 
@@ -68,7 +68,7 @@ int afindep_connect(const struct addrinfo *hints,
 	assert(local_service == NULL || strlen(local_service) > 0);
 
 	/* get the address of the remote end of the connection */
-	err = getaddrinfo(remote_address, remote_service, hints, &res);
+	err = getaddrinfo_ex(remote_address, remote_service, hints, &res);
 	if (err != 0) {
 		warning(_("forward host lookup failed "
 		        "for remote endpoint %s: %s"),
@@ -132,7 +132,7 @@ int afindep_connect(const struct addrinfo *hints,
 			src_hints.ai_flags    = hints->ai_flags;
 
 			/* get the local IP address of the connection */
-			err = getaddrinfo(local_address, local_service,
+			err = getaddrinfo_ex(local_address, local_service,
 			                  &src_hints, &src_res);
 			if (err != 0) {
 				if (verbose_mode()) {
@@ -168,13 +168,13 @@ int afindep_connect(const struct addrinfo *hints,
 					     "%s: %s"), name_buf,
 					     strerror(errno));
 				}
-				freeaddrinfo(src_res);
+				freeaddrinfo_ex(src_res);
 				close(fd);
 				fd = -1;
 				continue;
 			}
 
-			freeaddrinfo(src_res);
+			freeaddrinfo_ex(src_res);
 		}
 
 		/* attempt the connection */
@@ -229,7 +229,7 @@ int afindep_connect(const struct addrinfo *hints,
 		*rt_socktype = ptr->ai_socktype;
 
 	/* cleanup addrinfo structure */
-	freeaddrinfo(res);
+	freeaddrinfo_ex(res);
 
 	return fd;
 }
@@ -265,7 +265,7 @@ int afindep_listener(const struct addrinfo *hints,
 		return 0;
 
 	/* get the IP address of the local end of the connection */
-	err = getaddrinfo(local_address, local_service, hints, &res);
+	err = getaddrinfo_ex(local_address, local_service, hints, &res);
 	if (err != 0) {
 		warning(_("forward host lookup failed "
 		        "for local endpoint %s (%s): %s"),
@@ -411,7 +411,7 @@ int afindep_listener(const struct addrinfo *hints,
 		nfd++;
 	}
 
-	freeaddrinfo(res);
+	freeaddrinfo_ex(res);
 	
 	if (nfd == 0) {
 		warning(_("failed to bind to any local addr/port"));
@@ -676,7 +676,7 @@ static bool is_allowed(const struct sockaddr *sa, socklen_t salen,
 	/* if no address or service is supplied, match everything */
 	if (address == NULL && service == NULL) return true;
 		
-	err = getaddrinfo(address, service, hints, &res);
+	err = getaddrinfo_ex(address, service, hints, &res);
 	if (err != 0) {
 		/* some errors just indicate that the address wasn't suitable */
 		switch (err) {
@@ -713,7 +713,7 @@ static bool is_allowed(const struct sockaddr *sa, socklen_t salen,
 		}
 	}
 
-	freeaddrinfo(res);
+	freeaddrinfo_ex(res);
 
 	return ret;
 }

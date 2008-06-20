@@ -66,9 +66,14 @@ void free_bound_sockets(bound_socket_t *list);
 /* close all bound sockets in a list and free the list */
 void close_and_free_bound_sockets(bound_socket_t *list);
 
-/* variant of getnameinfo that formats to a human understandable format, of
- * either "host (ip) port [service]", or "ip port" if reverse lookup fails or
- * numeric mode is set to true */
+/* wrapper around getaddrinfo that understands some additional protocols
+ * that the system getaddrinfo doesn't. */
+int getaddrinfo_ex(const char *nodename, const char *servname,
+		const struct addrinfo *hints, struct addrinfo **res);
+void freeaddrinfo_ex(struct addrinfo *ai);
+
+/* wrapper arround getnameinfo that understands some additional protocols
+ * and formats in a human understandable way. */
 void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 		size_t size, bool numeric_mode);
 
