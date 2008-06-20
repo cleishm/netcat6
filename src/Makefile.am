@@ -6,6 +6,7 @@ noinst_HEADERS = \
   network.h \
   afindep.h \
   bluez.h \
+  iucv.h \
   netsupport.h \
   parser.h \
   readwrite.h \
@@ -24,18 +25,22 @@ nc6_SOURCES = \
   io_stream.c \
   connection.c
 
-EXTRA_nc6_SOURCES = bluez.c
+EXTRA_nc6_SOURCES = iucv.c bluez.c
 
 if BLUEZ
 nc6_bluez = bluez.$(OBJEXT)
 endif
 
+if IUCV
+nc6_iucv = iucv.$(OBJEXT)
+endif
+
 localedir=$(datadir)/locale
 
-nc6_LDADD = $(nc6_bluez) $(top_builddir)/contrib/libnc6contrib.a @LIBINTL@
+nc6_LDADD = $(nc6_bluez) $(nc6_iucv) $(top_builddir)/contrib/libnc6contrib.a @LIBINTL@
 
 # note: must use ../intl instead of absolute path
 AM_CPPFLAGS = -I$(top_srcdir)/contrib -I../intl -DLOCALEDIR=\"$(localedir)\"
 AM_CFLAGS = @CFLAGS@ @NC6_CFLAGS@
 
-MAINTAINERCLEANFILES 	= Makefile.in stamp-h.in
+MAINTAINERCLEANFILES = Makefile.in stamp-h.in
