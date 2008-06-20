@@ -34,9 +34,6 @@
 #include <unistd.h>
 #include <limits.h>
 
-/* suggested size for argument to getnameinfo_ex */
-static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
-
 /* iucv names are space-padded */
 static void iucv_pad_string(char *dst, const char *src)
 {

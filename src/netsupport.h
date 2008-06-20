@@ -23,6 +23,7 @@
 #define NETSUPPORT_H
 
 #include <sys/socket.h>
+#include <netdb.h>
 
 /* issue the 'connect' call with a timeout.  Returns 0 on success and -1 on
  * failure (with errno set appropriately) */
@@ -47,7 +48,6 @@ bool is_address_ipv4_mapped(const struct sockaddr *a);
 bool sockaddr_compare(const struct sockaddr *a, socklen_t a_len,
 		const struct sockaddr *b, socklen_t b_len);
 
-
 typedef struct bound_socket {
 	int fd;
 	int socktype;
@@ -66,5 +66,13 @@ void free_bound_sockets(bound_socket_t *list);
 /* close all bound sockets in a list and free the list */
 void close_and_free_bound_sockets(bound_socket_t *list);
 
+/* variant of getnameinfo that formats to a human understandable format, of
+ * either "host (ip) port [service]", or "ip port" if reverse lookup fails or
+ * numeric mode is set to true */
+void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+		size_t size, bool numeric_mode);
+
+/* suggested size for argument to getnameinfo_ex */
+static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
 
 #endif/*NETSUPPORT_H*/
