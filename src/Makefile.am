@@ -3,7 +3,7 @@ noinst_HEADERS = \
   system.h \
   parser.h \
   attributes.h \
-  network.h \
+  connection.h \
   readwrite.h \
   io_stream.h \
   circ_buf.h \
@@ -16,7 +16,7 @@ nc6_SOURCES = \
   main.c \
   parser.c \
   attributes.c \
-  network.c \
+  connection.c \
   readwrite.c \
   io_stream.c \
   circ_buf.c \

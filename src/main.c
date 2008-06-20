@@ -20,12 +20,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
 #include "system.h"
-#include "misc.h"
-#include "attributes.h"
-#include "io_stream.h"
 #include "parser.h"
-#include "network.h"
+#include "attributes.h"
+#include "connection.h"
 #include "readwrite.h"
+#include "io_stream.h"
+#include "misc.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -40,7 +40,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.43 2008-06-20 14:35:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.44 2008-06-20 14:44:51 chris Exp $");
 
 
 /* program name */
@@ -48,7 +48,6 @@ static char *program_name  = NULL;
 
 
 /* function prototypes */
-static int establish_connections(const connection_attributes_t *attrs);
 static void established_callback(const connection_attributes_t *attrs,
 		int fd, int socktype, void *cdata);
 static int connection_main(const connection_attributes_t *attrs,
@@ -70,7 +69,7 @@ int main(int argc, char **argv)
 {
 	connection_attributes_t connection_attrs;
 	char *ptr;
-	int retval;
+	int retval, result;
 
 	i18n_init();
 
@@ -94,29 +93,19 @@ int main(int argc, char **argv)
 	/* set flags and fill out the addresses and connection attributes */
 	parse_arguments(argc, argv, &connection_attrs);
 
-	/* establish the connections */
-	retval = establish_connections(&connection_attrs);
+	/* establish connections and callback when connected */
+	retval = establish_connections(&connection_attrs,
+	                               established_callback, &result);
+
+	/* if only a single connection was established, result will
+	 * contain any error code from that connection handler */
+	if (retval == 0)
+		retval = result;
 
 	/* cleanup */
 	ca_destroy(&connection_attrs);
 
 	return (retval)? EXIT_FAILURE : EXIT_SUCCESS;
-}
-
-
-
-static int establish_connections(const connection_attributes_t *attrs)
-{
-	int err, result = 0;
-
-	/* establish connection and callback when connected */
-	err = net_establish(attrs, established_callback, &result);
-	if (err)
-		return err;
-
-	/* if only a single connection was established, result will
-	 * contain any error code from that connection handler */
-	return result;
 }
 
 

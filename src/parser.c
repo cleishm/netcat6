@@ -21,8 +21,8 @@
  */  
 #include "system.h"  
 #include "parser.h"  
+#include "connection.h"  
 #include "misc.h"  
-#include "network.h"  
 
 #include <assert.h>
 #include <stdio.h>
@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.69 2008-06-20 04:15:50 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.70 2008-06-20 14:44:51 chris Exp $");
 
 
 

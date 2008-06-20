@@ -1,5 +1,5 @@
 /*
- *  network.h - common networking functions module - header
+ *  connection.h - connection establishment - header
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2006 Mauro Tortonesi <mauro _at_ deepspace6.net>
@@ -19,16 +19,16 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
 #include "attributes.h"
 
 typedef void (*established_callback_t)(const connection_attributes_t *attrs,
 		int fd, int socktype, void *cdata);
 
-/* establish outgoing connections and issue callbacks */
-int net_establish(const connection_attributes_t *attrs,
+/* establish connections and issue callbacks */
+int establish_connections(const connection_attributes_t *attrs,
 		established_callback_t callback, void *cdata);
 
-#endif/*NETWORK_H*/
+#endif/*CONNECTION_H*/

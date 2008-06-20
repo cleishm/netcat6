@@ -1,5 +1,5 @@
 /*
- *  network.c - common networking functions module - implementation
+ *  connection.c - connection establishment - implementation
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2006 Mauro Tortonesi <mauro _at_ deepspace6.net>
@@ -20,9 +20,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
 #include "system.h"
+#include "connection.h"
 #include "parser.h"
 #include "attributes.h"
-#include "network.h"
 #include "afindep.h"
 #ifdef ENABLE_BLUEZ
 #include "bluez.h"
@@ -37,7 +37,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.61 2008-06-20 14:35:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.35 2008-06-20 14:44:51 chris Exp $");
 
 
 /* cdata argument for the established callback */
@@ -60,7 +60,7 @@ static void warn_socket_details(const connection_attributes_t *attrs,
 
 
 
-int net_establish(const connection_attributes_t *attrs,
+int establish_connections(const connection_attributes_t *attrs,
 		established_callback_t callback, void *cdata)
 {
 	established_cdata_t callback_data;

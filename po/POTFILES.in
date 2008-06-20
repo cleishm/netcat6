@@ -2,7 +2,7 @@
 src/main.c
 src/parser.c
 src/attributes.c
-src/network.c
+src/connection.c
 src/readwrite.c
 src/io_stream.c
 src/circ_buf.c
