@@ -22,7 +22,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "connection.h"
+#include "attributes.h"
 
 bool verbose_mode(void);
 bool very_verbose_mode(void);

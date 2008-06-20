@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.6 2008-06-20 07:59:40 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.7 2008-06-20 14:35:43 chris Exp $");
 
 
 
@@ -115,9 +115,9 @@ int afindep_connect(const struct addrinfo *hints,
 
 		/* setup name_buf if we're in verbose mode */
 		if (verbose_mode())
-			getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, 
-			               name_buf, sizeof(name_buf),
-				       (hints->ai_flags & AI_NUMERICHOST));
+			xgetnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, 
+			                name_buf, sizeof(name_buf),
+			                (hints->ai_flags & AI_NUMERICHOST));
 					
 		/* setup local source address and/or service */
 		if (local_address != NULL || local_service != NULL) {
@@ -136,7 +136,7 @@ int afindep_connect(const struct addrinfo *hints,
 			                  &src_hints, &src_res);
 			if (err != 0) {
 				if (verbose_mode()) {
-					warning(_("bind to source addr/port "
+					warning(_("lookup of source addr/port "
 					     "failed when connecting to "
 					     "%s: %s"), name_buf,
 					     gai_strerror(err));
@@ -351,8 +351,8 @@ int afindep_listener(const struct addrinfo *hints,
 			set_sockopt_handler(fd, hdata);
 
 		/* get the numeric name for this source address */
-		getnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, name_buf, 
-		               sizeof(name_buf), true);
+		xgetnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, name_buf, 
+		                sizeof(name_buf), true);
 
 		/* bind to the local address */
 		err = bind(fd, ptr->ai_addr, ptr->ai_addrlen);
@@ -499,7 +499,8 @@ int afindep_listener(const struct addrinfo *hints,
 			socklen_t srclen = sizeof(src);
 
 			/* find out what address the connection was to */
-			err = getsockname(ns, (struct sockaddr *)&src, &srclen);
+			err = getsockname_ex(ns,
+			                     (struct sockaddr *)&src, &srclen);
 			if (err < 0) {
 				warning("getsockname failed: %s",
 				        strerror(errno));
@@ -508,13 +509,13 @@ int afindep_listener(const struct addrinfo *hints,
 			}
 
 			/* get the numeric name for this source */
-			getnameinfo_ex((struct sockaddr *)&src, srclen,
-			               name_buf, sizeof(name_buf), true);
+			xgetnameinfo_ex((struct sockaddr *)&src, srclen,
+			                name_buf, sizeof(name_buf), true);
 
 			/* get the name for this client */
-			getnameinfo_ex((struct sockaddr *)&dest, destlen,
-			               c_name_buf, sizeof(c_name_buf),
-				       (hints->ai_flags & AI_NUMERICHOST));
+			xgetnameinfo_ex((struct sockaddr *)&dest, destlen,
+			                c_name_buf, sizeof(c_name_buf),
+			                (hints->ai_flags & AI_NUMERICHOST));
 		}
 
 		/* check if connections from this client are allowed */

@@ -22,8 +22,8 @@
 #include "system.h"
 #include "misc.h"
 #include "netsupport.h"
-#ifdef ENABLE_IUCV
-#include "iucv.h"
+#ifdef ENABLE_BLUEZ
+#include "bluez.h"
 #endif
 
 #include <assert.h>
@@ -47,7 +47,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.16 2008-06-20 07:59:40 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.17 2008-06-20 14:35:43 chris Exp $");
 
 
 
@@ -251,37 +251,6 @@ bool sockaddr_compare(const struct sockaddr *a, socklen_t a_len,
 	}
 #endif
 	
-#ifdef ENABLE_IUCV
-	if (a->sa_family == AF_IUCV) {
-		const struct sockaddr_iucv *sa =
-			(const struct sockaddr_iucv *)a;
-		const struct sockaddr_iucv *sb =
-			(const struct sockaddr_iucv *)b;
-		const char empty[IUCV_MAXNAME] = "        ";
-
-		/* compare userid part
-		 * either may be empty, resulting in a good match */
-		if (memcmp(sa->siucv_userid, empty, IUCV_MAXNAME) &&
-		    memcmp(sb->siucv_userid, empty, IUCV_MAXNAME) &&
-		    strncasecmp(sa->siucv_userid, sb->siucv_userid,
-				IUCV_MAXNAME))
-		{
-			return false;
-		}
-
-		/* compare name part
-		 * either may be empty, resulting in a good match */
-		if (memcmp(sa->siucv_name, empty, IUCV_MAXNAME) &&
-		    memcmp(sb->siucv_name, empty, IUCV_MAXNAME) &&
-		    strncasecmp(sa->siucv_name, sb->siucv_name, IUCV_MAXNAME))
-		{
-			return false;
-		}
-
-		return true;
-	}
-#endif
-	
 	/* for all other socket types, return false */
 	return false;
 }
@@ -384,7 +353,7 @@ void freeaddrinfo_ex(struct addrinfo *ai)
 
 /* wrapper arround getnameinfo that understands some additional protocols
  * and formats in a human understandable way. */
-void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+int getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 		size_t size, bool numeric_mode)
 {
 	int err;
@@ -404,9 +373,8 @@ void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 			  sbuf_num, sizeof(sbuf_num),
 			  NI_NUMERICHOST | NI_NUMERICSERV);
 
-	/* this should never happen */
 	if (err != 0)
-		fatal("getnameinfo failed: %s", gai_strerror(err));
+		return err;
 
 	if (numeric_mode == false) {
 		/* get the real name for this destination as a string */
@@ -424,4 +392,26 @@ void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 	} else {
 		snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
 	}
+
+	return 0;
+}
+
+
+
+void xgetnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+		size_t size, bool numeric_mode)
+{
+	int err = getnameinfo_ex(sa, len, str, size, numeric_mode);
+	if (err != 0) {
+		fatal(_("getnameinfo failed: %s"), gai_strerror(err));
+	}
+}
+
+
+
+/* wrapper around getaddrinfo that understands some additional protocols
+ * that the system getsockname doesn't. */
+int getsockname_ex(int socket, struct sockaddr *addr, socklen_t *addrlen)
+{
+	return getsockname(socket, addr, addrlen);
 }

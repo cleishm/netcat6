@@ -1,28 +1,28 @@
 bin_PROGRAMS = nc6
 noinst_HEADERS = \
   system.h \
-  circ_buf.h \
-  misc.h \
-  network.h \
-  afindep.h \
-  bluez.h \
-  netsupport.h \
   parser.h \
+  attributes.h \
+  network.h \
   readwrite.h \
   io_stream.h \
-  connection.h
+  circ_buf.h \
+  netsupport.h \
+  afindep.h \
+  bluez.h \
+  misc.h
 
 nc6_SOURCES = \
-  circ_buf.c \
   main.c \
-  misc.c \
-  network.c \
-  afindep.c \
-  netsupport.c \
   parser.c \
+  attributes.c \
+  network.c \
   readwrite.c \
   io_stream.c \
-  connection.c
+  circ_buf.c \
+  netsupport.c \
+  afindep.c \
+  misc.c
 
 EXTRA_nc6_SOURCES = bluez.c
 

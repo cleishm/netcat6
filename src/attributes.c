@@ -1,5 +1,5 @@
 /*
- *  connection.c - connection description structures and functions - implementation
+ *  attributes.c - structs and funcs for connection attributes - implementation
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2002-2006 Chris Leishman <chris _at_ leishman.org>
@@ -21,7 +21,7 @@
  */  
 #include "system.h"
 #include "misc.h"
-#include "connection.h"
+#include "attributes.h"
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.33 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/attributes.c,v 1.1 2008-06-20 14:35:43 chris Exp $");
 
 /* default buffer size is 8kb */
 static const size_t DEFAULT_BUFFER_SIZE = 8192;

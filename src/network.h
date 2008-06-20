@@ -22,7 +22,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "connection.h"
+#include "attributes.h"
 
 typedef void (*established_callback_t)(const connection_attributes_t *attrs,
 		int fd, int socktype, void *cdata);

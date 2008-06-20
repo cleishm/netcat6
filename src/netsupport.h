@@ -74,10 +74,16 @@ void freeaddrinfo_ex(struct addrinfo *ai);
 
 /* wrapper arround getnameinfo that understands some additional protocols
  * and formats in a human understandable way. */
-void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+int getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+		size_t size, bool numeric_mode);
+void xgetnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
 		size_t size, bool numeric_mode);
 
 /* suggested size for argument to getnameinfo_ex */
 static const int AI_STR_SIZE = (2 * (NI_MAXHOST + NI_MAXSERV + 2)) + 8;
+
+/* wrapper around getaddrinfo that understands some additional protocols
+ * that the system getsockname doesn't. */
+int getsockname_ex(int socket, struct sockaddr *addr, socklen_t *addrlen);
 
 #endif/*NETSUPPORT_H*/

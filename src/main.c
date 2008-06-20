@@ -21,7 +21,7 @@
  */  
 #include "system.h"
 #include "misc.h"
-#include "connection.h"
+#include "attributes.h"
 #include "io_stream.h"
 #include "parser.h"
 #include "network.h"
@@ -40,7 +40,8 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.42 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.43 2008-06-20 14:35:43 chris Exp $");
+
 
 /* program name */
 static char *program_name  = NULL;
@@ -124,7 +125,7 @@ static void established_callback(const connection_attributes_t *attrs,
 		int fd, int socktype, void *cdata)
 {
 	/* a connection has been established */
-	int do_fork = 0;
+	bool was_forked = false;
 	int result;
 
 	/* check if multiple connections will be established,
@@ -132,10 +133,6 @@ static void established_callback(const connection_attributes_t *attrs,
 	if (ca_is_flag_set(attrs, CA_LISTEN_MODE) &&
 	    ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT))
 	{
-		do_fork = 1;
-	}
-
-	if (do_fork) {
 		/* fork and let the parent return immediately */
 		int pid;
 		int size;
@@ -149,6 +146,8 @@ static void established_callback(const connection_attributes_t *attrs,
 			return;
 		}
 
+		was_forked = true;
+
 		/* setup program_name */
 		size = strlen(program_name) + 10;
 		new_name = (char *) xmalloc(size * sizeof(char));
@@ -159,8 +158,8 @@ static void established_callback(const connection_attributes_t *attrs,
 	/* invoke main connection handler */
 	result = connection_main(attrs, fd, socktype);
 
-	/* if this is a forked child, then exit with an error code */
-	if (do_fork)
+	/* if this is a forked child, then exit with an appropriate code */
+	if (was_forked)
 		exit((result)? EXIT_FAILURE : EXIT_SUCCESS);
 
 	/* otherwise write the result code to the cdata before returning */
@@ -184,11 +183,9 @@ static int connection_main(const connection_attributes_t *attrs,
 	cb_init(&remote_buffer, ca_buffer_size(attrs));
 	cb_init(&local_buffer, ca_buffer_size(attrs));
 
-	/* setup remote stream */
 	setup_remote_stream(attrs, fd, socktype, &remote_stream,
 	                    &remote_buffer, &local_buffer);
 
-	/* setup local stream */
 	setup_local_stream(attrs, &local_stream, &remote_buffer, &local_buffer);
 	
 	/* set remote mtu & nru */

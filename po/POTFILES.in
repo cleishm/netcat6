@@ -1,15 +1,15 @@
 # Package source files
+src/main.c
+src/parser.c
+src/attributes.c
+src/network.c
+src/readwrite.c
+src/io_stream.c
+src/circ_buf.c
+src/netsupport.c
 src/afindep.c
 src/bluez.c
-src/circ_buf.c
-src/connection.c
-src/io_stream.c
-src/main.c
 src/misc.c
-src/netsupport.c
-src/network.c
-src/parser.c
-src/readwrite.c
 
 # Contib files
 contrib/getopt.c

@@ -20,10 +20,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
 #include "system.h"
-#include "network.h"
-#include "connection.h"
-#include "afindep.h"
 #include "parser.h"
+#include "attributes.h"
+#include "network.h"
+#include "afindep.h"
 #ifdef ENABLE_BLUEZ
 #include "bluez.h"
 #endif/*ENABLE_BLUEZ*/
@@ -37,23 +37,23 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.60 2006-08-16 09:56:11 mauro Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/network.c,v 1.61 2008-06-20 14:35:43 chris Exp $");
 
 
-/* cddata argument for the listen callback proxy */
-typedef struct callback_proxy_data {
+/* cdata argument for the established callback */
+typedef struct established_cdata {
 	const connection_attributes_t *attrs;
-	established_callback_t callback;
-	void *cdata;
-} callback_proxy_data_t;
+	established_callback_t delegate_callback;
+	void *callback_cdata;
+} established_cdata_t;
 
 
 
 static int net_connect(const connection_attributes_t *attrs,
-		established_callback_t callback, void *cdata);
+		established_cdata_t established_data);
 static int net_listen(const connection_attributes_t *attrs,
-		established_callback_t callback, void *cdata);
-static void callback_proxy(int fd, int socktype, void *cdata);
+		established_cdata_t established_data);
+static void established_calback(int fd, int socktype, void *cdata);
 static void set_sockopt_handler(int sock, void *hdata);
 static void warn_socket_details(const connection_attributes_t *attrs,
 		int sock, int socktype);
@@ -63,11 +63,18 @@ static void warn_socket_details(const connection_attributes_t *attrs,
 int net_establish(const connection_attributes_t *attrs,
 		established_callback_t callback, void *cdata)
 {
+	established_cdata_t callback_data;
+
+	/* store connection attributes and original callback plus cdata */
+	callback_data.attrs = attrs;
+	callback_data.delegate_callback = callback;
+	callback_data.callback_cdata = cdata;
+
 	/* establish remote connection */
 	if (ca_is_flag_set(attrs, CA_CONNECT_MODE)) {
-		return net_connect(attrs, callback, cdata);
+		return net_connect(attrs, callback_data);
 	} else if (ca_is_flag_set(attrs, CA_LISTEN_MODE)) {
-		return net_listen(attrs, callback, cdata);
+		return net_listen(attrs, callback_data);
 	} else {
 		fatal_internal("unknown connection mode");
 	}
@@ -79,13 +86,12 @@ int net_establish(const connection_attributes_t *attrs,
 
 
 static int net_connect(const connection_attributes_t *attrs,
-		established_callback_t callback, void *cdata)
+		established_cdata_t established_cdata)
 {
 	struct addrinfo hints;
 	const address_t *remote, *local;
 	time_t timeout;
 	int fd, socktype;
-	callback_proxy_data_t proxy_data;
 
 	assert(attrs != NULL);
 
@@ -106,11 +112,6 @@ static int net_connect(const connection_attributes_t *attrs,
 
 	/* get timeout */
 	timeout = ca_connect_timeout(attrs);
-
-	/* store requested callback and cdata */
-	proxy_data.attrs = attrs;
-	proxy_data.callback = callback;
-	proxy_data.cdata = cdata;
 
 	/* invoke the appropriate connector for the protocol family */
 	switch (ca_family(attrs)) {
@@ -135,21 +136,20 @@ static int net_connect(const connection_attributes_t *attrs,
 	if (fd < 0)
 		return fd;
 
-	/* only support a single connect, so issue callback directly */
-	callback_proxy(fd, socktype, &proxy_data);
+	/* only support a single connect */
+	established_calback(fd, socktype, &established_cdata);
 	return 0;
 }
 
 
 
 static int net_listen(const connection_attributes_t *attrs,
-		established_callback_t callback, void *cdata)
+		established_cdata_t established_cdata)
 {
 	struct addrinfo hints;
 	const address_t *remote, *local;
 	time_t timeout;
 	int max_accept;
-	callback_proxy_data_t proxy_data;
 
 	/* make sure that attrs is a valid pointer */
 	assert(attrs != NULL);
@@ -174,11 +174,6 @@ static int net_listen(const connection_attributes_t *attrs,
 	/* get maximum accepted connection (currently either 1 or infinite) */
 	max_accept = ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT)? -1 : 1;
 
-	/* store requested callback and cdata */
-	proxy_data.attrs = attrs;
-	proxy_data.callback = callback;
-	proxy_data.cdata = cdata;
-
 	/* invoke the appropriate listener for the protocol family */
 	switch (ca_family(attrs)) {
 #ifdef ENABLE_BLUEZ
@@ -187,7 +182,7 @@ static int net_listen(const connection_attributes_t *attrs,
 				local->address, local->service,
 				remote->address, remote->service,
 				set_sockopt_handler, &attrs,
-				callback_proxy, &proxy_data,
+				established_calback, &established_cdata,
 				timeout, max_accept);
 #endif/*ENABLE_BLUEZ*/
 	default:
@@ -195,7 +190,7 @@ static int net_listen(const connection_attributes_t *attrs,
 				local->address, local->service,
 				remote->address, remote->service,
 				set_sockopt_handler, &attrs,
-				callback_proxy, &proxy_data,
+				established_calback, &established_cdata,
 				timeout, max_accept);
 	}
 
@@ -205,22 +200,25 @@ static int net_listen(const connection_attributes_t *attrs,
 
 
 
-/* proxy for the actual callback, to keep track of the connection attributes */
-static void callback_proxy(int fd, int socktype, void *cdata)
+/* callback when connection is established */
+static void established_calback(int fd, int socktype, void *cdata)
 {
-	callback_proxy_data_t *proxy_data = (callback_proxy_data_t *)cdata;
+	established_cdata_t *established_cdata = (established_cdata_t *)cdata;
 	const connection_attributes_t *attrs;
 
-	assert(proxy_data != NULL);
+	assert(established_cdata != NULL);
 	assert(fd >= 0);
 	assert(socktype >= 0);
 
-	attrs = proxy_data->attrs;
+	attrs = established_cdata->attrs;
 
 	if (verbose_mode())
 		warn_socket_details(attrs, fd, socktype);
 
-	proxy_data->callback(attrs, fd, socktype, proxy_data->cdata);
+	if (established_cdata->delegate_callback != NULL) {
+		established_cdata->delegate_callback(attrs, fd, socktype,
+				established_cdata->callback_cdata);
+	}
 }
 
 

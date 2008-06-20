@@ -1,5 +1,5 @@
 /*
- *  connection.h - connection description structures and functions - header
+ *  attributes.h - structs and funcs for connection attributes - header
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2002-2006 Chris Leishman <chris _at_ leishman.org>
@@ -19,8 +19,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef ATTRIBUTES_H
+#define ATTRIBUTES_H
 
 #include "io_stream.h"
 #include <netdb.h>
@@ -148,4 +148,4 @@ void ca_set_local_exec(connection_attributes_t *attrs, const char *exec);
 void ca_to_addrinfo(struct addrinfo *ainfo,
 		const connection_attributes_t *attrs);
 
-#endif/*CONNECTION_H*/
+#endif/*ATTRIBUTES_H*/
