@@ -44,7 +44,7 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.14 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.15 2008-06-20 04:15:50 chris Exp $");
 
 
 
@@ -326,5 +326,52 @@ void close_and_destroy_bound_sockets(bound_socket_t *list)
 		list = list->next;
 		close(tmp->fd);
 		free(tmp);
+	}
+}
+
+
+
+/* variant of getnameinfo that formats to a human understandable format, of
+ * either "host (ip) port [service]", or "ip port" if reverse lookup fails or
+ * numeric mode is set to true */
+void getnameinfo_ex(const struct sockaddr *sa, socklen_t len, char *str,
+		size_t size, bool numeric_mode)
+{
+	int err;
+	char hbuf_rev[NI_MAXHOST + 1];
+	char hbuf_num[NI_MAXHOST + 1];
+	char sbuf_rev[NI_MAXSERV + 1];
+	char sbuf_num[NI_MAXSERV + 1];
+
+	/* check arguments */
+	assert(sa != NULL);
+	assert(len > 0);
+	assert(str != NULL);
+	assert(size > 0);
+	
+	/* get the numeric name for this destination as a string */
+	err = getnameinfo(sa, len, hbuf_num, sizeof(hbuf_num),
+			  sbuf_num, sizeof(sbuf_num),
+			  NI_NUMERICHOST | NI_NUMERICSERV);
+
+	/* this should never happen */
+	if (err != 0)
+		fatal("getnameinfo failed: %s", gai_strerror(err));
+
+	if (numeric_mode == false) {
+		/* get the real name for this destination as a string */
+		err = getnameinfo(sa, len, hbuf_rev, sizeof(hbuf_rev),
+				  sbuf_rev, sizeof(sbuf_rev), 0);
+		if (err == 0) {
+			snprintf(str, size, "%s (%s) %s [%s]", hbuf_rev, 
+			         hbuf_num, sbuf_num, sbuf_rev);
+		} else {
+			warning(_("inverse lookup failed for %s: %s"),
+			        hbuf_num, gai_strerror(err));
+			
+			snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
+		}
+	} else {
+		snprintf(str, size, "%s %s", hbuf_num, sbuf_num);
 	}
 }

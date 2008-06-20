@@ -34,7 +34,7 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.68 2008-06-19 04:41:03 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/parser.c,v 1.69 2008-06-20 04:15:50 chris Exp $");
 
 
 
@@ -341,7 +341,7 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 
 	/* check protocol and family combinations are valid */
 	if (protocol == UDP_PROTOCOL && family == PROTO_BLUEZ)
-		fatal(_("cannot specify UDP protocol and bluetooth"));
+		fatal(_("cannot specify --udp (-u) and --bluetooth (-b)"));
 	if (protocol == SCO_PROTOCOL && family != PROTO_BLUEZ)
 		fatal(_("--sco requires --bluetooth (-b)"));
 
@@ -425,8 +425,9 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 		fatal(_("cannot set both --recv-only and --send-only"));
 	}
 
-	/* check ports have not been specified with --sco */
+	/* check family/protocol specific requirements on hosts/ports */
 	if (protocol == SCO_PROTOCOL) {
+		/* sco doesn't support services/ports */
 		if (remote_address.service != NULL)
 			fatal(_("--sco does not support remote port"));
 		if (local_address.service != NULL)
@@ -447,13 +448,16 @@ void parse_arguments(int argc, char **argv, connection_attributes_t *attrs)
 			      "must be used with --exec"));
 		}
 	} else {
+		/* check the remote host has been specified */
+		if (remote_address.address == NULL) {
+			fatal(_("you must specify the address of "
+			      "the remote endpoint"));
+		}
 		/* check port has been specified (except with sco) */
-		if (remote_address.address == NULL || 
-		    (remote_address.service == NULL &&
-		    protocol != SCO_PROTOCOL))
+		if (remote_address.service == NULL && protocol != SCO_PROTOCOL)
 		{
-			fatal(_("you must specify the address/port couple "
-			      "of the remote endpoint"));
+			fatal(_("you must specify the port of the "
+			      "remote endpoint"));
 		}
 		if (ca_is_flag_set(attrs, CA_DONT_REUSE_ADDR)) {
 			fatal(_("--no-reuseaddr option "
