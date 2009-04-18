@@ -21,7 +21,6 @@
  */  
 #include "system.h"
 #include "connection.h"
-#include "parser.h"
 #include "attributes.h"
 #include "afindep.h"
 #ifdef ENABLE_BLUEZ
@@ -37,7 +36,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.35 2008-06-20 14:44:51 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.36 2009-04-18 11:39:35 chris Exp $");
 
 
 /* cdata argument for the established callback */
@@ -50,9 +49,11 @@ typedef struct established_cdata {
 
 
 static int net_connect(const connection_attributes_t *attrs,
-		established_cdata_t established_data);
+		const struct addrinfo *hints,
+		established_cdata_t established_cdata);
 static int net_listen(const connection_attributes_t *attrs,
-		established_cdata_t established_data);
+		const struct addrinfo *hints,
+		established_cdata_t established_cdata);
 static void established_calback(int fd, int socktype, void *cdata);
 static void set_sockopt_handler(int sock, void *hdata);
 static void warn_socket_details(const connection_attributes_t *attrs,
@@ -64,20 +65,25 @@ int establish_connections(const connection_attributes_t *attrs,
 		established_callback_t callback, void *cdata)
 {
 	established_cdata_t callback_data;
+	struct addrinfo hints;
+
+	assert(attrs != NULL);
 
 	/* store connection attributes and original callback plus cdata */
 	callback_data.attrs = attrs;
 	callback_data.delegate_callback = callback;
 	callback_data.callback_cdata = cdata;
 
-	/* establish remote connection */
-	if (ca_is_flag_set(attrs, CA_CONNECT_MODE)) {
-		return net_connect(attrs, callback_data);
-	} else if (ca_is_flag_set(attrs, CA_LISTEN_MODE)) {
-		return net_listen(attrs, callback_data);
+	/* setup getaddrinfo hints */
+	memset(&hints, 0, sizeof(hints));
+	ca_to_addrinfo(&hints, attrs);
+
+	/* establish connections */
+	if (ca_is_flag_set(attrs, CA_PASSIVE)) {
+		return net_listen(attrs, &hints, callback_data);
 	} else {
-		fatal_internal("unknown connection mode");
-	}
+		return net_connect(attrs, &hints, callback_data);
+	} 
 
 	/* not reached */
 	abort();
@@ -86,25 +92,12 @@ int establish_connections(const connection_attributes_t *attrs,
 
 
 static int net_connect(const connection_attributes_t *attrs,
+		const struct addrinfo *hints,
 		established_cdata_t established_cdata)
 {
-	struct addrinfo hints;
 	const address_t *remote, *local;
 	time_t timeout;
 	int fd, socktype;
-
-	assert(attrs != NULL);
-
-	/* setup getaddrinfo hints */
-	memset(&hints, 0, sizeof(hints));
-	ca_to_addrinfo(&hints, attrs);
-#ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
-	/* make calls to getaddrinfo send AAAA queries only if at least one
-	 * IPv6 interface is configured */
-	hints.ai_flags |= AI_ADDRCONFIG;
-#endif
-	if (ca_is_flag_set(attrs, CA_NUMERIC_MODE))
-		hints.ai_flags |= AI_NUMERICHOST;
 
 	/* get addresses */
 	remote = ca_remote_address(attrs);
@@ -116,17 +109,17 @@ static int net_connect(const connection_attributes_t *attrs,
 	/* invoke the appropriate connector for the protocol family */
 	switch (ca_family(attrs)) {
 #ifdef ENABLE_BLUEZ
-	case PROTO_BLUEZ:
-		fd = bluez_connect(&hints,
-				remote->address, remote->service,
+	case PF_BLUETOOTH:
+		fd = bluez_connect(*hints,
+				remote->nodename, remote->service,
 				set_sockopt_handler, &attrs,
 				timeout, &socktype);
 		break;
 #endif/*ENABLE_BLUEZ*/
 	default:
-		fd = afindep_connect(&hints,
-				remote->address, remote->service,
-				local->address, local->service,
+		fd = afindep_connect(*hints,
+				remote->nodename, remote->service,
+				local->nodename, local->service,
 				set_sockopt_handler, &attrs,
 				timeout, &socktype);
 		break;
@@ -144,25 +137,12 @@ static int net_connect(const connection_attributes_t *attrs,
 
 
 static int net_listen(const connection_attributes_t *attrs,
+		const struct addrinfo *hints,
 		established_cdata_t established_cdata)
 {
-	struct addrinfo hints;
 	const address_t *remote, *local;
 	time_t timeout;
 	int max_accept;
-
-	/* make sure that attrs is a valid pointer */
-	assert(attrs != NULL);
-
-	/* setup getaddrinfo hints */
-	memset(&hints, 0, sizeof(hints));
-	ca_to_addrinfo(&hints, attrs);
-	hints.ai_flags = AI_PASSIVE;
-#ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
-	hints.ai_flags |= AI_ADDRCONFIG;
-#endif
-	if (ca_is_flag_set(attrs, CA_NUMERIC_MODE))
-		hints.ai_flags |= AI_NUMERICHOST;
 
 	/* get addresses */
 	remote = ca_remote_address(attrs);
@@ -177,18 +157,18 @@ static int net_listen(const connection_attributes_t *attrs,
 	/* invoke the appropriate listener for the protocol family */
 	switch (ca_family(attrs)) {
 #ifdef ENABLE_BLUEZ
-	case PROTO_BLUEZ:
-		return bluez_listener(&hints,
-				local->address, local->service,
-				remote->address, remote->service,
+	case PF_BLUETOOTH:
+		return bluez_listener(*hints,
+				local->nodename, local->service,
+				remote->nodename, remote->service,
 				set_sockopt_handler, &attrs,
 				established_calback, &established_cdata,
 				timeout, max_accept);
 #endif/*ENABLE_BLUEZ*/
 	default:
-		return afindep_listener(&hints,
-				local->address, local->service,
-				remote->address, remote->service,
+		return afindep_listener(*hints,
+				local->nodename, local->service,
+				remote->nodename, remote->service,
 				set_sockopt_handler, &attrs,
 				established_calback, &established_cdata,
 				timeout, max_accept);

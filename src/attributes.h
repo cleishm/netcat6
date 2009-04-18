@@ -26,37 +26,22 @@
 #include <netdb.h>
 #include <sys/time.h>
 
-
-typedef enum sock_family {
-	PROTO_UNSPECIFIED,
-	PROTO_IPv6,
-	PROTO_IPv4,
-	PROTO_BLUEZ
-} sock_family_t;
-
-typedef enum sock_protocol {
-	TCP_PROTOCOL,
-	UDP_PROTOCOL,
-	SCO_PROTOCOL,
-	L2CAP_PROTOCOL
-} sock_protocol_t;
-
-typedef struct address
-{
-	char *address;
-	char *service;
+typedef struct address {
+	const char *nodename;
+	const char *service;
 } address_t;
 
-#define address_init(AD)	((AD)->address = (AD)->service = NULL)
+#define address_init(AD)	((AD)->nodename = (AD)->service = NULL)
 
 
 typedef struct connection_attributes
 {
-	sock_family_t family;
-	sock_protocol_t protocol;
+	int flags;
+	int family;
+	int socktype;
+	int protocol;
 	address_t remote_address;
 	address_t local_address;
-	int flags;
 	size_t buffer_size;
 	size_t remote_mtu;
 	size_t remote_nru;
@@ -64,61 +49,56 @@ typedef struct connection_attributes
 	size_t rcvbuf_size;
 	int connect_timeout;
 	int idle_timeout;
-	int local_hold_timeout;
 	int remote_hold_timeout;
+	int local_hold_timeout;
 	bool remote_half_close_suppress;
 	bool local_half_close_suppress;
 	char *local_exec;
 } connection_attributes_t;
 
 /* CA flags */
-#define CA_NUMERIC_MODE		0x000001
-#define CA_STRICT_IPV6		0x000002
-#define CA_DONT_REUSE_ADDR	0x000004
-#define CA_LISTEN_MODE		0x000008
-#define CA_CONNECT_MODE		0x000010
-#define CA_RECV_DATA_ONLY	0x000020
-#define CA_SEND_DATA_ONLY	0x000040
-#define CA_DISABLE_NAGLE	0x000080
-#define CA_CONTINUOUS_ACCEPT	0x000100
+#define CA_NUMERICHOST		0x000001
+#define CA_DONT_REUSE_ADDR	0x000002
+#define CA_PASSIVE		0x000004
+#define CA_RECV_DATA_ONLY	0x000008
+#define CA_SEND_DATA_ONLY	0x000010
+#define CA_DISABLE_NAGLE	0x000020
+#define CA_CONTINUOUS_ACCEPT	0x000040
 
 void ca_init(connection_attributes_t *attrs);
 void ca_destroy(connection_attributes_t *attrs);
-
-#define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
-#define ca_family(CA)			((CA)->family)
-#define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
-#define ca_protocol(CA)			((CA)->protocol)
-
-#define ca_remote_address(CA)	((const address_t *)&((CA)->remote_address))
-#define ca_local_address(CA)	((const address_t *)&((CA)->local_address))
-#define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
-#define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
-
-#define ca_connect_func(CA)		((CA)->connect)
-#define ca_set_connect_func(CA, FUNC)	((CA)->connect = (FUNC))
-#define ca_listen_func(CA)		((CA)->listen)
-#define ca_set_listen_func(CA, FUNC)	((CA)->listen = (FUNC))
 
 #define ca_is_flag_set(CA, FLG)		((CA)->flags & (FLG))
 #define ca_set_flag(CA, FLG)		((CA)->flags |=  (FLG))
 #define ca_clear_flag(CA, FLG)		((CA)->flags &= ~(FLG))
 
-#define ca_buffer_size(CA)		((CA)->buffer_size)
+#define ca_family(CA)			((CA)->family)
+#define ca_set_family(CA, FAMILY)	((CA)->family = (FAMILY))
+#define ca_socktype(CA)			((CA)->socktype)
+#define ca_set_socktype(CA, SOCKTYPE)	((CA)->socktype = (SOCKTYPE))
+#define ca_protocol(CA)			((CA)->protocol)
+#define ca_set_protocol(CA, PROTO)	((CA)->protocol = (PROTO))
+
+#define ca_local_address(CA)	((const address_t *)&((CA)->local_address))
+#define ca_set_local_addr(CA, ADDR)	((CA)->local_address  = (ADDR))
+#define ca_remote_address(CA)	((const address_t *)&((CA)->remote_address))
+#define ca_set_remote_addr(CA, ADDR)	((CA)->remote_address = (ADDR))
+
+size_t ca_buffer_size(const connection_attributes_t *attrs, int socktype);
 #define ca_set_buffer_size(CA, SZ)	((CA)->buffer_size = (SZ))
 
-#define ca_remote_MTU(CA)		((CA)->remote_mtu)
+size_t ca_remote_MTU(const connection_attributes_t *attrs, int socktype);
 #define ca_set_remote_MTU(CA, MTU)	((CA)->remote_mtu = (MTU))
 
-#define ca_remote_NRU(CA)		((CA)->remote_nru)
+size_t ca_remote_NRU(const connection_attributes_t *attrs, int socktype);
 #define ca_set_remote_NRU(CA, NRU)	((CA)->remote_nru = (NRU))
 
 #define ca_sndbuf_size(CA)		((CA)->sndbuf_size)
 #define ca_set_sndbuf_size(CA, SZ)	((CA)->sndbuf_size = (SZ))
-	
+
 #define ca_rcvbuf_size(CA)		((CA)->rcvbuf_size)
 #define ca_set_rcvbuf_size(CA, SZ)	((CA)->rcvbuf_size = (SZ))
-	
+
 #define ca_connect_timeout(CA)		((CA)->connect_timeout)
 #define ca_set_connect_timeout(CA, CT)	((CA)->connect_timeout = (CT))
 
@@ -143,7 +123,7 @@ void ca_destroy(connection_attributes_t *attrs);
 
 #define ca_local_exec(CA)		(const char*)(((CA)->local_exec))
 void ca_set_local_exec(connection_attributes_t *attrs, const char *exec);
-	
+
 /* fill out an addrinfo structure with parameters from the ca */
 void ca_to_addrinfo(struct addrinfo *ainfo,
 		const connection_attributes_t *attrs);

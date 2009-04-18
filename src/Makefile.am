@@ -1,7 +1,7 @@
 bin_PROGRAMS = nc6
 noinst_HEADERS = \
   system.h \
-  parser.h \
+  options.h \
   attributes.h \
   connection.h \
   readwrite.h \
@@ -14,7 +14,7 @@ noinst_HEADERS = \
 
 nc6_SOURCES = \
   main.c \
-  parser.c \
+  options.c \
   attributes.c \
   connection.c \
   readwrite.c \

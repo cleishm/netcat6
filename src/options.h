@@ -1,5 +1,5 @@
 /*
- *  parser.h - argument parser & dispatcher module - header 
+ *  options.h - argument parser module - header 
  * 
  *  nc6 - an advanced netcat clone
  *  Copyright (C) 2001-2006 Mauro Tortonesi <mauro _at_ deepspace6.net>
@@ -23,9 +23,6 @@
 #define PARSER_H
 
 #include "attributes.h"
-
-bool verbose_mode(void);
-bool very_verbose_mode(void);
 
 void parse_arguments(int argc, char **argv, connection_attributes_t *attrs);
 

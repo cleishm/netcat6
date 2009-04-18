@@ -23,7 +23,6 @@
 #include "afindep.h"
 #include "misc.h"
 #include "netsupport.h"
-#include "parser.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -35,7 +34,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.7 2008-06-20 14:35:43 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.8 2009-04-18 11:39:35 chris Exp $");
 
 
 
@@ -49,7 +48,7 @@ static bool is_allowed(const struct sockaddr *sa, socklen_t salen,
 
 
 
-int afindep_connect(const struct addrinfo *hints,
+int afindep_connect(struct addrinfo hints,
 		const char *remote_address, const char *remote_service,
 		const char *local_address, const char *local_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
@@ -61,18 +60,22 @@ int afindep_connect(const struct addrinfo *hints,
 	char name_buf[AI_STR_SIZE];
 
 	/* make sure arguments are valid and preconditions are respected */
-	assert(hints != NULL);
 	assert(remote_address != NULL && strlen(remote_address) > 0);
 	assert(remote_service != NULL && strlen(remote_service) > 0);
 	assert(local_address == NULL || strlen(local_address) > 0);
 	assert(local_service == NULL || strlen(local_service) > 0);
 
+#ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
+	/* make calls to getaddrinfo send AAAA queries only if at least one
+	 * IPv6 interface is configured */
+	hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+
 	/* get the address of the remote end of the connection */
-	err = getaddrinfo_ex(remote_address, remote_service, hints, &res);
+	err = getaddrinfo_ex(remote_address, remote_service, &hints, &res);
 	if (err != 0) {
 		warning(_("forward host lookup failed "
-		        "for remote endpoint %s: %s"),
-		        remote_address, gai_strerror(err));
+		        "for remote endpoint %s: %s"), gai_strerror(err));
 		return -1;
 	}
 
@@ -117,7 +120,7 @@ int afindep_connect(const struct addrinfo *hints,
 		if (verbose_mode())
 			xgetnameinfo_ex(ptr->ai_addr, ptr->ai_addrlen, 
 			                name_buf, sizeof(name_buf),
-			                (hints->ai_flags & AI_NUMERICHOST));
+			                (hints.ai_flags & AI_NUMERICHOST));
 					
 		/* setup local source address and/or service */
 		if (local_address != NULL || local_service != NULL) {
@@ -129,7 +132,7 @@ int afindep_connect(const struct addrinfo *hints,
 			src_hints.ai_flags    = AI_PASSIVE;
 			src_hints.ai_socktype = ptr->ai_socktype;
 			src_hints.ai_protocol = ptr->ai_protocol;
-			src_hints.ai_flags    = hints->ai_flags;
+			src_hints.ai_flags    = hints.ai_flags;
 
 			/* get the local IP address of the connection */
 			err = getaddrinfo_ex(local_address, local_service,
@@ -236,7 +239,7 @@ int afindep_connect(const struct addrinfo *hints,
 
 
 
-int afindep_listener(const struct addrinfo *hints,
+int afindep_listener(struct addrinfo hints,
 		const char *local_address, const char *local_service,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
@@ -254,7 +257,6 @@ int afindep_listener(const struct addrinfo *hints,
 	char name_buf[AI_STR_SIZE];
 
 	/* make sure arguments are valid and preconditions are respected */
-	assert(hints != NULL);
 	assert(remote_address == NULL || strlen(remote_address) > 0);
 	assert(remote_service == NULL || strlen(remote_service) > 0);
 	assert(local_address == NULL || strlen(local_address) > 0);
@@ -264,9 +266,17 @@ int afindep_listener(const struct addrinfo *hints,
 	if (max_accept == 0)
 		return 0;
 
+	hints.ai_flags |= AI_PASSIVE;
+#ifdef HAVE_GETADDRINFO_AI_ADDRCONFIG
+	/* make calls to getaddrinfo send AAAA queries only if at least one
+	 * IPv6 interface is configured */
+	hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+
 	/* get the IP address of the local end of the connection */
-	err = getaddrinfo_ex(local_address, local_service, hints, &res);
+	err = getaddrinfo_ex(local_address, local_service, &hints, &res);
 	if (err != 0) {
+		printf("%d %d %d\n", hints.ai_family, hints.ai_socktype, hints.ai_protocol);
 		warning(_("forward host lookup failed "
 		        "for local endpoint %s (%s): %s"),
 		        local_address? local_address : _("[unspecified]"),
@@ -414,7 +424,7 @@ int afindep_listener(const struct addrinfo *hints,
 	freeaddrinfo_ex(res);
 	
 	if (nfd == 0) {
-		warning(_("failed to bind to any local addr/port"));
+		warning(_("failed to bind to any local address/service"));
 		return -1;
 	}
 
@@ -515,12 +525,12 @@ int afindep_listener(const struct addrinfo *hints,
 			/* get the name for this client */
 			xgetnameinfo_ex((struct sockaddr *)&dest, destlen,
 			                c_name_buf, sizeof(c_name_buf),
-			                (hints->ai_flags & AI_NUMERICHOST));
+			                (hints.ai_flags & AI_NUMERICHOST));
 		}
 
 		/* check if connections from this client are allowed */
 		if ((remote_address == NULL && remote_service == NULL) ||
-		    (is_allowed((struct sockaddr *)&dest, destlen, hints,
+		    (is_allowed((struct sockaddr *)&dest, destlen, &hints,
 				remote_address, remote_service) == true))
 		{
 
@@ -589,14 +599,7 @@ static bool skip_address(const struct addrinfo *ai)
 	 * skip IPv4 mapped addresses returned from getaddrinfo,
 	 * for security reasons. see the documents:
 	 *
-	 * http://playground.iijlab.net/i-d/
-	 *       /draft-itojun-ipv6-transition-abuse-01.txt
-	 *       
-	 * http://playground.iijlab.net/i-d/
-	 *       /draft-cmetz-v6ops-v4mapped-api-harmful-00.txt
-	 *       
-	 * http://playground.iijlab.net/i-d/
-	 *       /draft-itojun-v6ops-v4mapped-harmful-01.txt
+	 * http://tools.ietf.org/id/draft-itojun-v6ops-v4mapped-harmful-02.txt
 	 */
 	if (is_address_ipv4_mapped(ai->ai_addr))
 		return true;
@@ -607,7 +610,7 @@ static bool skip_address(const struct addrinfo *ai)
 		return true;
 #endif
 #endif
-	
+
 	return false;
 }
 
@@ -615,9 +618,9 @@ static bool skip_address(const struct addrinfo *ai)
 
 /* 
  * Some systems (notably Linux) will bind to both IPv6 AND IPv4 when
- * listening.  Connections will still be accepted from either IPv6 or
- * IPv4 clients (IPv4 will be mapped into IPv6).  However, this means
- * that we MUST bind the IPv6 address ONLY for these hosts.
+ * listening on a single socket.  Connections will still be accepted from
+ * either IPv6 or IPv4 clients (IPv4 will be mapped into IPv6).  However, this
+ * means that we MUST bind the IPv6 address ONLY for these hosts.
  *
  * To handle this, we will ensure that IPv6 sockets are bound first and then
  * attempt to bind the IPv4 ones.  On systems that double bind IPv6/IPv4 the

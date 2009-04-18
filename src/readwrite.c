@@ -23,7 +23,6 @@
 #include "readwrite.h"
 #include "misc.h"
 #include "circ_buf.h"
-#include "parser.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -36,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.44 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/readwrite.c,v 1.45 2009-04-18 11:39:35 chris Exp $");
 
 
 

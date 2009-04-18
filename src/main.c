@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */  
 #include "system.h"
-#include "parser.h"
+#include "options.h"
 #include "attributes.h"
 #include "connection.h"
 #include "readwrite.h"
@@ -40,7 +40,7 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.44 2008-06-20 14:44:51 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.45 2009-04-18 11:39:35 chris Exp $");
 
 
 /* program name */
@@ -119,8 +119,7 @@ static void established_callback(const connection_attributes_t *attrs,
 
 	/* check if multiple connections will be established,
 	 * in which case a child should be forked to handle this connection */
-	if (ca_is_flag_set(attrs, CA_LISTEN_MODE) &&
-	    ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT))
+	if (ca_is_flag_set(attrs, CA_CONTINUOUS_ACCEPT))
 	{
 		/* fork and let the parent return immediately */
 		int pid;
@@ -169,8 +168,8 @@ static int connection_main(const connection_attributes_t *attrs,
 	assert(socktype >= 0);
 
 	/* initialise buffers */
-	cb_init(&remote_buffer, ca_buffer_size(attrs));
-	cb_init(&local_buffer, ca_buffer_size(attrs));
+	cb_init(&remote_buffer, ca_buffer_size(attrs, socktype));
+	cb_init(&local_buffer, ca_buffer_size(attrs, socktype));
 
 	setup_remote_stream(attrs, fd, socktype, &remote_stream,
 	                    &remote_buffer, &local_buffer);
@@ -178,8 +177,8 @@ static int connection_main(const connection_attributes_t *attrs,
 	setup_local_stream(attrs, &local_stream, &remote_buffer, &local_buffer);
 	
 	/* set remote mtu & nru */
-	ios_set_mtu(&remote_stream, ca_remote_MTU(attrs));
-	ios_set_nru(&remote_stream, ca_remote_NRU(attrs));
+	ios_set_mtu(&remote_stream, ca_remote_MTU(attrs, socktype));
+	ios_set_nru(&remote_stream, ca_remote_NRU(attrs, socktype));
 
 	/* set idle timeouts - only on remote ios */
 	ios_set_idle_timeout(&remote_stream, ca_idle_timeout(attrs));

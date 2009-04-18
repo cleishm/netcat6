@@ -120,10 +120,11 @@ Disables the SO_REUSEADDR socket option (this is only useful in listen mode).
 .I \--nru=BYTES
 Set the miNimum Receive Unit for the remote endpoint (network receives).  Note
 that this does not mean that every network read will get the specified number
-of bytes, only that nc6 MUST be able to receive at least that amount of data
-when a read is done.  This is only really useful for datagram protocols like
-UDP where the entire datagram must be received in one call or it is truncated.
-The default NRU for TCP connections is 1 byte, and 65536 bytes for UDP.
+of bytes, only that nc6 MUST have enough buffer space to receive that amount of
+data when a read is done.  This is only really useful for datagram protocols
+like UDP where the entire datagram must be received in one call or it is
+truncated.  The default NRU for stream connections is 1 byte and 65536 bytes
+for datagram connections.
 .TP 13
 .I \-p, --port=PORT
 Sets the port number for the local endpoint of the connection.

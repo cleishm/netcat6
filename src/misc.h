@@ -44,6 +44,8 @@ void strlcpy_trunc(char *dst, const char *src, size_t size);
 /* bounded strlen */
 size_t strnlen(const char *str, size_t maxlen);
 
+const char *non_empty_string(const char *str);
+
 void nonblock(int fd);
 
 int open3(const char *cmd, int *in, int *out, int *err);
@@ -54,5 +56,11 @@ int safe_atoi(const char *str, int *result);
 #define BA_MAXHOST 18
 int safe_ba2str(const bdaddr_t *ba, char *str, size_t strlen);
 #endif
+
+extern int _verbosity_level;
+#define set_verbosity_level(LEVEL)	(_verbosity_level = (LEVEL))
+#define verbosity_level()		(_verbosity_level)
+#define verbose_mode()			(_verbosity_level >= 1)
+#define very_verbose_mode()		(_verbosity_level >= 2)
 
 #endif/*MISC_H*/

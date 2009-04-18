@@ -30,7 +30,7 @@ typedef void (*listen_callback_t)(int fd, int socktype, void *cdata);
 
 
 /* establish a connection and return a new fd and socktype */
-int afindep_connect(const struct addrinfo *hints,
+int afindep_connect(struct addrinfo hints,
 		const char *remote_address, const char *remote_service,
 		const char *local_address, const char *local_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
@@ -38,7 +38,7 @@ int afindep_connect(const struct addrinfo *hints,
 
 
 /* listen for connects and issue callbacks */
-int afindep_listener(const struct addrinfo *hints,
+int afindep_listener(struct addrinfo hints,
 		const char *local_address, const char *local_service,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,

@@ -25,13 +25,13 @@
 #include "afindep.h"
 
 /* establish a connection and return a new fd and socktype */
-int bluez_connect(const struct addrinfo *hints,
+int bluez_connect(struct addrinfo hints,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
 		time_t timeout, int *socktype);
 
 /* listen for connects and issue callbacks */
-int bluez_listener(const struct addrinfo *hints,
+int bluez_listener(struct addrinfo hints,
 		const char *local_address, const char *local_service,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,

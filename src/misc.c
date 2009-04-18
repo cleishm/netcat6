@@ -44,7 +44,12 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.31 2008-06-20 07:59:40 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.32 2009-04-18 11:39:35 chris Exp $");
+
+
+
+/* verbosity global flag */
+int _verbosity_level = 0;
 
 
 
@@ -137,7 +142,8 @@ void strlcpy_trunc(char *dst, const char *src, size_t size)
 
 
 /* bounded strlen */
-size_t strnlen(const char *str, size_t maxlen) {
+size_t strnlen(const char *str, size_t maxlen)
+{
 	register size_t len;
 	/* bounded strlen */
 	for (len = 0; len < maxlen && str[len] != '\0'; ++len)
@@ -145,6 +151,12 @@ size_t strnlen(const char *str, size_t maxlen) {
 	return len;
 }
 
+
+
+const char *non_empty_string(const char *str)
+{
+	return (str == NULL || strlen(str) == 0)? NULL : str;
+}
 
 
 void nonblock(int fd)

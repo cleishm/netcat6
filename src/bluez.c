@@ -23,7 +23,6 @@
 #include "bluez.h"
 #include "misc.h"
 #include "netsupport.h"
-#include "parser.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -37,7 +36,7 @@
 #include <bluetooth/sco.h>
 #include <bluetooth/l2cap.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.4 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.5 2009-04-18 11:39:35 chris Exp $");
 
 
 /* suggested size for argument to getnameinfo_ex */
@@ -55,7 +54,7 @@ static bool is_allowed(const struct sockaddr *sa, socklen_t salen,
 
 
 
-int bluez_connect(const struct addrinfo *hints,
+int bluez_connect(struct addrinfo hints,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
 		time_t timeout, int *rt_socktype)
@@ -66,16 +65,15 @@ int bluez_connect(const struct addrinfo *hints,
 	char name_buf[BA_STR_SIZE];
 
 	/* make sure arguments are valid and preconditions are respected */
-	assert(hints != NULL);
 	assert(remote_address != NULL && strlen(remote_address) > 0);
 
 	/* this function only supports a specific protocol family */
-	assert(hints->ai_family == PF_BLUETOOTH);
+	assert(hints.ai_family == PF_BLUETOOTH);
 
 	memset(&ss, 0, sizeof(ss));
 	
 	/* get the sockaddr */
-	if (getbluezaddr(remote_address, remote_service, hints,
+	if (getbluezaddr(remote_address, remote_service, &hints,
 	                 (struct sockaddr *)&ss, &salen))
 	{
 		return -1;
@@ -83,10 +81,10 @@ int bluez_connect(const struct addrinfo *hints,
 
 	/* setup name_buf if we're in verbose mode */
 	if (verbose_mode())
-		getbluezname((struct sockaddr *)&ss, hints->ai_protocol,
+		getbluezname((struct sockaddr *)&ss, hints.ai_protocol,
 		             name_buf, sizeof(name_buf));
 
-	fd = socket(hints->ai_family, hints->ai_socktype, hints->ai_protocol);
+	fd = socket(hints.ai_family, hints.ai_socktype, hints.ai_protocol);
 	if (fd < 0) {
 		warning("cannot create the bluez socket: %s", strerror(errno));
 		return -1;
@@ -113,13 +111,13 @@ int bluez_connect(const struct addrinfo *hints,
 		return err;
 	}
 
-	*rt_socktype = hints->ai_socktype;
+	*rt_socktype = hints.ai_socktype;
 	return fd;
 }
 
 
 
-int bluez_listener(const struct addrinfo *hints,
+int bluez_listener(struct addrinfo hints,
 		const char *local_address, const char *local_service,
 		const char *remote_address, const char *remote_service,
 		set_sockopt_handler_t set_sockopt_handler, void *hdata,
@@ -132,13 +130,12 @@ int bluez_listener(const struct addrinfo *hints,
 	char name_buf[BA_STR_SIZE];
 
 	/* make sure arguments are valid and preconditions are respected */
-	assert(hints != NULL);
 	assert(local_address == NULL || strlen(local_address) > 0);
 	assert(remote_address == NULL || strlen(remote_address) > 0);
 	assert(callback != NULL);
 
 	/* this function only supports a specific protocol family */
-	assert(hints->ai_family == PF_BLUETOOTH);
+	assert(hints.ai_family == PF_BLUETOOTH);
 	
 	/* if max_accept is 0, just return */
 	if (max_accept == 0)
@@ -147,7 +144,7 @@ int bluez_listener(const struct addrinfo *hints,
 	memset(&ss, 0, sizeof(ss));
 	
 	/* get the sockaddr */
-	if (getbluezaddr(local_address, local_service, hints,
+	if (getbluezaddr(local_address, local_service, &hints,
 	                 (struct sockaddr *)&ss, &salen))
 	{
 		return -1;
@@ -155,10 +152,10 @@ int bluez_listener(const struct addrinfo *hints,
 
 	/* setup name_buf if we're in verbose mode */
 	if (verbose_mode())
-		getbluezname((struct sockaddr *)&ss, hints->ai_protocol,
+		getbluezname((struct sockaddr *)&ss, hints.ai_protocol,
 		             name_buf, sizeof(name_buf));
 
-	fd = socket(hints->ai_family, hints->ai_socktype, hints->ai_protocol);
+	fd = socket(hints.ai_family, hints.ai_socktype, hints.ai_protocol);
 	if (fd < 0) {
 		warning("cannot create the bluez socket: %s", strerror(errno));
 		return -1;
@@ -227,12 +224,12 @@ int bluez_listener(const struct addrinfo *hints,
 		/* get the name for this client */
 		if (verbose_mode())
 			getbluezname((struct sockaddr *)&dest,
-			             hints->ai_protocol,
+			             hints.ai_protocol,
 				     c_name_buf, sizeof(name_buf));
 
 		/* check if connections from this client are allowed */
 		if ((remote_address == NULL && remote_service == NULL) ||
-		    (is_allowed((struct sockaddr *)&dest, destlen, hints,
+		    (is_allowed((struct sockaddr *)&dest, destlen, &hints,
 				remote_address, remote_service) == true))
 		{
 			if (verbose_mode()) {

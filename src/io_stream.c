@@ -22,7 +22,6 @@
 #include "system.h"
 #include "io_stream.h"
 #include "misc.h"
-#include "parser.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -32,7 +31,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.32 2006-01-19 22:46:23 chris Exp $");
+RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.33 2009-04-18 11:39:35 chris Exp $");
 
 
 
@@ -115,7 +114,7 @@ void ios_init(io_stream_t *ios, const char *name,
 	ios->buf_out = outbuf;
 
 	ios->mtu = 0; /* unlimited */
-	ios->nru = 0; /* unlimited */
+	ios->nru = 1; /* at least 1 byte space before reading */
 
 	ios->half_close_suppress = false;
 

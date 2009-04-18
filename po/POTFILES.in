@@ -1,6 +1,6 @@
 # Package source files
 src/main.c
-src/parser.c
+src/options.c
 src/attributes.c
 src/connection.c
 src/readwrite.c
