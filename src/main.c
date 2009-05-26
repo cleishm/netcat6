@@ -40,9 +40,6 @@
 #endif
  
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/main.c,v 1.45 2009-04-18 11:39:35 chris Exp $");
-
-
 /* program name */
 static char *program_name  = NULL;
 

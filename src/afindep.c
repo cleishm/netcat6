@@ -34,9 +34,6 @@
 #include <unistd.h>
 #include <limits.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/afindep.c,v 1.8 2009-04-18 11:39:35 chris Exp $");
-
-
 
 static bool skip_address(const struct addrinfo *ai);
 #ifdef ENABLE_IPV6

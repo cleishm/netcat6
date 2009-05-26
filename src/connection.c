@@ -36,8 +36,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/connection.c,v 1.36 2009-04-18 11:39:35 chris Exp $");
-
 
 /* cdata argument for the established callback */
 typedef struct established_cdata {

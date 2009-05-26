@@ -31,9 +31,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/io_stream.c,v 1.33 2009-04-18 11:39:35 chris Exp $");
-
-
 
 #ifndef NDEBUG
 static void ios_assert(const io_stream_t *ios)

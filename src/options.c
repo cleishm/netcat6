@@ -34,9 +34,6 @@
 #include <netdb.h>
 #include <getopt.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/options.c,v 1.1 2009-04-18 11:39:35 chris Exp $");
-
-
 
 /* long options */
 static const struct option options[] = {

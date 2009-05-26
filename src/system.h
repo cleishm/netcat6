@@ -92,14 +92,6 @@ typedef unsigned char _Bool;
 	(((tvp)->tv_sec < 0) || ((tvp)->tv_sec == 0 && (tvp)->tv_usec <= 0))
 
 
-/* setup RCSID */
-#ifndef lint
-#define RCSID(X) static const char rcsid[] = X
-#else
-#define RCSID(X)
-#endif
-
-
 /* setup NLS */
 #if ENABLE_NLS
 #include <libintl.h>

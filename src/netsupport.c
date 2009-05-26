@@ -47,9 +47,6 @@ char *alloca();
 #endif
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/netsupport.c,v 1.17 2008-06-20 14:35:43 chris Exp $");
-
-
 
 /* call 'connect' in non-blocking mode and use select to await a timeout */
 int connect_with_timeout(int fd, const struct sockaddr *sa,

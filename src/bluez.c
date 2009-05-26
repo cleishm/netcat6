@@ -36,8 +36,6 @@
 #include <bluetooth/sco.h>
 #include <bluetooth/l2cap.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/bluez.c,v 1.5 2009-04-18 11:39:35 chris Exp $");
-
 
 /* suggested size for argument to getnameinfo_ex */
 static const int BA_STR_SIZE = BA_MAXHOST + 14;

@@ -30,9 +30,6 @@
 #include <string.h>
 #include <sys/uio.h>
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/circ_buf.c,v 1.26 2006-01-19 22:46:23 chris Exp $");
-
-
 
 #ifndef NDEBUG
 static void cb_assert(const circ_buf_t *cb)

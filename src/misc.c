@@ -44,9 +44,6 @@
 #include <bluetooth/bluetooth.h>
 #endif
 
-RCSID("@(#) $Header: /Users/cleishma/work/nc6-repo/nc6/src/misc.c,v 1.32 2009-04-18 11:39:35 chris Exp $");
-
-
 
 /* verbosity global flag */
 int _verbosity_level = 0;
