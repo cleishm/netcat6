@@ -1,4 +1,4 @@
-*.o
+*.[oa]
 Makefile
 Makefile.in
 .deps
